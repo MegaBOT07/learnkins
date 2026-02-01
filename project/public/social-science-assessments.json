@@ -1,0 +1,137 @@
+[
+  {
+    "id": "social-1",
+    "title": "Ancient Civilizations Quiz",
+    "subject": "Social Science",
+    "description": "Test your knowledge of ancient civilizations and their contributions",
+    "questions": [
+      {
+        "id": 1,
+        "question": "Which ancient civilization developed cuneiform writing?",
+        "options": ["Egypt", "Mesopotamia", "Greece", "Rome"],
+        "correctAnswer": 1,
+        "explanation": "Mesopotamia developed cuneiform, the first writing system"
+      },
+      {
+        "id": 2,
+        "question": "What were the main structures built by ancient Egyptians?",
+        "options": ["Ziggurats", "Pyramids", "Colosseums", "Temples"],
+        "correctAnswer": 1,
+        "explanation": "Ancient Egyptians built pyramids as tombs for pharaohs"
+      },
+      {
+        "id": 3,
+        "question": "Which civilization is known for developing democracy?",
+        "options": ["Mesopotamia", "Egypt", "Greece", "Rome"],
+        "correctAnswer": 2,
+        "explanation": "Ancient Greece developed the first democracy in Athens"
+      },
+      {
+        "id": 4,
+        "question": "What was the main contribution of ancient Rome to modern society?",
+        "options": ["Democracy", "Pyramids", "Law and engineering", "Hieroglyphics"],
+        "correctAnswer": 2,
+        "explanation": "Rome contributed law systems and engineering innovations"
+      },
+      {
+        "id": 5,
+        "question": "Which ancient civilization built the Great Wall?",
+        "options": ["India", "China", "Japan", "Korea"],
+        "correctAnswer": 1,
+        "explanation": "Ancient China built the Great Wall for protection"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "social-2",
+    "title": "Geography and Government Test",
+    "subject": "Social Science",
+    "description": "Test your knowledge of physical geography and government systems",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is a landform?",
+        "options": ["A natural feature of Earth's surface", "A type of climate", "A body of water", "A type of soil"],
+        "correctAnswer": 0,
+        "explanation": "Landforms are natural features of Earth's surface like mountains, valleys, plains"
+      },
+      {
+        "id": 2,
+        "question": "Which climate factor is most important?",
+        "options": ["Latitude", "Longitude", "Population", "Economy"],
+        "correctAnswer": 0,
+        "explanation": "Latitude is the most important factor affecting climate"
+      },
+      {
+        "id": 3,
+        "question": "What is democracy?",
+        "options": ["Rule by one person", "Rule by the people", "Rule by the wealthy", "Rule by the military"],
+        "correctAnswer": 1,
+        "explanation": "Democracy means 'rule by the people'"
+      },
+      {
+        "id": 4,
+        "question": "Which is NOT a type of government?",
+        "options": ["Democracy", "Monarchy", "Dictatorship", "Capitalism"],
+        "correctAnswer": 3,
+        "explanation": "Capitalism is an economic system, not a government type"
+      },
+      {
+        "id": 5,
+        "question": "What is the purpose of elections in a democracy?",
+        "options": ["To choose leaders", "To make laws", "To collect taxes", "All of the above"],
+        "correctAnswer": 0,
+        "explanation": "Elections allow citizens to choose their leaders"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "social-3",
+    "title": "Economics and Culture Assessment",
+    "subject": "Social Science",
+    "description": "Test your understanding of economic systems and cultural diversity",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is supply and demand?",
+        "options": ["A type of government", "An economic principle", "A cultural tradition", "A geographic feature"],
+        "correctAnswer": 1,
+        "explanation": "Supply and demand is a fundamental economic principle"
+      },
+      {
+        "id": 2,
+        "question": "Which economic system is based on supply and demand?",
+        "options": ["Traditional", "Market", "Command", "Mixed"],
+        "correctAnswer": 1,
+        "explanation": "Market economy is based on supply and demand"
+      },
+      {
+        "id": 3,
+        "question": "What is cultural diversity?",
+        "options": ["Variety of cultures", "One culture", "No cultures", "Modern culture only"],
+        "correctAnswer": 0,
+        "explanation": "Cultural diversity refers to the variety of cultures"
+      },
+      {
+        "id": 4,
+        "question": "What is a trade?",
+        "options": ["Exchange of goods", "A type of government", "A cultural practice", "A geographic feature"],
+        "correctAnswer": 0,
+        "explanation": "Trade is the exchange of goods and services"
+      },
+      {
+        "id": 5,
+        "question": "Why is cultural understanding important?",
+        "options": ["For global citizenship", "For trade only", "For government only", "For geography only"],
+        "correctAnswer": 0,
+        "explanation": "Cultural understanding is important for global citizenship"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  }
+] 

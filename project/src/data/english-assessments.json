@@ -1,0 +1,137 @@
+[
+  {
+    "id": "english-1",
+    "title": "Grammar Fundamentals Quiz",
+    "subject": "English",
+    "description": "Test your understanding of parts of speech and basic grammar",
+    "questions": [
+      {
+        "id": 1,
+        "question": "Which part of speech describes a noun?",
+        "options": ["Verb", "Adjective", "Adverb", "Pronoun"],
+        "correctAnswer": 1,
+        "explanation": "Adjectives describe nouns (e.g., 'red' car, 'tall' building)"
+      },
+      {
+        "id": 2,
+        "question": "What part of speech is 'quickly' in 'She runs quickly'?",
+        "options": ["Noun", "Verb", "Adjective", "Adverb"],
+        "correctAnswer": 3,
+        "explanation": "'Quickly' describes how she runs, so it's an adverb"
+      },
+      {
+        "id": 3,
+        "question": "Which word is a pronoun?",
+        "options": ["Happy", "Running", "He", "Beautiful"],
+        "correctAnswer": 2,
+        "explanation": "'He' is a pronoun that replaces a noun"
+      },
+      {
+        "id": 4,
+        "question": "What type of sentence is 'What time is it?'?",
+        "options": ["Declarative", "Interrogative", "Imperative", "Exclamatory"],
+        "correctAnswer": 1,
+        "explanation": "This is an interrogative sentence (asks a question)"
+      },
+      {
+        "id": 5,
+        "question": "Which word is a conjunction?",
+        "options": ["And", "Quickly", "Happy", "Running"],
+        "correctAnswer": 0,
+        "explanation": "'And' connects words or phrases, making it a conjunction"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "english-2",
+    "title": "Reading Comprehension Assessment",
+    "subject": "English",
+    "description": "Test your reading comprehension and analysis skills",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the main purpose of previewing a text?",
+        "options": ["To finish reading quickly", "To understand the structure", "To memorize content", "To skip difficult parts"],
+        "correctAnswer": 1,
+        "explanation": "Previewing helps understand the text's structure and main ideas"
+      },
+      {
+        "id": 2,
+        "question": "What type of question asks for facts directly stated in the text?",
+        "options": ["Literal", "Inferential", "Evaluative", "Critical"],
+        "correctAnswer": 0,
+        "explanation": "Literal questions ask for facts directly stated in the text"
+      },
+      {
+        "id": 3,
+        "question": "Which reading strategy involves creating mental pictures?",
+        "options": ["Predicting", "Visualizing", "Questioning", "Summarizing"],
+        "correctAnswer": 1,
+        "explanation": "Visualizing involves creating mental pictures while reading"
+      },
+      {
+        "id": 4,
+        "question": "What is the purpose of making connections while reading?",
+        "options": ["To finish faster", "To understand better", "To memorize more", "To skip parts"],
+        "correctAnswer": 1,
+        "explanation": "Making connections helps readers understand the text better"
+      },
+      {
+        "id": 5,
+        "question": "Which is NOT a reading comprehension strategy?",
+        "options": ["Previewing", "Predicting", "Memorizing", "Summarizing"],
+        "correctAnswer": 2,
+        "explanation": "Memorizing is not a comprehension strategy; understanding is more important"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "english-3",
+    "title": "Writing and Literature Test",
+    "subject": "English",
+    "description": "Test your knowledge of writing techniques and literary elements",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is 'show, don't tell' in writing?",
+        "options": ["Using vivid descriptions", "Using dialogue only", "Using short sentences", "Using long paragraphs"],
+        "correctAnswer": 0,
+        "explanation": "'Show, don't tell' means using vivid descriptions instead of stating facts"
+      },
+      {
+        "id": 2,
+        "question": "What is a simile?",
+        "options": ["A comparison using 'like' or 'as'", "A direct comparison", "A sound word", "A repeated sound"],
+        "correctAnswer": 0,
+        "explanation": "A simile is a comparison using 'like' or 'as'"
+      },
+      {
+        "id": 3,
+        "question": "What is the main character in a story called?",
+        "options": ["Antagonist", "Protagonist", "Narrator", "Author"],
+        "correctAnswer": 1,
+        "explanation": "The protagonist is the main character in a story"
+      },
+      {
+        "id": 4,
+        "question": "What is the theme of a story?",
+        "options": ["The main message", "The setting", "The plot", "The characters"],
+        "correctAnswer": 0,
+        "explanation": "The theme is the main message or lesson of the story"
+      },
+      {
+        "id": 5,
+        "question": "What is personification?",
+        "options": ["Giving human traits to non-human things", "Comparing two things", "Repeating sounds", "Using descriptive words"],
+        "correctAnswer": 0,
+        "explanation": "Personification gives human traits to non-human things"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Intermediate"
+  }
+] 

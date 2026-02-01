@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background: linear-gradient(
+    135deg,
+    #eff6ff 0%,
+    #faf5ff 25%,
+    #fff7ed 50%,
+    #f0fdf4 75%,
+    #eff6ff 100%
+  );
+  min-height: 100vh;
+  background-attachment: fixed;
+}
+
+/* Glow Button Effects */
+.glow-button {
+  position: relative;
+  background: linear-gradient(45deg, #4f7cff, #a855f7, #ff8c42);
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(79, 124, 255, 0.5), 0 0 20px rgba(79, 124, 255, 0.3),
+    0 0 30px rgba(79, 124, 255, 0.1);
+}
+
+.glow-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(79, 124, 255, 0.8), 0 0 40px rgba(79, 124, 255, 0.5),
+    0 0 60px rgba(79, 124, 255, 0.3);
+}
+
+.glow-button:active {
+  transform: translateY(0);
+}
+
+/* Neon Border Effect */
+.neon-border {
+  position: relative;
+  border: 2px solid transparent;
+  background: linear-gradient(45deg, #4f7cff, #a855f7, #ff8c42) border-box;
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.neon-border::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #4f7cff, #a855f7, #ff8c42, #22c55e);
+  border-radius: 10px;
+  z-index: -1;
+  animation: neon-rotate 3s linear infinite;
+}
+
+/* Glow Animations */
+@keyframes glow-pulse {
+  0% {
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+  100% {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor,
+      0 0 30px currentColor, 0 0 40px currentColor;
+  }
+}
+
+@keyframes glow-pulse-blue {
+  0% {
+    text-shadow: 0 0 5px #4f7cff, 0 0 10px #4f7cff, 0 0 15px #4f7cff;
+  }
+  100% {
+    text-shadow: 0 0 10px #4f7cff, 0 0 20px #4f7cff, 0 0 30px #4f7cff,
+      0 0 40px #4f7cff;
+  }
+}
+
+@keyframes glow-pulse-purple {
+  0% {
+    text-shadow: 0 0 5px #a855f7, 0 0 10px #a855f7, 0 0 15px #a855f7;
+  }
+  100% {
+    text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 30px #a855f7,
+      0 0 40px #a855f7;
+  }
+}
+
+@keyframes glow-pulse-orange {
+  0% {
+    text-shadow: 0 0 5px #ff8c42, 0 0 10px #ff8c42, 0 0 15px #ff8c42;
+  }
+  100% {
+    text-shadow: 0 0 10px #ff8c42, 0 0 20px #ff8c42, 0 0 30px #ff8c42,
+      0 0 40px #ff8c42;
+  }
+}
+
+@keyframes glow-pulse-green {
+  0% {
+    text-shadow: 0 0 5px #22c55e, 0 0 10px #22c55e, 0 0 15px #22c55e;
+  }
+  100% {
+    text-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e, 0 0 30px #22c55e,
+      0 0 40px #22c55e;
+  }
+}
+
+@keyframes neon-rotate {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* Gaming Card Effect */
+.gaming-card {
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.gaming-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.gaming-card:hover::before {
+  left: 100%;
+}
+
+.gaming-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1), 0 0 20px rgba(79, 124, 255, 0.3);
+}
+
+/* Cyberpunk Text Effect */
+.cyberpunk-text {
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: linear-gradient(45deg, #4f7cff, #a855f7, #ff8c42);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: cyberpunk-shift 3s ease-in-out infinite;
+}
+
+@keyframes cyberpunk-shift {
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(180deg);
+  }
+}
+
+/* Quiz Popup Animations */
+@keyframes bounce-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.8),
+      0 0 60px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.6s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.5s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
