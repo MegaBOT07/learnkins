@@ -7,7 +7,10 @@ import {
   Twitter,
   Instagram,
   Youtube,
+  Send,
 } from "lucide-react";
+import Logo from "../common/Logo";
+import Container from "../common/Container";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -47,46 +50,43 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="bg-slate-900 text-white">
+    <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-white">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
-          {/* Brand Section */}
-          <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img
-                src="/Screenshot 2025-07-01 135146.png"
-                alt="LearnKins"
-                className="h-10 w-auto"
-              />
-            </Link>
-            <p className="text-gray-300 mb-6 leading-relaxed">
-              Empowering middle school students with interactive learning
-              experiences that make education engaging, fun, and effective.
-            </p>
+      <div className="border-b border-gray-700/50">
+        <Container size="xl" className="py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
+            {/* Brand Section */}
+            <div className="lg:col-span-2">
+              <Link to="/" className="inline-block mb-4">
+                <Logo size="md" />
+              </Link>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Empowering middle school students with interactive learning
+                experiences that make education engaging, fun, and effective.
+              </p>
 
-            {/* Contact Info */}
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Phone className="h-4 w-4 text-learnkins-blue-400" />
-                <span className="text-gray-300">+91-7878888924</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Mail className="h-4 w-4 text-learnkins-blue-400" />
-                <span className="text-gray-300">support@learnkins.com</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 text-learnkins-blue-400" />
-                <span className="text-gray-300">
-                  Skit Campus , Jaipur , Rajasthan , India
-                </span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="h-4 w-4 text-learnkins-blue-400" />
-                <span className="text-gray-300">Founder - Mohit Lalwani</span>
+              {/* Contact Info */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 group">
+                  <Phone className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-300">+91-7878888924</span>
+                </div>
+                <div className="flex items-center space-x-3 group">
+                  <Mail className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-300">support@learnkins.com</span>
+                </div>
+                <div className="flex items-center space-x-3 group">
+                  <MapPin className="h-4 w-4 text-blue-400 group-hover:scale-110 transition-transform" />
+                  <span className="text-gray-300">
+                    Skit Campus, Jaipur, Rajasthan, India
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="h-4 w-4 text-blue-400">👤</div>
+                  <span className="text-gray-300">Founder - Mohit Lalwani</span>
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Subjects */}
           <div>
@@ -96,7 +96,7 @@ const Footer = () => {
                 <li key={index}>
                   <Link
                     to={link.path}
-                    className="text-gray-300 hover:text-learnkins-blue-400 transition-colors duration-200"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </Link>
@@ -113,7 +113,7 @@ const Footer = () => {
                 <li key={index}>
                   <Link
                     to={link.path}
-                    className="text-gray-300 hover:text-learnkins-blue-400 transition-colors duration-200"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </Link>
@@ -130,7 +130,7 @@ const Footer = () => {
                 <li key={index}>
                   <Link
                     to={link.path}
-                    className="text-gray-300 hover:text-learnkins-blue-400 transition-colors duration-200"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </Link>
@@ -147,7 +147,7 @@ const Footer = () => {
                 <li key={index}>
                   <Link
                     to={link.path}
-                    className="text-gray-300 hover:text-learnkins-blue-400 transition-colors duration-200"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 hover:translate-x-1 inline-block"
                   >
                     {link.name}
                   </Link>
@@ -156,40 +156,44 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-
-        {/* Newsletter Signup */}
-        <div className="border-t border-gray-700 mt-12 pt-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                Stay Updated
-              </h3>
-              <p className="text-gray-300">
-                Subscribe to our newsletter for the latest educational content
-                and updates.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-learnkins-blue-500 focus:border-transparent"
-              />
-              <button className="px-6 py-3 bg-learnkins-gradient text-white rounded-lg hover:opacity-90 transition-opacity font-medium whitespace-nowrap">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
+        </Container>
       </div>
 
+        {/* Newsletter Signup */}
+        <div className="border-t border-gray-700/50">
+          <Container size="xl" className="py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  Stay Updated
+                </h3>
+                <p className="text-gray-300">
+                  Subscribe to our newsletter for the latest educational content
+                  and updates.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <input
+                  type="email"
+                  placeholder="Enter your email address"
+                  className="flex-1 input bg-gray-800/50 border-gray-600 text-white placeholder-gray-400"
+                />
+                <button className="btn btn-primary group">
+                  Subscribe
+                  <Send className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+          </Container>
+        </div>
+
       {/* Bottom Footer */}
-      <div className="border-t border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="border-t border-gray-700/50">
+        <Container size="xl" className="py-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-gray-300 text-sm">
-              © {currentYear} LearnKins. All rights reserved. Made with ❤️ for
-              students.
+              © {currentYear} LearnKins. All rights reserved. Made with{" "}
+              <span className="text-red-400">♥</span> for students.
             </div>
 
             {/* Social Links */}
@@ -199,7 +203,7 @@ const Footer = () => {
                 <a
                   key={index}
                   href={social.href}
-                  className="text-gray-400 hover:text-learnkins-blue-400 transition-colors duration-200"
+                  className="text-gray-400 hover:text-blue-400 transition-all duration-200 hover:scale-110"
                   aria-label={social.name}
                 >
                   {social.icon}
@@ -207,7 +211,7 @@ const Footer = () => {
               ))}
             </div>
           </div>
-        </div>
+        </Container>
       </div>
     </footer>
   );

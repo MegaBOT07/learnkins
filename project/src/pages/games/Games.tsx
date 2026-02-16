@@ -9,7 +9,16 @@ import {
   Users,
   Flame,
   TrendingUp,
+  Gamepad2,
+  Beaker,
+  Calculator,
+  Globe2,
+  BookText,
+  Zap,
+  Target,
 } from "lucide-react";
+import Container from "@/components/common/Container";
+import Section from "@/components/common/Section";
 
 const Games = () => {
   const navigate = useNavigate();
@@ -29,31 +38,31 @@ const Games = () => {
     {
       id: "all",
       name: "All Categories",
-      icon: "🎮",
+      icon: <Gamepad2 className="w-6 h-6" />,
       color: "from-purple-500 to-pink-500",
     },
     {
       id: "science",
       name: "Science",
-      icon: "🔬",
+      icon: <Beaker className="w-6 h-6" />,
       color: "from-blue-500 to-cyan-500",
     },
     {
       id: "math",
       name: "Mathematics",
-      icon: "📐",
+      icon: <Calculator className="w-6 h-6" />,
       color: "from-green-500 to-emerald-500",
     },
     {
       id: "social",
       name: "Social Science",
-      icon: "🌍",
+      icon: <Globe2 className="w-6 h-6" />,
       color: "from-orange-500 to-red-500",
     },
     {
       id: "english",
       name: "English",
-      icon: "📚",
+      icon: <BookText className="w-6 h-6" />,
       color: "from-indigo-500 to-purple-500",
     },
   ];
@@ -72,7 +81,7 @@ const Games = () => {
       // Using local public asset (place your banner image at public/games/treasurehunt.png)
       image: "/games/treasurehunt.png",
       color: "from-purple-500 to-indigo-600",
-      badges: ["🔥 Hot", "⭐ Popular"],
+      badges: ["Hot", "Popular"],
       features: ["Multiplayer", "Leaderboard", "Achievements"],
       gameUrl: "/games/history-game", // Integrated 3D History Game
     },
@@ -89,7 +98,7 @@ const Games = () => {
       // Local banner image for this game. Place `timetravel.png` into `public/games`
       image: "/games/timetravel.png",
       color: "from-blue-500 to-cyan-600",
-      badges: ["🏆 Champion", "⚡ Fast"],
+      badges: ["Champion", "Fast"],
       features: ["3D Graphics", "Time Travel", "NCERT History"],
       gameUrl: "/games/history-game", // Integrated 3D History Game
     },
@@ -107,7 +116,7 @@ const Games = () => {
       // Local banner image for this game. Place `englishworrier.png` into `public/games`
       image: "/games/englishworrier.png",
       color: "from-orange-500 to-red-600",
-      badges: ["📈 Trending", "🎯 Accurate"],
+      badges: ["Trending", "Accurate"],
       features: ["Vocabulary", "Spelling", "Language"],
       gameUrl: "/games/grammar-warrior", // Integrated Grammar Warrior
     },
@@ -124,7 +133,7 @@ const Games = () => {
       image:
         "https://images.pexels.com/photos/2280571/pexels-photo-2280571.jpeg?auto=compress&cs=tinysrgb&w=400",
       color: "from-purple-500 to-indigo-600",
-      badges: ["🧪 Lab", "⚗️ Chemistry"],
+      badges: ["Lab", "Chemistry"],
       features: ["Experiments", "Safety", "Reactions"],
       gameUrl: "http://localhost:5000", // Demo URL (can be updated)
     },
@@ -141,7 +150,7 @@ const Games = () => {
       image:
         "https://images.pexels.com/photos/1066895/pexels-photo-1066895.jpeg?auto=compress&cs=tinysrgb&w=400",
       color: "from-green-500 to-teal-600",
-      badges: ["🌍 Global", "🗺️ Maps"],
+      badges: ["Global", "Maps"],
       features: ["Geography", "Maps", "Exploration"],
       gameUrl: "http://localhost:5000", // Demo URL (can be updated)
     },
@@ -230,14 +239,14 @@ const Games = () => {
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute top-20 left-10 text-6xl opacity-20"
+          className="absolute top-20 left-10 text-purple-400 opacity-20"
           animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         >
-          🎮
+          <Gamepad2 className="w-24 h-24" />
         </motion.div>
         <motion.div
-          className="absolute top-40 right-20 text-4xl opacity-30"
+          className="absolute top-40 right-20 text-yellow-400 opacity-30"
           animate={{ y: [0, 15, 0], rotate: [0, -3, 0] }}
           transition={{
             duration: 3,
@@ -246,10 +255,10 @@ const Games = () => {
             delay: 1,
           }}
         >
-          ⚡
+          <Zap className="w-16 h-16" />
         </motion.div>
         <motion.div
-          className="absolute bottom-40 left-20 text-5xl opacity-25"
+          className="absolute bottom-40 left-20 text-blue-400 opacity-25"
           animate={{ y: [0, -10, 0], rotate: [0, 8, 0] }}
           transition={{
             duration: 5,
@@ -258,7 +267,7 @@ const Games = () => {
             delay: 2,
           }}
         >
-          🏆
+          <Trophy className="w-20 h-20" />
         </motion.div>
       </div>
 
@@ -365,7 +374,7 @@ const Games = () => {
                     : "bg-white/10 backdrop-blur-sm text-gray-300 hover:bg-white/20 border border-white/20"
                 }`}
               >
-                <span className="text-xl">{category.icon}</span>
+                {category.icon}
                 <span>{category.name}</span>
               </motion.button>
             ))}

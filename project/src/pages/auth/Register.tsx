@@ -1,7 +1,9 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
+import Logo from '../../components/common/Logo';
 
 interface RegisterFormData {
   name: string;
@@ -117,15 +119,16 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-learnkins-subtle flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
         <div className="flex justify-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/Screenshot 2025-07-01 135146.png" 
-              alt="LearnKins" 
-              className="h-12 w-auto"
-            />
+          <Link to="/" className="inline-block">
+            <Logo size="lg" />
           </Link>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -138,21 +141,30 @@ const Register: React.FC = () => {
           Already have an account?{' '}
           <Link
             to="/login"
-            className="font-medium text-learnkins-blue-600 hover:text-learnkins-blue-500 transition-colors"
+            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
           >
             Sign in here
           </Link>
         </p>
-      </div>
+      </motion.div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <div className="card p-8 shadow-2xl">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center space-x-2">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center space-x-2"
+              >
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>{error}</span>
-              </div>
+              </motion.div>
             )}
 
             <div>
@@ -167,8 +179,8 @@ const Register: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors ${
-                    errors.name ? 'border-red-300' : 'border-gray-300'
+                  className={`input ${
+                    errors.name ? 'border-red-300' : ''
                   }`}
                   placeholder="Enter your full name"
                 />
@@ -194,8 +206,8 @@ const Register: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
+                  className={`input ${
+                    errors.email ? 'border-red-300' : ''
                   }`}
                   placeholder="Enter your email"
                 />
@@ -218,7 +230,7 @@ const Register: React.FC = () => {
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors"
+                  className="input"
                 >
                   <option value="student">Student</option>
                   <option value="parent">Parent</option>
@@ -242,7 +254,7 @@ const Register: React.FC = () => {
                       name="grade"
                       value={formData.grade}
                       onChange={handleChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors"
+                      className="input"
                     >
                       <option value="6th">6th Grade</option>
                       <option value="7th">7th Grade</option>
@@ -262,8 +274,8 @@ const Register: React.FC = () => {
                       type="email"
                       value={formData.parentEmail}
                       onChange={handleChange}
-                      className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors ${
-                        errors.parentEmail ? 'border-red-300' : 'border-gray-300'
+                      className={`input ${
+                        errors.parentEmail ? 'border-red-300' : ''
                       }`}
                       placeholder="Enter parent's email"
                     />
@@ -293,8 +305,8 @@ const Register: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 pr-10 transition-colors ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
+                  className={`input pr-10 ${
+                    errors.password ? 'border-red-300' : ''
                   }`}
                   placeholder="Enter your password"
                 />
@@ -330,8 +342,8 @@ const Register: React.FC = () => {
                   required
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 pr-10 transition-colors ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                  className={`input pr-10 ${
+                    errors.confirmPassword ? 'border-red-300' : ''
                   }`}
                   placeholder="Confirm your password"
                 />
@@ -354,7 +366,7 @@ const Register: React.FC = () => {
                 </p>
               )}
               {formData.password && formData.confirmPassword && !errors.confirmPassword && formData.password === formData.confirmPassword && (
-                <p className="mt-1 text-sm text-learnkins-green-600 flex items-center space-x-1">
+                <p className="mt-1 text-sm text-green-600 flex items-center space-x-1">
                   <CheckCircle className="h-4 w-4" />
                   <span>Passwords match</span>
                 </p>
@@ -367,15 +379,15 @@ const Register: React.FC = () => {
                 name="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-learnkins-blue-600 focus:ring-learnkins-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                 I agree to the{' '}
-                <Link to="/terms" className="text-learnkins-blue-600 hover:text-learnkins-blue-500">
+                <Link to="/terms" className="text-blue-600 hover:text-blue-500">
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link to="/privacy" className="text-learnkins-blue-600 hover:text-learnkins-blue-500">
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-500">
                   Privacy Policy
                 </Link>
               </label>
@@ -385,7 +397,7 @@ const Register: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-learnkins-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-learnkins-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="btn btn-primary w-full"
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
@@ -399,7 +411,7 @@ const Register: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

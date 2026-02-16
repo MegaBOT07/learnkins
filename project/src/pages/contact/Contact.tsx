@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Mail,
   Phone,
   MapPin,
-  Clock,
   Send,
   MessageCircle,
   HelpCircle,
   Users,
+  Clock,
 } from "lucide-react";
+import Container from "../../components/common/Container";
+import Section from "../../components/common/Section";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -129,69 +132,99 @@ const Contact = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 text-white py-20">
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-          }}
-        ></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center space-x-2 text-lg mb-6">
-            <Link to="/" className="hover:text-blue-400 transition-colors">
-              Home
-            </Link>
-            <ArrowRight className="h-5 w-5" />
-            <span>Contact</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">Contact Us</h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            We're here to help! Get in touch with our support team for any
-            questions or assistance
-          </p>
-        </div>
-      </section>
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <Section padding="lg" background="gradient" className="relative overflow-hidden">
+        <Container size="lg">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center text-white relative z-10"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-block mb-6"
+            >
+              <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <MessageCircle className="h-5 w-5 mr-2" />
+                <span className="font-medium">Get in Touch</span>
+              </div>
+            </motion.div>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6">
+              Contact Us
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
+              We're here to help! Get in touch with our support team for any
+              questions or assistance
+            </p>
+            <div className="flex items-center justify-center space-x-2 text-lg">
+              <Link to="/" className="hover:text-white/80 transition-colors">
+                Home
+              </Link>
+              <ArrowRight className="h-5 w-5" />
+              <span className="font-semibold">Contact</span>
+            </div>
+          </motion.div>
+        </Container>
+      </Section>
 
       {/* Support Categories */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+      <Section padding="lg" background="white">
+        <Container size="xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
               How Can We Help?
             </h2>
             <p className="text-lg text-gray-600">
               Choose the category that best describes your inquiry
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {supportCategories.map((category, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-gray-50 p-6 rounded-xl text-center hover:shadow-md transition-shadow duration-300 cursor-pointer hover:bg-blue-50"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="card card-hover p-8 text-center cursor-pointer group"
               >
-                <div className="text-blue-600 mb-4 flex justify-center">
+                <div className="text-blue-600 bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-xl inline-block mb-4 group-hover:scale-110 transition-transform">
                   {category.icon}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {category.title}
                 </h3>
                 <p className="text-gray-600">{category.description}</p>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* Contact Form and Info */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Section padding="xl" background="gray">
+        <Container size="xl">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Form */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="card p-8"
+            >
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
                 Send us a Message
               </h2>
@@ -212,7 +245,7 @@ const Contact = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="input"
                       placeholder="Your full name"
                     />
                   </div>
@@ -231,7 +264,7 @@ const Contact = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      className="input"
                       placeholder="your.email@example.com"
                     />
                   </div>
@@ -249,7 +282,7 @@ const Contact = () => {
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="input"
                   >
                     <option value="general">General Inquiry</option>
                     <option value="technical">Technical Support</option>
@@ -273,7 +306,7 @@ const Contact = () => {
                     value={formData.subject}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                    className="input"
                     placeholder="Brief description of your inquiry"
                   />
                 </div>
@@ -292,41 +325,53 @@ const Contact = () => {
                     onChange={handleInputChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+                    className="input resize-none"
                     placeholder="Please provide details about your inquiry..."
                   ></textarea>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300 font-semibold flex items-center justify-center space-x-2"
+                  className="btn btn-primary w-full group"
                 >
-                  <Send className="h-5 w-5" />
+                  <Send className="h-5 w-5 mr-2" />
                   <span>Send Message</span>
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </form>
-            </div>
+            </motion.div>
 
             {/* Contact Information */}
-            <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="space-y-8"
+            >
               <div>
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">
                   Get in Touch
                 </h2>
                 <p className="text-lg text-gray-600 mb-8">
-                  Have questions about Brillix? We're here to help! Reach out to
+                  Have questions about LearnKins? We're here to help! Reach out to
                   us through any of the following channels.
                 </p>
               </div>
 
               <div className="space-y-6">
                 {contactInfo.map((info, index) => (
-                  <div
+                  <motion.div
                     key={index}
-                    className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    whileHover={{ x: 5 }}
+                    className="card card-hover p-6"
                   >
                     <div className="flex items-start space-x-4">
-                      <div className="text-blue-600 bg-blue-100 p-3 rounded-lg">
+                      <div className="text-blue-600 bg-gradient-to-br from-blue-100 to-blue-50 p-3 rounded-xl shadow-sm">
                         {info.icon}
                       </div>
                       <div className="flex-1">
@@ -345,80 +390,102 @@ const Contact = () => {
                         </p>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+      <Section padding="xl" background="white">
+        <Container size="xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-gray-600">
-              Find quick answers to common questions about Brillix
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Find quick answers to common questions about LearnKins
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {faqItems.map((faq, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-shadow duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                whileHover={{ y: -3 }}
+                className="card card-hover p-6"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  {faq.question}
-                </h3>
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
+                <div className="flex items-start gap-3 mb-3">
+                  <HelpCircle className="h-6 w-6 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    {faq.question}
+                  </h3>
+                </div>
+                <p className="text-gray-600 leading-relaxed ml-9">{faq.answer}</p>
+              </motion.div>
             ))}
           </div>
 
-          <div className="text-center mt-12">
-            <p className="text-gray-600 mb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-center mt-12"
+          >
+            <p className="text-gray-600 mb-4 text-lg">
               Can't find what you're looking for?
             </p>
-            <Link
-              to="/community"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 font-medium"
-            >
+            <Link to="/community" className="btn btn-primary group">
               Visit Community Forum
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </Container>
+      </Section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-teal-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Start Learning?</h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join thousands of students who are already excelling with Brillix's
-            interactive learning platform
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/subjects"
-              className="inline-flex items-center px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg text-lg hover:bg-gray-100 transform hover:scale-105 transition-all duration-300 shadow-lg"
-            >
-              Explore Subjects
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-            <Link
-              to="/team"
-              className="inline-flex items-center px-8 py-4 border-2 border-white text-white font-semibold rounded-lg text-lg hover:bg-white hover:text-blue-600 transform hover:scale-105 transition-all duration-300"
-            >
-              Meet Our Team
-            </Link>
-          </div>
-        </div>
-      </section>
+      <Section padding="xl" background="gradient">
+        <Container size="lg">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center text-white"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+              Ready to Start Learning?
+            </h2>
+            <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+              Join thousands of students who are already excelling with LearnKins's
+              interactive learning platform
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/subjects" className="btn btn-primary bg-white text-blue-600 hover:bg-gray-100 group shadow-xl">
+                Explore Subjects
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link to="/team" className="btn btn-outline border-2 border-white text-white hover:bg-white hover:text-blue-600 group">
+                Meet Our Team
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </motion.div>
+        </Container>
+      </Section>
     </div>
   );
 };

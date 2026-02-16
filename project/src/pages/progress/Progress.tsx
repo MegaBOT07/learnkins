@@ -10,22 +10,30 @@ import {
   Crown,
   Flame,
   Brain,
+  BookOpen,
+  Users,
+  Compass,
+  Search,
+  BarChart2,
+  Beaker,
 } from "lucide-react";
 import { useGame } from "../../context/GameContext";
 import LevelDisplay from "../../components/features/progress/LevelDisplay";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
+import Container from "@/components/common/Container";
+import Section from "@/components/common/Section";
 
 const Progress = () => {
   const { userProgress } = useGame();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   const categories = [
-    { id: "all", name: "All", icon: "🏆" },
-    { id: "learning", name: "Learning", icon: "📚" },
-    { id: "social", name: "Social", icon: "👥" },
-    { id: "exploration", name: "Exploration", icon: "🔍" },
-    { id: "mastery", name: "Mastery", icon: "🎯" },
+    { id: "all", name: "All", icon: <Trophy className="w-5 h-5" /> },
+    { id: "learning", name: "Learning", icon: <BookOpen className="w-5 h-5" /> },
+    { id: "social", name: "Social", icon: <Users className="w-5 h-5" /> },
+    { id: "exploration", name: "Exploration", icon: <Compass className="w-5 h-5" /> },
+    { id: "mastery", name: "Mastery", icon: <Target className="w-5 h-5" /> },
   ];
 
   const filteredAchievements =
@@ -78,25 +86,25 @@ const Progress = () => {
       type: "achievement",
       message: 'Unlocked "First Steps" achievement',
       time: "2 hours ago",
-      icon: "🎯",
+      icon: <Target className="w-5 h-5" />,
     },
     {
       type: "level",
       message: "Reached Level 2",
       time: "1 day ago",
-      icon: "⭐",
+      icon: <Star className="w-5 h-5" />,
     },
     {
       type: "quiz",
       message: "Completed Mathematics Quiz",
       time: "2 days ago",
-      icon: "📊",
+      icon: <BarChart2 className="w-5 h-5" />,
     },
     {
       type: "subject",
       message: "Finished Science Module",
       time: "3 days ago",
-      icon: "🔬",
+      icon: <Beaker className="w-5 h-5" />,
     },
   ];
 
@@ -182,7 +190,7 @@ const Progress = () => {
             >
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <Award className="h-6 w-6 text-learnkins-orange-600 mr-2" />
+                  <Award className="h-6 w-6 text-orange-600 mr-2" />
                   Achievements
                 </h2>
                 <div className="flex space-x-2">
@@ -190,13 +198,13 @@ const Progress = () => {
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 flex items-center ${
                         selectedCategory === category.id
-                          ? "bg-learnkins-blue-500 text-white"
+                          ? "bg-blue-500 text-white"
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      <span className="mr-1">{category.icon}</span>
+                      <span className="mr-2">{category.icon}</span>
                       {category.name}
                     </button>
                   ))}
@@ -228,7 +236,7 @@ const Progress = () => {
               transition={{ delay: 0.8, duration: 0.6 }}
             >
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <TrendingUp className="h-5 w-5 text-learnkins-blue-600 mr-2" />
+                <TrendingUp className="h-5 w-5 text-blue-600 mr-2" />
                 Recent Activity
               </h3>
               <div className="space-y-3">
@@ -240,7 +248,7 @@ const Progress = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
                   >
-                    <div className="text-2xl">{activity.icon}</div>
+                    <div className="text-gray-600">{activity.icon}</div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {activity.message}
@@ -260,7 +268,7 @@ const Progress = () => {
               transition={{ delay: 1.2, duration: 0.6 }}
             >
               <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <BarChart3 className="h-5 w-5 text-learnkins-green-600 mr-2" />
+                <BarChart3 className="h-5 w-5 text-green-600 mr-2" />
                 Quick Stats
               </h3>
               <div className="space-y-4">
@@ -305,7 +313,7 @@ const Progress = () => {
 
             {/* Next Goals */}
             <motion.div
-              className="bg-gradient-to-br from-learnkins-blue-500 to-learnkins-purple-600 rounded-xl shadow-lg p-6 text-white"
+              className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg p-6 text-white"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 1.4, duration: 0.6 }}

@@ -1,7 +1,9 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, User, Users, GraduationCap, UserCog } from 'lucide-react';
+import Logo from '../../components/common/Logo';
 
 interface LoginFormData {
   email: string;
@@ -48,15 +50,16 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-learnkins-subtle flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="sm:mx-auto sm:w-full sm:max-w-md"
+      >
         <div className="flex justify-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <img 
-              src="/Screenshot 2025-07-01 135146.png" 
-              alt="LearnKins" 
-              className="h-12 w-auto"
-            />
+          <Link to="/" className="inline-block">
+            <Logo size="lg" />
           </Link>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -69,21 +72,30 @@ const Login: React.FC = () => {
           Or{' '}
           <Link
             to="/register"
-            className="font-medium text-learnkins-blue-600 hover:text-learnkins-blue-500 transition-colors"
+            className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
           >
             create a new account
           </Link>
         </p>
-      </div>
+      </motion.div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-lg sm:px-10">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="mt-8 sm:mx-auto sm:w-full sm:max-w-md"
+      >
+        <div className="card p-8 shadow-2xl">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center space-x-2">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center space-x-2"
+              >
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <span>{error}</span>
-              </div>
+              </motion.div>
             )}
 
             <div>
@@ -99,7 +111,7 @@ const Login: React.FC = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 transition-colors"
+                  className="input"
                   placeholder="Enter your email"
                 />
               </div>
@@ -118,7 +130,7 @@ const Login: React.FC = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-learnkins-blue-500 focus:border-learnkins-blue-500 pr-10 transition-colors"
+                  className="input pr-10"
                   placeholder="Enter your password"
                 />
                 <button
@@ -141,7 +153,7 @@ const Login: React.FC = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-learnkins-blue-600 focus:ring-learnkins-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Remember me
@@ -151,7 +163,7 @@ const Login: React.FC = () => {
               <div className="text-sm">
                 <Link
                   to="/forgot-password"
-                  className="font-medium text-learnkins-blue-600 hover:text-learnkins-blue-500 transition-colors"
+                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Forgot your password?
                 </Link>
@@ -162,7 +174,7 @@ const Login: React.FC = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-learnkins-gradient hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-learnkins-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="btn btn-primary w-full"
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
@@ -190,41 +202,41 @@ const Login: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleDemoLogin('student@learnkins.com', 'student123')}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                className="card card-hover p-3 text-center group cursor-pointer border-2 border-transparent hover:border-blue-200"
               >
-                <span className="text-learnkins-blue-600 mr-1">👨‍🎓</span>
-                Student
+                <User className="h-6 w-6 text-blue-600 mx-auto mb-1" />
+                <span className="text-sm font-medium text-gray-700">Student</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoLogin('parent@learnkins.com', 'parent123')}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                className="card card-hover p-3 text-center group cursor-pointer border-2 border-transparent hover:border-green-200"
               >
-                <span className="text-learnkins-green-600 mr-1">👨‍👩‍👧‍👦</span>
-                Parent
+                <Users className="h-6 w-6 text-green-600 mx-auto mb-1" />
+                <span className="text-sm font-medium text-gray-700">Parent</span>
               </button>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => handleDemoLogin('teacher@learnkins.com', 'teacher123')}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                className="card card-hover p-3 text-center group cursor-pointer border-2 border-transparent hover:border-purple-200"
               >
-                <span className="text-learnkins-purple-600 mr-1">👨‍🏫</span>
-                Teacher
+                <GraduationCap className="h-6 w-6 text-purple-600 mx-auto mb-1" />
+                <span className="text-sm font-medium text-gray-700">Teacher</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoLogin('admin@learnkins.com', 'admin123')}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                className="card card-hover p-3 text-center group cursor-pointer border-2 border-transparent hover:border-orange-200"
               >
-                <span className="text-learnkins-orange-600 mr-1">👨‍💼</span>
-                Admin
+                <UserCog className="h-6 w-6 text-orange-600 mx-auto mb-1" />
+                <span className="text-sm font-medium text-gray-700">Admin</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

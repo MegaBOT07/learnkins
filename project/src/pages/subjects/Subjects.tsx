@@ -1,14 +1,22 @@
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Play,
   FileText,
   HelpCircle,
   Video,
   BookOpen,
-  Download,
   CreditCard,
+  Beaker,
+  Calculator,
+  Globe2,
+  BookText,
+  Clock,
+  Coffee,
+  Dumbbell,
 } from "lucide-react";
+import Container from "../../components/common/Container";
+import Section from "../../components/common/Section";
 
 const Subjects = () => {
   const subjects = [
@@ -17,8 +25,8 @@ const Subjects = () => {
       slug: "science",
       description:
         "Explore the wonders of physics, chemistry, and biology through interactive experiments and engaging content.",
-      color: "from-learnkins-purple-500 to-learnkins-purple-600",
-      icon: "🔬",
+      color: "from-purple-600 to-purple-500",
+      icon: <Beaker className="h-12 w-12" />,
       topics: ["Physics", "Chemistry", "Environmental Science"],
       materials: {
         videos: 45,
@@ -32,8 +40,8 @@ const Subjects = () => {
       slug: "mathematics",
       description:
         "Master mathematical concepts from basic arithmetic to advanced problem-solving techniques.",
-      color: "from-learnkins-blue-500 to-learnkins-blue-600",
-      icon: "📊",
+      color: "from-blue-600 to-blue-500",
+      icon: <Calculator className="h-12 w-12" />,
       topics: ["Algebra", "Geometry", "Statistics", "Number Theory"],
       materials: {
         videos: 50,
@@ -47,8 +55,8 @@ const Subjects = () => {
       slug: "social-science",
       description:
         "Understand history, geography, civics, and economics through engaging stories and interactive maps.",
-      color: "from-learnkins-green-500 to-learnkins-green-600",
-      icon: "🌍",
+      color: "from-green-600 to-green-500",
+      icon: <Globe2 className="h-12 w-12" />,
       topics: ["History", "Geography", "Civics"],
       materials: {
         videos: 40,
@@ -62,8 +70,8 @@ const Subjects = () => {
       slug: "english",
       description:
         "Develop reading, writing, and communication skills through literature and creative exercises.",
-      color: "from-learnkins-orange-500 to-learnkins-orange-600",
-      icon: "📚",
+      color: "from-orange-600 to-orange-500",
+      icon: <BookText className="h-12 w-12" />,
       topics: ["Grammar", "Literature", "Creative Writing", "Comprehension"],
       materials: {
         videos: 35,
@@ -111,90 +119,127 @@ const Subjects = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <section
-        className="relative bg-cover bg-center text-white py-20"
-        style={{
-          backgroundImage: `url(project\public\ChatGPT Image Aug 25, 2025, 06_05_33 PM.png)`, // <-- update path
-        }}
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <Section
+        padding="lg"
+        background="gradient"
+        className="relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-black bg-opacity-40"></div>{" "}
-        {/* Dark overlay for readability */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">SUBJECTS</h1>
-          <div className="flex items-center justify-center space-x-2 text-lg">
-            <Link
-              to="/"
-              className="hover:text-learnkins-blue-400 transition-colors"
+        <Container size="lg">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center text-white relative z-10"
+          >
+            <motion.div
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-block mb-6"
             >
-              Home
-            </Link>
-            <ArrowRight className="h-5 w-5" />
-            <span>Subjects</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30">
+                <BookOpen className="h-5 w-5 mr-2" />
+                <span className="font-medium">Explore All Subjects</span>
+              </div>
+            </motion.div>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6">
               Choose Your Subject
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            </h1>
+            <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
               Discover engaging content tailored for middle school students
             </p>
-          </div>
+            <div className="flex items-center justify-center space-x-2 text-lg">
+              <Link
+                to="/"
+                className="hover:text-white/80 transition-colors"
+              >
+                Home
+              </Link>
+              <ArrowRight className="h-5 w-5" />
+              <span className="font-semibold">Subjects</span>
+            </div>
+          </motion.div>
+        </Container>
+      </Section>
 
+      {/* Main Content */}
+      <Section padding="xl" background="white">
+        <Container size="xl">
           {/* Material Types Overview */}
-          <div className="mb-16">
-            <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mb-16"
+          >
+            <div className="text-center mb-12">
+              <h3 className="text-3xl font-bold text-gray-900 mb-3">
                 Types of Study Materials
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 Everything you need to excel in your studies
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
               {materialTypes.map((type, index) => (
-                <div
+                <motion.div
                   key={index}
-                  className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  whileHover={{ y: -5 }}
+                  className="card card-hover p-6 text-center"
                 >
                   <div
-                    className={`${type.color} text-white p-2 rounded-lg inline-block mb-3`}
+                    className={`${type.color} text-white p-3 rounded-xl inline-block mb-4 shadow-lg`}
                   >
                     {type.icon}
                   </div>
-                  <h4 className="text-sm font-semibold text-gray-900 mb-1">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
                     {type.title}
                   </h4>
-                  <p className="text-gray-600 text-xs">{type.description}</p>
-                </div>
+                  <p className="text-gray-600 text-xs leading-relaxed">
+                    {type.description}
+                  </p>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {subjects.map((subject, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden group"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                whileHover={{ y: -8 }}
+                className="card overflow-hidden group shadow-xl"
               >
                 <div
-                  className={`bg-gradient-to-br ${subject.color} p-8 text-white`}
+                  className={`bg-gradient-to-br ${subject.color} p-8 text-white relative overflow-hidden`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-5xl">{subject.icon}</div>
-                    <div className="text-4xl font-bold opacity-20">
-                      {String(index + 1).padStart(2, "0")}
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20" />
+                  <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16" />
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                        {subject.icon}
+                      </div>
+                      <div className="text-5xl font-bold opacity-20">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
                     </div>
+                    <h3 className="text-3xl font-bold mb-3">{subject.name}</h3>
+                    <p className="text-lg opacity-90 leading-relaxed">
+                      {subject.description}
+                    </p>
                   </div>
-                  <h3 className="text-3xl font-bold mb-2">{subject.name}</h3>
-                  <p className="text-lg opacity-90">{subject.description}</p>
                 </div>
 
                 <div className="p-8">
@@ -251,31 +296,37 @@ const Subjects = () => {
                           ? "/english"
                           : `/subjects/${subject.slug}`
                       }
-                      className="inline-flex items-center px-6 py-3 bg-learnkins-blue-600 text-white font-semibold rounded-lg hover:bg-learnkins-blue-700 transition-colors duration-300 group-hover:bg-learnkins-blue-700"
+                      className="btn btn-primary w-full group"
                     >
                       Start Learning
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* Materials Showcase Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+      <Section padding="xl" background="gray">
+        <Container size="xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Comprehensive Study Materials
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Access a wide variety of learning resources designed to help you
               succeed
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
@@ -284,7 +335,7 @@ const Subjects = () => {
                 description:
                   "Engaging video lessons with animations and real-world examples",
                 icon: <Video className="h-8 w-8" />,
-                color: "bg-learnkins-blue-500",
+                color: "bg-gradient-to-br from-blue-600 to-blue-500",
                 count: "200+",
               },
               {
@@ -292,7 +343,7 @@ const Subjects = () => {
                 description:
                   "Comprehensive notes covering all important concepts and topics",
                 icon: <BookOpen className="h-8 w-8" />,
-                color: "bg-learnkins-green-500",
+                color: "bg-gradient-to-br from-green-600 to-green-500",
                 count: "150+",
               },
               {
@@ -300,7 +351,7 @@ const Subjects = () => {
                 description:
                   "Hands-on exercises and problems to reinforce learning",
                 icon: <FileText className="h-8 w-8" />,
-                color: "bg-learnkins-orange-500",
+                color: "bg-gradient-to-br from-orange-600 to-orange-500",
                 count: "100+",
               },
               {
@@ -308,27 +359,32 @@ const Subjects = () => {
                 description:
                   "Test your knowledge with adaptive quizzes and assessments",
                 icon: <HelpCircle className="h-8 w-8" />,
-                color: "bg-learnkins-purple-500",
+                color: "bg-gradient-to-br from-purple-600 to-purple-500",
                 count: "80+",
               },
             ].map((material, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="card card-hover p-6"
               >
                 <div
-                  className={`${material.color} text-white p-3 rounded-lg inline-block mb-4`}
+                  className={`${material.color} text-white p-3 rounded-xl inline-block mb-4 shadow-lg`}
                 >
                   {material.icon}
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   {material.title}
                 </h3>
-                <p className="text-gray-600 text-sm mb-4">
+                <p className="text-gray-600 text-sm mb-4 leading-relaxed">
                   {material.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-gray-900">
+                  <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     {material.count}
                   </span>
                   <Link
@@ -339,81 +395,96 @@ const Subjects = () => {
                         ? "/quizzes"
                         : "/subjects"
                     }
-                    className="text-learnkins-blue-600 hover:text-learnkins-blue-700 font-medium text-sm"
+                    className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center group"
                   >
-                    Explore →
+                    Explore
+                    <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
-          <div className="text-center mt-12 space-x-4">
-            <Link
-              to="/flashcards"
-              className="inline-flex items-center px-8 py-4 bg-learnkins-purple-600 text-white font-semibold rounded-lg text-lg hover:bg-learnkins-purple-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
-            >
+          <div className="flex flex-wrap justify-center gap-4 mt-12">
+            <Link to="/flashcards" className="btn btn-secondary group">
               <CreditCard className="mr-2 h-5 w-5" />
               Try Interactive Flashcards
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link
-              to="/notes"
-              className="inline-flex items-center px-8 py-4 bg-learnkins-green-600 text-white font-semibold rounded-lg text-lg hover:bg-learnkins-green-700 transform hover:scale-105 transition-all duration-300 shadow-lg"
-            >
+            <Link to="/notes" className="btn btn-accent group">
               <BookOpen className="mr-2 h-5 w-5" />
               Access Study Notes
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
 
       {/* Study Tips Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+      <Section padding="xl" background="white">
+        <Container size="xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
               Study Tips for Success
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Make the most of your learning experience with these helpful tips
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
                 title: "Create a Study Schedule",
                 description:
-                  "Set aside specific times for each subject to maintain consistency.",
-                icon: "⏰",
+                  "Set aside specific times for each subject to maintain consistency and build a strong learning routine.",
+                icon: <Clock className="h-10 w-10" />,
+                color: "from-blue-500 to-cyan-500",
               },
               {
                 title: "Take Regular Breaks",
                 description:
-                  "Use the Pomodoro technique: 25 minutes study, 5 minutes break.",
-                icon: "☕",
+                  "Use the Pomodoro technique: 25 minutes study, 5 minutes break to maintain focus and avoid burnout.",
+                icon: <Coffee className="h-10 w-10" />,
+                color: "from-orange-500 to-red-500",
               },
               {
                 title: "Practice Regularly",
                 description:
-                  "Complete quizzes and exercises to reinforce your learning.",
-                icon: "💪",
+                  "Complete quizzes and exercises daily to reinforce your learning and build lasting knowledge.",
+                icon: <Dumbbell className="h-10 w-10" />,
+                color: "from-purple-500 to-pink-500",
               },
             ].map((tip, index) => (
-              <div
+              <motion.div
                 key={index}
-                className="bg-gray-50 p-6 rounded-xl text-center hover:shadow-md transition-shadow duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="card card-hover p-8 text-center group"
               >
-                <div className="text-4xl mb-4">{tip.icon}</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <div
+                  className={`bg-gradient-to-br ${tip.color} text-white p-4 rounded-xl inline-block mb-4 shadow-lg group-hover:scale-110 transition-transform`}
+                >
+                  {tip.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
                   {tip.title}
                 </h3>
-                <p className="text-gray-600">{tip.description}</p>
-              </div>
+                <p className="text-gray-600 leading-relaxed">{tip.description}</p>
+              </motion.div>
             ))}
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
     </div>
   );
 };

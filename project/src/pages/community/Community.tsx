@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import type { Discussion, StudyGroup, Achievement } from "../types/community";
 import {
@@ -12,7 +13,13 @@ import {
   MoreHorizontal,
   User,
   MessageCircle,
+  Target,
+  Zap,
+  Flame,
+  Calculator,
 } from "lucide-react";
+import Container from "../../components/common/Container";
+import Section from "../../components/common/Section";
 
 const Community = () => {
   const [activeTab, setActiveTab] = useState("discussions");
@@ -160,7 +167,7 @@ const Community = () => {
       points: 10,
       earned: true,
       earnedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      icon: "🎯",
+      icon: <Target className="h-10 w-10" />,
       rarity: "Common",
       criteria: "Complete any lesson",
       category: "study",
@@ -172,7 +179,7 @@ const Community = () => {
       points: 50,
       earned: true,
       earnedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      icon: "🏆",
+      icon: <Trophy className="h-10 w-10" />,
       rarity: "Uncommon",
       criteria: "Get perfect scores on 5 quizzes",
       category: "quiz",
@@ -184,7 +191,7 @@ const Community = () => {
       points: 100,
       earned: false,
       earnedAt: null,
-      icon: "🔥",
+      icon: <Flame className="h-10 w-10" />,
       rarity: "Rare",
       criteria: "Study every day for a week",
       category: "streak",
@@ -196,7 +203,7 @@ const Community = () => {
       points: 75,
       earned: true,
       earnedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      icon: "🧮",
+      icon: <Calculator className="h-10 w-10" />,
       rarity: "Uncommon",
       criteria: "Solve 50 math problems correctly",
       category: "study",
@@ -256,12 +263,10 @@ const Community = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading community...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-6">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Loading community...</p>
         </div>
       </div>
     );
@@ -269,16 +274,16 @@ const Community = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="card p-8">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Error Loading Community
             </h2>
-            <p className="text-gray-600 mb-4">{error}</p>
+            <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              className="btn btn-primary"
             >
               Try Again
             </button>
@@ -289,71 +294,101 @@ const Community = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">
-            Community Hub
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Connect with fellow students, join study groups, and track your
-            achievements.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header */}
+      <Section padding="lg" background="white">
+        <Container size="xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+              Community Hub
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Connect with fellow students, join study groups, and track your
+              achievements.
+            </p>
+          </motion.div>
+        </Container>
+      </Section>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search discussions, groups, or achievements..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={() => setShowNewDiscussion(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+        <Section padding="md" background="transparent">
+          <Container size="xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="card p-6 shadow-lg"
             >
-              <Plus className="w-5 h-5 mr-2" />
-              New Discussion
-            </button>
-          </div>
-        </div>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex-1 w-full relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    placeholder="Search discussions, groups, or achievements..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="input pl-10"
+                  />
+                </div>
+                <button
+                  onClick={() => setShowNewDiscussion(true)}
+                  className="btn btn-primary w-full sm:w-auto group"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  New Discussion
+                </button>
+              </div>
+            </motion.div>
+          </Container>
+        </Section>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-8">
-          <div className="flex border-b">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center space-x-2 py-4 px-6 font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-800"
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+        <Section padding="none" background="transparent">
+          <Container size="xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="card shadow-lg overflow-hidden"
+            >
+              <div className="flex border-b">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-1 flex items-center justify-center space-x-2 py-4 px-6 font-medium transition-all ${
+                      activeTab === tab.id
+                        ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/50"
+                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                    }`}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </Container>
+        </Section>
 
         {/* Content */}
-        <div className="space-y-8">
-          {activeTab === "discussions" && (
-            <div className="space-y-6">
-              {filteredDiscussions.map((discussion) => (
-                <div
-                  key={discussion.id}
-                  className="bg-white rounded-xl shadow-lg p-6"
-                >
+        <Section padding="lg" background="transparent">
+          <Container size="xl">
+            {activeTab === "discussions" && (
+              <div className="space-y-6">
+                {filteredDiscussions.map((discussion, index) => (
+                  <motion.div
+                    key={discussion.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="card card-hover p-6 shadow-lg"
+                  >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -406,17 +441,20 @@ const Community = () => {
                       </button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
 
           {activeTab === "groups" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {studyGroups.map((group) => (
-                <div
+              {studyGroups.map((group, index) => (
+                <motion.div
                   key={group.id}
-                  className="bg-white rounded-xl shadow-lg p-6"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="card card-hover p-6 shadow-lg"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -442,29 +480,41 @@ const Community = () => {
                     </div>
                     <button
                       onClick={() => handleJoinGroup(group.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      disabled={group.isMember}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                         group.isMember
-                          ? "bg-gray-100 text-gray-600"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
+                          ? "bg-gray-100 text-gray-600 cursor-not-allowed"
+                          : "btn btn-primary"
                       }`}
                     >
                       {group.isMember ? "Joined" : "Join Group"}
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
 
           {activeTab === "achievements" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {achievements.map((achievement) => (
-                <div
-                  key={achievement.id}
-                  className="bg-white rounded-xl shadow-lg p-6"
-                >
-                  <div className="text-center">
-                    <div className="text-4xl mb-4">{achievement.icon}</div>
+                {achievements.map((achievement, index) => (
+                  <motion.div
+                    key={achievement.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className={`card p-6 shadow-lg ${
+                      achievement.earned
+                        ? "bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200"
+                        : "bg-white"
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className={`flex justify-center mb-4 ${
+                        achievement.earned ? "text-blue-600" : "text-gray-400"
+                      }`}>
+                        {achievement.icon}
+                      </div>
                     <h3 className="font-semibold text-gray-800 mb-2">
                       {achievement.name}
                     </h3>
@@ -482,8 +532,8 @@ const Community = () => {
                     </div>
 
                     {achievement.earned ? (
-                      <div className="flex items-center justify-center text-green-600">
-                        <Star className="w-4 h-4 mr-1" />
+                      <div className="flex items-center justify-center text-green-600 font-medium">
+                        <Star className="w-5 h-5 mr-1 fill-current" />
                         <span className="text-sm">Earned</span>
                       </div>
                     ) : (
@@ -492,12 +542,12 @@ const Community = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}
-        </div>
-      </div>
+        </Container>
+      </Section>
     </div>
   );
 };
