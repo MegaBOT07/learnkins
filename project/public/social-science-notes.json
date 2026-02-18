@@ -1,0 +1,72 @@
+[
+  {
+    "id": "social-1",
+    "title": "Ancient Civilizations",
+    "content": "Ancient civilizations laid the foundation for modern society. From Mesopotamia to Egypt, Greece, and Rome, these cultures developed writing, government, and technology.",
+    "fullContent": "Ancient civilizations laid the foundation for modern society. From Mesopotamia to Egypt, Greece, and Rome, these cultures developed writing, government, and technology.\n\nKey Civilizations:\n• Mesopotamia (cuneiform writing, ziggurats)\n• Ancient Egypt (pyramids, hieroglyphics)\n• Ancient Greece (democracy, philosophy, art)\n• Ancient Rome (engineering, law, government)\n\nContributions:\n• Writing systems\n• Mathematical concepts\n• Architectural innovations\n• Legal systems\n• Cultural traditions",
+    "subject": "Social Science",
+    "tags": ["history", "ancient", "civilizations", "culture"],
+    "createdAt": "2024-01-12T16:45:00Z",
+    "updatedAt": "2024-01-12T16:45:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-green-100 border-green-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "social-2",
+    "title": "Physical Geography",
+    "content": "Physical geography studies Earth's natural features and processes. Understanding landforms, climate, and natural resources helps us manage our environment.",
+    "fullContent": "Physical geography studies Earth's natural features and processes. Understanding landforms, climate, and natural resources helps us manage our environment.\n\nLandforms:\n• Mountains and valleys\n• Plains and plateaus\n• Rivers and lakes\n• Oceans and coastlines\n\nClimate Factors:\n• Latitude and longitude\n• Elevation\n• Ocean currents\n• Wind patterns\n• Precipitation",
+    "subject": "Social Science",
+    "tags": ["geography", "landforms", "climate", "environment"],
+    "createdAt": "2024-01-11T11:20:00Z",
+    "updatedAt": "2024-01-11T11:20:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-green-100 border-green-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "social-3",
+    "title": "Democracy and Government",
+    "content": "Democracy is a system of government where power comes from the people. Understanding government structures helps citizens participate effectively in society.",
+    "fullContent": "Democracy is a system of government where power comes from the people. Understanding government structures helps citizens participate effectively in society.\n\nTypes of Government:\n• Democracy (rule by the people)\n• Monarchy (rule by a king/queen)\n• Dictatorship (rule by one person)\n• Republic (elected representatives)\n\nDemocratic Principles:\n• Free and fair elections\n• Rule of law\n• Protection of rights\n• Separation of powers\n• Citizen participation",
+    "subject": "Social Science",
+    "tags": ["civics", "democracy", "government", "rights"],
+    "createdAt": "2024-01-10T13:30:00Z",
+    "updatedAt": "2024-01-10T13:30:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-green-100 border-green-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "social-4",
+    "title": "World Cultures and Societies",
+    "content": "Explore diverse cultures and societies around the world. Learn about traditions, customs, and ways of life.",
+    "fullContent": "Explore diverse cultures and societies around the world. Learn about traditions, customs, and ways of life.\n\nCultural Elements:\n• Language and communication\n• Religion and beliefs\n• Arts and literature\n• Food and cuisine\n• Clothing and fashion\n• Social structures\n\nGlobal Perspectives:\n• Cultural diversity\n• Intercultural understanding\n• Global citizenship\n• Respect for differences",
+    "subject": "Social Science",
+    "tags": ["culture", "societies", "diversity", "global"],
+    "createdAt": "2024-01-09T15:15:00Z",
+    "updatedAt": "2024-01-09T15:15:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-green-100 border-green-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "social-5",
+    "title": "Economic Systems",
+    "content": "Understanding economic systems helps us make informed decisions about resources, trade, and development.",
+    "fullContent": "Understanding economic systems helps us make informed decisions about resources, trade, and development.\n\nEconomic Systems:\n• Traditional (custom-based)\n• Market (supply and demand)\n• Command (government control)\n• Mixed (combination)\n\nEconomic Concepts:\n• Supply and demand\n• Scarcity and choice\n• Trade and exchange\n• Money and banking\n• Economic growth",
+    "subject": "Social Science",
+    "tags": ["economics", "trade", "resources", "development"],
+    "createdAt": "2024-01-08T10:45:00Z",
+    "updatedAt": "2024-01-08T10:45:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-green-100 border-green-300",
+    "sourceFile": "demo"
+  }
+] 
