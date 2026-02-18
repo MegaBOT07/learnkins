@@ -69,3 +69,49 @@ export const redeemTokens = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+// POST /api/tokens/award-user/:id (Admin only)
+export const awardUserTokens = async (req, res) => {
+  try {
+    const { amount, reason, meta } = req.body;
+    const { id } = req.params;
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const targetUser = await User.findById(id);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const n = Number(amount) || 0;
+    if (n <= 0) return res.status(400).json({ success: false, message: 'Invalid amount' });
+
+    const tx = await TokenTransaction.create({ userId: targetUser._id, type: 'award', amount: n, reason: reason || 'admin_award', meta: meta || null });
+
+    targetUser.tokens = (targetUser.tokens || 0) + n;
+    await targetUser.save();
+
+    return res.status(200).json({ success: true, balance: targetUser.tokens, transaction: tx });
+  } catch (error) {
+    console.error('Error in awardUserTokens', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// GET /api/tokens/user/:id (Admin only)
+export const getUserTransactions = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    const txs = await TokenTransaction.find({ userId: id }).sort({ createdAt: -1 }).limit(100);
+    return res.status(200).json({ success: true, transactions: txs });
+  } catch (error) {
+    console.error('Error in getUserTransactions', error);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

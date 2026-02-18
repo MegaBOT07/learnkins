@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI } from "../../utils/api";
+import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Gamepad2, Settings,
   ChevronRight, Search, BarChart3, Clock, Award, Activity,
-  Filter, Download, Star
+  Filter, Download, Star, History
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -38,6 +38,7 @@ const AdminPanel = () => {
   // Selected user for progress view
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userProgress, setUserProgress] = useState<any[]>([]);
+  const [userTransactions, setUserTransactions] = useState<any[]>([]);
 
   // Creation Modals state
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
@@ -62,6 +63,9 @@ const AdminPanel = () => {
     title: "", subject: "science", difficulty: "Medium", questions: [] as any[]
   });
 
+  const [diamondAmount, setDiamondAmount] = useState<number>(0);
+  const [awardReason, setAwardReason] = useState<string>("Admin Reward");
+
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
 
   useEffect(() => {
@@ -69,6 +73,15 @@ const AdminPanel = () => {
       fetchAll();
     }
   }, [token]);
+
+  const fetchUserTransactions = async (userId: string) => {
+    try {
+      const res = await tokenAPI.getUserTransactions(userId);
+      setUserTransactions(res.data?.transactions || []);
+    } catch (err) {
+      console.error("Fetch user transactions failed", err);
+    }
+  };
 
   const fetchAll = async () => {
     setLoading(true);
@@ -116,6 +129,44 @@ const AdminPanel = () => {
     setGames([]);
   };
 
+  const handleAwardDiamonds = async () => {
+    if (!selectedUser || diamondAmount <= 0) return;
+    try {
+      setLoading(true);
+      // Using tokenAPI to award diamonds to target user
+      await tokenAPI.awardUser(selectedUser._id || selectedUser.id, diamondAmount, awardReason);
+      alert(`Successfully awarded ${diamondAmount} diamonds to ${selectedUser.name}`);
+      setDiamondAmount(0);
+      setAwardReason("Admin Reward");
+      fetchAll();
+      // Refresh transactions for current view
+      fetchUserTransactions(selectedUser._id || selectedUser.id);
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.response?.data?.message || "Failed to award diamonds");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCleanupStudents = async () => {
+    if (!window.confirm('Are you absolutely sure you want to remove ALL students and their associated data (progress, transactions)? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await userAPI.cleanupStudents();
+      alert('Student records have been successfully cleared.');
+      fetchAll();
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.response?.data?.message || 'Failed to cleanup students');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchUserProgress = async (userId: string) => {
     try {
       const res = await userAPI.getUserProgress(userId);
@@ -129,9 +180,12 @@ const AdminPanel = () => {
     if (selectedUser?._id === user._id) {
       setSelectedUser(null);
       setUserProgress([]);
+      setUserTransactions([]);
     } else {
       setSelectedUser(user);
-      fetchUserProgress(user._id || user.id);
+      const uid = user._id || user.id;
+      fetchUserProgress(uid);
+      fetchUserTransactions(uid);
     }
   };
 
@@ -553,9 +607,13 @@ const AdminPanel = () => {
                     <Download className="h-4 w-4" />
                     <span>Export CSV</span>
                   </div>
+                  <div className="bg-rose-50 border-2 border-rose-500 px-4 py-2 rounded-xl flex items-center space-x-2 font-black cursor-pointer hover:bg-rose-100 transition-all text-rose-600 shadow-[2px_2px_0px_0px_rgba(225,29,72,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none" onClick={handleCleanupStudents}>
+                    <Trash2 className="h-4 w-4" />
+                    <span>Clear Students</span>
+                  </div>
                 </div>
                 <div className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                  Showing {users.length} registered students
+                  Showing {users.filter(u => u.role === 'student').length} registered students
                 </div>
               </div>
 
@@ -666,29 +724,118 @@ const AdminPanel = () => {
 
                       <div className="flex-grow p-8 overflow-y-auto bg-white space-y-8">
                         {/* Analytics Row */}
-                        <div className="grid grid-cols-3 gap-6">
-                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
+                        <div className="grid grid-cols-5 gap-4">
+                          <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
                             <Clock className="h-6 w-6 mx-auto mb-2 text-indigo-500 opacity-80" />
-                            <div className="text-2xl font-bold text-slate-900">
+                            <div className="text-xl font-bold text-slate-900">
                               {(userProgress.reduce((acc, p) => acc + (p.timeSpent || 0), 0) / 60).toFixed(1)}h
                             </div>
-                            <div className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Total Study Time</div>
+                            <div className="text-[9px] font-bold uppercase text-slate-400 tracking-widest mt-1">Study Time</div>
                           </div>
-                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
+                          <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
                             <Award className="h-6 w-6 mx-auto mb-2 text-indigo-500 opacity-80" />
-                            <div className="text-2xl font-bold text-slate-900">
+                            <div className="text-xl font-bold text-slate-900">
                               {userProgress.reduce((acc, p) => acc + (p.completedActivities?.length || 0), 0)}
                             </div>
-                            <div className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Activities</div>
+                            <div className="text-[9px] font-bold uppercase text-slate-400 tracking-widest mt-1">Activities</div>
                           </div>
-                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
+                          <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center shadow-sm">
                             <BarChart3 className="h-6 w-6 mx-auto mb-2 text-indigo-500 opacity-80" />
-                            <div className="text-2xl font-bold text-slate-900">
+                            <div className="text-xl font-bold text-slate-900">
                               {userProgress.length > 0
                                 ? Math.round(userProgress.reduce((acc, p) => acc + (p.progress || 0), 0) / userProgress.length)
                                 : 0}%
                             </div>
-                            <div className="text-[10px] font-bold uppercase text-slate-400 tracking-widest mt-1">Avg Progress</div>
+                            <div className="text-[9px] font-bold uppercase text-slate-400 tracking-widest mt-1">Avg Progress</div>
+                          </div>
+                          <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-center shadow-sm">
+                            <Star className="h-6 w-6 mx-auto mb-2 text-emerald-600 opacity-80" />
+                            <div className="text-xl font-bold text-slate-900">
+                              Lvl {selectedUser.level || 1}
+                            </div>
+                            <div className="text-[9px] font-bold uppercase text-emerald-600 tracking-widest mt-1">Student Rank</div>
+                          </div>
+                          <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-center shadow-sm">
+                            <Activity className="h-6 w-6 mx-auto mb-2 text-amber-600 opacity-80" />
+                            <div className="text-xl font-bold text-slate-900">
+                              {selectedUser.experience || 0}
+                            </div>
+                            <div className="text-[9px] font-bold uppercase text-amber-600 tracking-widest mt-1">Total XP</div>
+                          </div>
+                        </div>
+
+                        {/* Diamond Allotment Section */}
+                        <div className="p-6 bg-indigo-50/50 border-2 border-dashed border-indigo-200 rounded-2xl">
+                          <h4 className="text-sm font-black uppercase tracking-wider text-indigo-700 mb-4 flex items-center gap-2">
+                            <span>💎</span> Allot Diamonds
+                          </h4>
+                          <div className="flex flex-col md:flex-row gap-4">
+                            <div className="flex-1">
+                              <input
+                                type="number"
+                                placeholder="Amount (e.g. 50)"
+                                className={theme.input}
+                                value={diamondAmount || ''}
+                                onChange={(e) => setDiamondAmount(parseInt(e.target.value) || 0)}
+                              />
+                            </div>
+                            <div className="flex-[2]">
+                              <input
+                                type="text"
+                                placeholder="Reason (e.g. Good Participation)"
+                                className={theme.input}
+                                value={awardReason}
+                                onChange={(e) => setAwardReason(e.target.value)}
+                              />
+                            </div>
+                            <button
+                              onClick={handleAwardDiamonds}
+                              disabled={diamondAmount <= 0}
+                              className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-black hover:bg-indigo-700 transition-all disabled:opacity-50"
+                            >
+                              Award
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Diamond Transaction History */}
+                        <div className="space-y-4">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500 flex items-center">
+                            <History size={16} className="mr-2" />
+                            Diamond Transaction History
+                          </h4>
+                          <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                            {userTransactions && userTransactions.length > 0 ? (
+                              <div className="divide-y divide-slate-50">
+                                {userTransactions.map((tx, idx) => (
+                                  <div key={idx} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-all">
+                                    <div className="flex items-center space-x-4">
+                                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center font-bold text-lg
+                                        ${tx.type === 'award' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}
+                                      `}>
+                                        {tx.type === 'award' ? '+' : '-'}
+                                      </div>
+                                      <div>
+                                        <div className="font-bold text-slate-900 text-sm">{tx.reason || (tx.type === 'award' ? 'Reward' : 'Redemption')}</div>
+                                        <div className="text-[10px] font-medium text-slate-400">
+                                          {new Date(tx.createdAt).toLocaleDateString()} at {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className={`text-sm font-black flex items-center gap-1
+                                      ${tx.type === 'award' ? 'text-emerald-600' : 'text-rose-600'}
+                                    `}>
+                                      <span>{tx.type === 'award' ? '+' : ''}{tx.amount}</span>
+                                      <span className="text-xs">💎</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="py-12 text-center">
+                                <p className="font-medium text-slate-400 text-sm italic">No diamond transactions recorded for this student.</p>
+                              </div>
+                            )}
                           </div>
                         </div>
 

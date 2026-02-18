@@ -23,6 +23,7 @@ interface UserProgress {
   subjectsCompleted: string[];
   quizzesTaken: number;
   gamesPlayed: number;
+  activityLogs: Record<string, number>;
 }
 
 interface GameContextType {
@@ -36,6 +37,7 @@ interface GameContextType {
   playGame: () => void;
   getLevelProgress: () => number;
   getNextAchievement: () => Achievement | null;
+  logActivity: (count?: number) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -124,6 +126,10 @@ const calculateExperienceToNext = (level: number): number => {
   return Math.floor(100 * Math.pow(1.5, level - 1));
 };
 
+// Access TokenContext award function via a separate mechanism or by assuming it's available in the app tree
+// Since we can't easily useToken() inside GameProvider (sibling or parent issue), 
+// we'll handle the diamond reward by calling the award function if passed or via a custom event/localStorage flag.
+
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userProgress, setUserProgress] = useState<UserProgress>(() => {
     const saved = localStorage.getItem('learnkins-game-progress');
@@ -132,10 +138,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return {
         ...parsed,
         lastLogin: new Date(parsed.lastLogin),
-        achievements: parsed.achievements || defaultAchievements
+        achievements: parsed.achievements || defaultAchievements,
+        activityLogs: parsed.activityLogs || {}
       };
     }
-    
+
     return {
       level: 1,
       experience: 0,
@@ -146,7 +153,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       achievements: defaultAchievements,
       subjectsCompleted: [],
       quizzesTaken: 0,
-      gamesPlayed: 0
+      gamesPlayed: 0,
+      activityLogs: {}
     };
   });
 
@@ -154,7 +162,51 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('learnkins-game-progress', JSON.stringify(userProgress));
   }, [userProgress]);
 
+  // Streak logic on mount
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const last = new Date(userProgress.lastLogin).toISOString().split('T')[0];
+
+    if (today !== last) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      setUserProgress(prev => {
+        let newStreak = prev.streak;
+        if (last === yesterdayStr) {
+          newStreak += 1;
+          // Reward diamonds for milestones
+          if (newStreak % 7 === 0) {
+            // Signal daily streak reward
+            localStorage.setItem('learnkins_streak_reward', 'true');
+          }
+        } else {
+          newStreak = 1;
+        }
+
+        return {
+          ...prev,
+          streak: newStreak,
+          lastLogin: new Date()
+        };
+      });
+    }
+  }, []);
+
+  const logActivity = (count = 1) => {
+    const today = new Date().toISOString().split('T')[0];
+    setUserProgress(prev => ({
+      ...prev,
+      activityLogs: {
+        ...prev.activityLogs,
+        [today]: (prev.activityLogs[today] || 0) + count
+      }
+    }));
+  };
+
   const addExperience = (amount: number) => {
+    logActivity();
     setUserProgress(prev => {
       let newExp = prev.experience + amount;
       let newLevel = prev.level;
@@ -177,6 +229,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const unlockAchievement = (achievementId: string) => {
+    logActivity(5);
     setUserProgress(prev => ({
       ...prev,
       achievements: prev.achievements.map(achievement =>
@@ -200,6 +253,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addPoints = (amount: number) => {
+    logActivity();
     setUserProgress(prev => ({
       ...prev,
       totalPoints: prev.totalPoints + amount
@@ -207,6 +261,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const completeSubject = (subject: string) => {
+    logActivity(10);
     setUserProgress(prev => ({
       ...prev,
       subjectsCompleted: [...new Set([...prev.subjectsCompleted, subject])]
@@ -214,6 +269,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const takeQuiz = () => {
+    logActivity(3);
     setUserProgress(prev => ({
       ...prev,
       quizzesTaken: prev.quizzesTaken + 1
@@ -221,6 +277,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const playGame = () => {
+    logActivity(3);
     setUserProgress(prev => ({
       ...prev,
       gamesPlayed: prev.gamesPlayed + 1
@@ -245,7 +302,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     takeQuiz,
     playGame,
     getLevelProgress,
-    getNextAchievement
+    getNextAchievement,
+    logActivity
   };
 
   return (

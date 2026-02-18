@@ -5,7 +5,8 @@ import {
   updateUser,
   deleteUser,
   getUserProgress,
-  getUserAchievements
+  getUserAchievements,
+  cleanupStudents
 } from '../controllers/userController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -16,6 +17,9 @@ router.use(protect);
 
 // Get all users (admin only)
 router.get('/', authorize('admin'), getUsers);
+
+// Cleanup all students (admin only)
+router.post('/cleanup-students', authorize('admin'), cleanupStudents);
 
 // Get user by ID
 router.get('/:id', getUser);

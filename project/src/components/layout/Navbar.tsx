@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 import { useGame } from "../../context/GameContext";
+import { useTokens } from "../../context/TokenContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -40,6 +41,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const { userProgress } = useGame();
+  const { balance, award } = useTokens();
+
+  // Check for streak rewards from GameContext
+  useEffect(() => {
+    if (localStorage.getItem('learnkins_streak_reward') === 'true') {
+      award(50, "7-Day Streak Bonus! 🔥");
+      localStorage.removeItem('learnkins_streak_reward');
+    }
+  }, [award]);
 
   // Handle scroll effect
   useEffect(() => {
@@ -231,20 +241,23 @@ const Navbar = () => {
             <div className="hidden lg:flex items-center gap-4">
               {isAuthenticated ? (
                 <>
+
                   {/* Points Badge */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <Star className="h-5 w-5 text-yellow-500" fill="currentColor" />
+                  <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
                     <span className="text-sm font-black text-black">
                       {userProgress.totalPoints}
                     </span>
                   </div>
 
-                  {/* Level Badge */}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.2)]">
-                    <span className="text-sm font-black text-green-400">
-                      Lvl {userProgress.level}
+                  {/* Diamonds Badge */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                    <span className="text-lg">💎</span>
+                    <span className="text-sm font-black text-black">
+                      {balance}
                     </span>
                   </div>
+
 
                   {/* User Menu */}
                   <div className="relative">

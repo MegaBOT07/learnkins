@@ -279,6 +279,7 @@ export interface UserAPI {
   deleteUser: (id: string) => Promise<AxiosResponse<void>>;
   getUserProgress: (id: string) => Promise<AxiosResponse<{ success: boolean; data: any[] }>>;
   getUserAchievements: (id: string) => Promise<AxiosResponse<{ success: boolean; data: any[] }>>;
+  cleanupStudents: () => Promise<AxiosResponse<any>>;
 }
 
 export interface SubjectAPI {
@@ -433,6 +434,8 @@ export interface TokenAPI {
   getTransactions: () => Promise<AxiosResponse<any>>;
   award: (amount: number, reason: string, meta?: any) => Promise<AxiosResponse<any>>;
   redeem: (amount: number, reason: string, meta?: any) => Promise<AxiosResponse<any>>;
+  awardUser: (userId: string, amount: number, reason: string, meta?: any) => Promise<AxiosResponse<any>>;
+  getUserTransactions: (userId: string) => Promise<AxiosResponse<any>>;
 }
 
 // Export the API objects with proper typing

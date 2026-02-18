@@ -16,7 +16,7 @@ export const errorHandler = (err, req, res, next) => {
   }
 
   if (err.code === 11000) {
-    message = 'Duplicate field value entered';
+    message = 'Account with this email or field already exists';
     mappedStatus = 400;
   }
 

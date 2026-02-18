@@ -459,6 +459,19 @@ export const submitProfessionalQuiz = async (req, res) => {
 
     await quiz.save();
 
+    // Award XP for professional quiz
+    const user = await User.findById(userId);
+    let levelUpData = null;
+    if (user) {
+      // Bonus XP for passing professional quiz
+      const passBonus = passed ? 50 : 0;
+      const correctBonus = processedAnswers.filter(a => a.isCorrect).length * 5;
+      const totalXP = passBonus + correctBonus;
+
+      levelUpData = user.addExperience(totalXP);
+      await user.save();
+    }
+
     // Update user progress
     try {
       let progress = await Progress.findOne({
@@ -491,7 +504,8 @@ export const submitProfessionalQuiz = async (req, res) => {
         percentage: Math.round(percentage),
         passed,
         timeTaken,
-        attemptNumber: quiz.attempts.length
+        attemptNumber: quiz.attempts.length,
+        levelUp: levelUpData
       }
     });
   } catch (error) {

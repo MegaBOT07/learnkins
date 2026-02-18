@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Progress from '../models/Progress.js';
 import Achievement from '../models/Achievement.js';
+import TokenTransaction from '../models/TokenTransaction.js';
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -227,6 +228,53 @@ export const getUserAchievements = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+};
+
+// @desc    Cleanup all students
+// @route   POST /api/users/cleanup-students
+// @access  Private (Admin)
+export const cleanupStudents = async (req, res) => {
+  try {
+    // 1. Find all students
+    const students = await User.find({ role: 'student' });
+    const studentIds = students.map(s => s._id);
+
+    if (students.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No students found to clean up'
+      });
+    }
+
+    console.log(`Cleaning up ${students.length} students...`);
+
+    // 2. Remove students from parent children arrays
+    await User.updateMany(
+      { role: 'parent' },
+      { $pull: { children: { $in: studentIds } } }
+    );
+
+    // 3. Delete progress records
+    await Progress.deleteMany({ userId: { $in: studentIds } });
+
+    // 4. Delete token transactions
+    await TokenTransaction.deleteMany({ userId: { $in: studentIds } });
+
+    // 5. Hard delete student users
+    const result = await User.deleteMany({ role: 'student' });
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully removed ${result.deletedCount} students and associated records`,
+      count: result.deletedCount
+    });
+  } catch (error) {
+    console.error('Cleanup students error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during cleanup'
     });
   }
 };

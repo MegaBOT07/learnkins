@@ -14,7 +14,7 @@ const generateToken = (id) => {
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
   try {
     // Check validation errors
     const errors = validationResult(req);
@@ -107,10 +107,16 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error during registration: ' + error.message
-    });
+
+    // Handle duplicate key error (E11000)
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'This email is already associated with an account'
+      });
+    }
+
+    next(error);
   }
 };
 

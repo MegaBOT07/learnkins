@@ -23,87 +23,137 @@ const TokenContext = createContext<TokenContextType | undefined>(undefined);
 export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [lastRewardDay, setLastRewardDay] = useState<string>("");
 
   useEffect(() => {
     const init = async () => {
       try {
         const raw = localStorage.getItem(TOKEN_KEY);
+        let localBalance = 0;
+        let localTx: Transaction[] = [];
+        let localLastReward = "";
+
         if (raw) {
           const parsed = JSON.parse(raw);
-          setBalance(parsed.balance || 0);
-          setTransactions(parsed.transactions || []);
+          localBalance = parsed.balance || 0;
+          localTx = parsed.transactions || [];
+          localLastReward = parsed.lastRewardDay || "";
+          setBalance(localBalance);
+          setTransactions(localTx);
+          setLastRewardDay(localLastReward);
         }
 
-        // If user is authenticated, try to sync balance/transactions from server
+        // Check for daily reward immediately
+        const today = new Date().toISOString().split('T')[0];
+        if (localLastReward !== today) {
+          // award() will handle state and server update
+          await award(20, "Daily Login Reward 🎁");
+          setLastRewardDay(today);
+        }
+
+        // If user is authenticated, sync from server to get authoritative state
         const token = localStorage.getItem("token");
         if (token) {
           try {
-            const resp = await tokenAPI.getBalance();
-            if (resp?.data?.balance != null) setBalance(resp.data.balance);
-            const txResp = await tokenAPI.getTransactions();
-            if (txResp?.data?.transactions) setTransactions(txResp.data.transactions.map((t: any) => ({ id: t._id, amount: t.amount, reason: t.reason, date: t.createdAt })));
+            const [balResp, txResp] = await Promise.all([
+              tokenAPI.getBalance(),
+              tokenAPI.getTransactions()
+            ]);
+
+            if (balResp?.data?.balance != null) {
+              setBalance(balResp.data.balance);
+            }
+            if (txResp?.data?.transactions) {
+              const formatted = txResp.data.transactions.map((t: any) => ({
+                id: t._id,
+                amount: t.amount,
+                reason: t.reason,
+                date: t.createdAt
+              }));
+              setTransactions(formatted);
+            }
           } catch (e) {
-            // ignore server sync failures and keep local state
             console.warn("Token sync failed", e);
           }
         }
       } catch (e) {
-        setBalance(0);
-        setTransactions([]);
+        console.error("Token init failed", e);
       }
     };
     init();
   }, []);
 
-  const persist = (nextBalance: number, nextTx: Transaction[]) => {
-    setBalance(nextBalance);
-    setTransactions(nextTx);
-    try {
-      localStorage.setItem(TOKEN_KEY, JSON.stringify({ balance: nextBalance, transactions: nextTx }));
-    } catch (e) {
-      console.error("Failed to persist tokens", e);
+  // Update localStorage whenever state changes
+  useEffect(() => {
+    if (lastRewardDay) {
+      localStorage.setItem(TOKEN_KEY, JSON.stringify({
+        balance,
+        transactions,
+        lastRewardDay
+      }));
     }
-  };
+  }, [balance, transactions, lastRewardDay]);
 
   const award = async (amount: number, reason = "award", meta: any = null) => {
     if (amount <= 0) return;
-    // optimistic local update
-    const tx: Transaction = { id: Date.now().toString(), amount, reason, date: new Date().toISOString() };
-    const nextBalance = balance + amount;
-    const nextTx = [tx, ...transactions].slice(0, 100);
-    persist(nextBalance, nextTx);
 
-    // if authenticated, persist to server
+    // Create unique ID for optimistic update
+    const tempId = "temp-" + Date.now();
+    const optimisticTx: Transaction = {
+      id: tempId,
+      amount,
+      reason,
+      date: new Date().toISOString()
+    };
+
+    // Optimistic Update
+    setBalance(prev => prev + amount);
+    setTransactions(prev => [optimisticTx, ...prev].slice(0, 100));
+
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const resp = await tokenAPI.award(amount, reason, meta);
         if (resp?.data?.balance != null) {
-          // replace local state with authoritative server state
           const serverBalance = resp.data.balance;
           const serverTx = resp.data.transaction;
-          const serverTxFormatted = { id: serverTx._id, amount: serverTx.amount, reason: serverTx.reason, date: serverTx.createdAt };
-          persist(serverBalance, [serverTxFormatted, ...transactions].slice(0, 100));
+          const serverTxFormatted = {
+            id: serverTx._id,
+            amount: serverTx.amount,
+            reason: serverTx.reason,
+            date: serverTx.createdAt
+          };
+
+          setBalance(serverBalance);
+          setTransactions(prev => {
+            // Replace matching temp transaction or just prepend if not found
+            const filtered = prev.filter(t => t.id !== tempId);
+            return [serverTxFormatted, ...filtered].slice(0, 100);
+          });
         }
       } catch (e) {
-        console.warn("Failed to persist award to server", e);
+        console.warn("Server award failed", e);
       }
     }
   };
 
-  const canRedeem = (amount: number) => {
-    return balance >= amount;
-  };
+  const canRedeem = (amount: number) => balance >= amount;
 
   const redeem = async (amount: number, reason = "redeem", meta: any = null) => {
     if (amount <= 0) return false;
     if (!canRedeem(amount)) return false;
 
-    // optimistic local update
-    const tx: Transaction = { id: Date.now().toString(), amount: -amount, reason, date: new Date().toISOString() };
-    const nextBalance = balance - amount;
-    const nextTx = [tx, ...transactions].slice(0, 100);
-    persist(nextBalance, nextTx);
+    const tempId = "temp-" + Date.now();
+    const optimisticTx: Transaction = {
+      id: tempId,
+      amount: -amount,
+      reason,
+      date: new Date().toISOString()
+    };
+
+    // Optimistic Update
+    setBalance(prev => prev - amount);
+    setTransactions(prev => [optimisticTx, ...prev].slice(0, 100));
 
     const token = localStorage.getItem("token");
     if (token) {
@@ -112,24 +162,39 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (resp?.data?.balance != null) {
           const serverBalance = resp.data.balance;
           const serverTx = resp.data.transaction;
-          const serverTxFormatted = { id: serverTx._id, amount: serverTx.amount, reason: serverTx.reason, date: serverTx.createdAt };
-          persist(serverBalance, [serverTxFormatted, ...transactions].slice(0, 100));
+          const serverTxFormatted = {
+            id: serverTx._id,
+            amount: serverTx.amount,
+            reason: serverTx.reason,
+            date: serverTx.createdAt
+          };
+
+          setBalance(serverBalance);
+          setTransactions(prev => {
+            const filtered = prev.filter(t => t.id !== tempId);
+            return [serverTxFormatted, ...filtered].slice(0, 100);
+          });
+          return true;
         }
       } catch (e) {
-        console.warn("Failed to persist redeem to server", e);
-        // if server redeem failed, rollback local optimistic change by re-syncing from server
-        try {
-          const resp2 = await tokenAPI.getBalance();
-          if (resp2?.data?.balance != null) setBalance(resp2.data.balance);
-          const txResp = await tokenAPI.getTransactions();
-          if (txResp?.data?.transactions) setTransactions(txResp.data.transactions.map((t: any) => ({ id: t._id, amount: t.amount, reason: t.reason, date: t.createdAt })));
-        } catch (e2) {
-          console.warn('Failed to rollback/re-sync tokens', e2);
+        console.warn("Server redeem failed", e);
+        // Rollback on error
+        const [balResp, txResp] = await Promise.all([
+          tokenAPI.getBalance(),
+          tokenAPI.getTransactions()
+        ]);
+        if (balResp?.data?.balance != null) setBalance(balResp.data.balance);
+        if (txResp?.data?.transactions) {
+          setTransactions(txResp.data.transactions.map((t: any) => ({
+            id: t._id,
+            amount: t.amount,
+            reason: t.reason,
+            date: t.createdAt
+          })));
         }
         return false;
       }
     }
-
     return true;
   };
 

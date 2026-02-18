@@ -11,6 +11,8 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import Subjects from "./pages/subjects/Subjects";
 import SubjectDetail from "./pages/subjects/SubjectDetail";
 import StudyMaterials from "./pages/learning/StudyMaterials";
+// @ts-ignore
+import Profile from "./pages/profile/Profile";
 import GamesQuiz from "./pages/assessment/GamesQuiz";
 import Games from "./pages/games/Games";
 import Game from "./pages/games/Game";
@@ -39,6 +41,11 @@ import Vault from "./components/features/vault/Vault";
 // Import game components
 import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryGame";
 import GrammarWarrior from "./components/games/GrammarWarrior/GrammarWarrior";
+import MathsAdventure from "./components/games/MathsGame/MathsAdventure";
+import ChemistryMixer from "./components/games/ChemistryMixer/ChemistryMixer";
+import GeographyExplorer from "./components/games/GeographyExplorer/GeographyExplorer";
+import ScienceLab from "./components/games/ScienceLab/ScienceLab";
+import WordBuilder from "./components/games/WordBuilder/WordBuilder";
 
 /** Routes where Navbar & Footer should be hidden */
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
@@ -68,6 +75,11 @@ function AppLayout() {
           {/* Integrated game routes */}
           <Route path="/games/history-game" element={<EnhancedHistoryGame />} />
           <Route path="/games/grammar-warrior" element={<GrammarWarrior />} />
+          <Route path="/games/maths-adventure" element={<MathsAdventure />} />
+          <Route path="/games/chemistry-mixer" element={<ChemistryMixer />} />
+          <Route path="/games/geography-explorer" element={<GeographyExplorer />} />
+          <Route path="/games/science-lab" element={<ScienceLab />} />
+          <Route path="/games/word-builder" element={<WordBuilder />} />
 
           {/* Redirect standard quiz routes to Professional Quizzes UI */}
           <Route path="/quizzes" element={<ProfessionalQuizzes />} />
@@ -89,6 +101,7 @@ function AppLayout() {
           <Route path="/science" element={<Science />} />
           <Route path="/social-science" element={<SocialScience />} />
           <Route path="/english" element={<English />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/team" element={<Team />} />
           <Route path="/learnerbot" element={<LearnerBot />} />

@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stars } from "@react-three/drei";
+import { OrbitControls, Stars, Sparkles as DreiSparkles, Float } from "@react-three/drei";
+import { EffectComposer, Bloom, ChromaticAberration, Vignette } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import { motion } from "framer-motion";
 import * as THREE from "three";
 import {
@@ -200,37 +202,37 @@ const TimeMachine = ({
             color={
               isActive
                 ? [
-                    "#ef4444",
-                    "#f97316",
-                    "#eab308",
-                    "#10b981",
-                    "#06b6d4",
-                    "#8b5cf6",
-                    "#ec4899",
-                    "#f59e0b",
-                    "#84cc16",
-                    "#22c55e",
-                    "#3b82f6",
-                    "#a855f7",
-                  ][i]
+                  "#ef4444",
+                  "#f97316",
+                  "#eab308",
+                  "#10b981",
+                  "#06b6d4",
+                  "#8b5cf6",
+                  "#ec4899",
+                  "#f59e0b",
+                  "#84cc16",
+                  "#22c55e",
+                  "#3b82f6",
+                  "#a855f7",
+                ][i]
                 : "#666666"
             }
             emissive={
               isActive
                 ? [
-                    "#ef4444",
-                    "#f97316",
-                    "#eab308",
-                    "#10b981",
-                    "#06b6d4",
-                    "#8b5cf6",
-                    "#ec4899",
-                    "#f59e0b",
-                    "#84cc16",
-                    "#22c55e",
-                    "#3b82f6",
-                    "#a855f7",
-                  ][i]
+                  "#ef4444",
+                  "#f97316",
+                  "#eab308",
+                  "#10b981",
+                  "#06b6d4",
+                  "#8b5cf6",
+                  "#ec4899",
+                  "#f59e0b",
+                  "#84cc16",
+                  "#22c55e",
+                  "#3b82f6",
+                  "#a855f7",
+                ][i]
                 : "#000000"
             }
             emissiveIntensity={isActive ? 1.2 : 0}
@@ -2050,7 +2052,7 @@ const EnhancedHistoryGame = () => {
       setGameState("historical");
       const randomQuestion =
         randomPeriod.questions[
-          Math.floor(Math.random() * randomPeriod.questions.length)
+        Math.floor(Math.random() * randomPeriod.questions.length)
         ];
       setCurrentQuestion(randomQuestion);
       setTimeout(() => {
@@ -2255,21 +2257,19 @@ const EnhancedHistoryGame = () => {
             <span className="text-white text-sm font-medium">Mode:</span>
             <button
               onClick={() => setMode("tpp")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
-                mode === "tpp"
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${mode === "tpp"
                   ? "bg-purple-500 text-white shadow-lg"
                   : "text-white/70 hover:text-white hover:bg-white/20"
-              }`}
+                }`}
             >
               TPP
             </button>
             <button
               onClick={() => setMode("fpp")}
-              className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
-                mode === "fpp"
+              className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${mode === "fpp"
                   ? "bg-purple-500 text-white shadow-lg"
                   : "text-white/70 hover:text-white hover:bg-white/20"
-              }`}
+                }`}
             >
               FPP
             </button>
@@ -2283,11 +2283,10 @@ const EnhancedHistoryGame = () => {
                 <button
                   key={level}
                   onClick={() => setDifficulty(level)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
-                    difficulty === level
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${difficulty === level
                       ? "bg-purple-500 text-white shadow-lg"
                       : "text-white/70 hover:text-white hover:bg-white/20"
-                  }`}
+                    }`}
                 >
                   {level.charAt(0).toUpperCase() + level.slice(1)}
                 </button>
@@ -2327,11 +2326,10 @@ const EnhancedHistoryGame = () => {
                 <button
                   key={grade}
                   onClick={() => setGradeLevel(grade)}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${
-                    gradeLevel === grade
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${gradeLevel === grade
                       ? "bg-purple-500 text-white shadow-lg"
                       : "text-white/70 hover:text-white hover:bg-white/20"
-                  }`}
+                    }`}
                 >
                   {grade.replace("class", "Class ")}
                 </button>
@@ -2457,8 +2455,17 @@ const EnhancedHistoryGame = () => {
 
       {/* 3D Canvas */}
       <div className="w-full h-screen">
-        <Canvas camera={{ position: [0, 5, 10], fov: 75 }}>
+        <Canvas camera={{ position: [0, 5, 10], fov: 75 }} gl={{ antialias: true, alpha: false }} dpr={[1, 2]}>
           <OrbitControls enableZoom={false} />
+          <fog attach="fog" args={['#0c0020', 10, 80]} />
+          {/* Post-processing effects */}
+          <EffectComposer>
+            <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
+            <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0005, 0.0005] as any} />
+            <Vignette eskil={false} offset={0.1} darkness={0.8} />
+          </EffectComposer>
+          {/* Ambient cosmic sparkles everywhere */}
+          <DreiSparkles count={200} scale={30} size={2} speed={0.3} color="#a78bfa" />
 
           {/* FPP Mode: Render background first, then overlay cockpit */}
           {mode === "fpp" && (
@@ -2506,8 +2513,10 @@ const EnhancedHistoryGame = () => {
                 onLightClick={toggleUfoLights}
               />
               <Student isTraveling={false} isCrashed={isUfoCrashed} />
-              <ambientLight intensity={0.6} />
-              <pointLight position={[10, 10, 10]} intensity={1} />
+              <ambientLight intensity={0.4} />
+              <pointLight position={[10, 10, 10]} intensity={1.5} color="#e0d4ff" />
+              <pointLight position={[-5, 3, -5]} intensity={0.5} color="#8b5cf6" />
+              <DreiSparkles count={80} scale={15} size={3} speed={0.5} color="#c4b5fd" />
             </>
           )}
 
@@ -2522,9 +2531,11 @@ const EnhancedHistoryGame = () => {
               />
               <Student isTraveling={true} isCrashed={isUfoCrashed} />
               <TimeTravelEffect />
-              <ambientLight intensity={0.6} />
-              <pointLight position={[10, 10, 10]} intensity={1} />
-              <pointLight position={[0, 0, 0]} intensity={2} color="#4f46e5" />
+              <ambientLight intensity={0.3} />
+              <pointLight position={[10, 10, 10]} intensity={1.5} color="#a78bfa" />
+              <pointLight position={[0, 0, 0]} intensity={3} color="#4f46e5" />
+              <pointLight position={[-5, -5, 5]} intensity={1} color="#06b6d4" />
+              <DreiSparkles count={150} scale={20} size={5} speed={2} color="#818cf8" />
             </>
           )}
 

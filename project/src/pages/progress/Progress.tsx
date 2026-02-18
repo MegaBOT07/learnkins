@@ -20,6 +20,7 @@ import { useGame } from "../../context/GameContext";
 import LevelDisplay from "../../components/features/progress/LevelDisplay";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
+import ActivityHeatmap from "../../components/features/progress/ActivityHeatmap";
 
 const Progress = () => {
   const { userProgress } = useGame();
@@ -152,6 +153,16 @@ const Progress = () => {
           />
         </motion.div>
 
+        {/* Activity Tracker */}
+        <motion.div
+          className="mb-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          <ActivityHeatmap activityLogs={userProgress.activityLogs || {}} />
+        </motion.div>
+
         {/* Stats Grid */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
@@ -206,8 +217,8 @@ const Progress = () => {
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
                       className={`px-3 py-1 rounded-xl text-sm font-bold transition-all flex items-center border-2 ${selectedCategory === category.id
-                          ? "bg-black text-white border-black"
-                          : "bg-white text-black border-gray-300 hover:border-black"
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-black border-gray-300 hover:border-black"
                         }`}
                     >
                       <span className="mr-1">{category.icon}</span>

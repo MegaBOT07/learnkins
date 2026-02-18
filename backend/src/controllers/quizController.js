@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Quiz from '../models/Quiz.js';
 import Progress from '../models/Progress.js';
+import User from '../models/User.js';
 
 // @desc    Get all quizzes
 // @route   GET /api/quizzes
@@ -8,7 +9,7 @@ import Progress from '../models/Progress.js';
 export const getQuizzes = async (req, res) => {
   try {
     const { subject, grade, difficulty, page = 1, limit = 10 } = req.query;
-    
+
     let filter = { isActive: true };
     if (subject) filter.subject = subject;
     if (grade) filter.grade = grade;
@@ -195,7 +196,7 @@ export const submitQuiz = async (req, res) => {
         quizData.questions.forEach((question, index) => {
           const userAnswer = answers[index];
           const isCorrect = userAnswer === question.correctAnswer;
-          
+
           if (isCorrect) {
             score += 10; // Default points per question
             correctCount++;
@@ -325,7 +326,7 @@ export const submitQuiz = async (req, res) => {
 
     quiz.questions.forEach((question, index) => {
       const userAnswer = answers[index];
-      const isCorrect = question.type === 'multiple-choice' 
+      const isCorrect = question.type === 'multiple-choice'
         ? question.options.find(opt => opt.isCorrect)?.text === userAnswer
         : question.correctAnswer === userAnswer;
 
@@ -368,13 +369,23 @@ export const submitQuiz = async (req, res) => {
       { upsert: true }
     );
 
+    // Award XP for regular quiz
+    const user = await User.findById(req.user.id);
+    let levelUpData = null;
+    if (user) {
+      const xpToAward = results.filter(r => r.isCorrect).length * 10;
+      levelUpData = user.addExperience(xpToAward);
+      await user.save();
+    }
+
     res.status(200).json({
       success: true,
       data: {
         score,
         totalPoints: quiz.totalPoints,
         percentage: Math.round((score / quiz.totalPoints) * 100),
-        results
+        results,
+        levelUp: levelUpData
       }
     });
   } catch (error) {

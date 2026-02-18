@@ -65,6 +65,7 @@ export const userAPI = {
   deleteUser: (id) => api.delete(`/users/${id}`),
   getUserProgress: (id) => api.get(`/users/${id}/progress`),
   getUserAchievements: (id) => api.get(`/users/${id}/achievements`),
+  cleanupStudents: () => api.post("/users/cleanup-students"),
 };
 
 // Subject API
@@ -182,6 +183,8 @@ export const tokenAPI = {
   getTransactions: () => api.get('/tokens/transactions'),
   award: (amount, reason, meta) => api.post('/tokens/award', { amount, reason, meta }),
   redeem: (amount, reason, meta) => api.post('/tokens/redeem', { amount, reason, meta }),
+  awardUser: (userId, amount, reason, meta) => api.post(`/tokens/award-user/${userId}`, { amount, reason, meta }),
+  getUserTransactions: (userId) => api.get(`/tokens/user/${userId}`),
 };
 
 // Professional Quiz API
