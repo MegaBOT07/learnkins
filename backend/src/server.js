@@ -92,7 +92,7 @@ app.use(
         "http://127.0.0.1:5175",
         "http://127.0.0.1:5176",
         // GitHub Codespaces URLs
-        "https://legendary-space-fishstick-g69qw6qj44g2jjv-5173.app.github.dev",
+        "https://learnkins-1.onrender.com",
       ];
 
       // Allow requests with no origin (like mobile apps or curl requests)
