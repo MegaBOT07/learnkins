@@ -92,7 +92,7 @@ app.use(
         "http://127.0.0.1:5175",
         "http://127.0.0.1:5176",
         // GitHub Codespaces URLs
-        "https://learnkins-1.onrender.com",
+        "https://learnkins-two.vercel.app",
       ];
 
       // Allow requests with no origin (like mobile apps or curl requests)
