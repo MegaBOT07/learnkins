@@ -46,7 +46,7 @@ if (!process.env.JWT_EXPIRE) {
 
 if (!process.env.MONGODB_URI) {
   process.env.MONGODB_URI =
-    "mongodb://localhost:27017/learnkins";
+    "mongodb+srv://demonicrui1_db_user:SfvEmhUD0j58C16t@cluster0.8oojsj8.mongodb.net/?appName=Cluster0";
 }
 
 // Set default email configuration for Gmail
