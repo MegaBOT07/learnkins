@@ -185,6 +185,27 @@ export const tokenAPI = {
   redeem: (amount, reason, meta) => api.post('/tokens/redeem', { amount, reason, meta }),
   awardUser: (userId, amount, reason, meta) => api.post(`/tokens/award-user/${userId}`, { amount, reason, meta }),
   getUserTransactions: (userId) => api.get(`/tokens/user/${userId}`),
+  claimDaily: () => api.post('/tokens/daily'),
+  getAdminStats: () => api.get('/tokens/admin/stats'),
+};
+
+// Shop API
+export const shopAPI = {
+  getItems: (params = {}) => api.get('/shop', { params }),
+  purchase: (id) => api.post(`/shop/${id}/purchase`),
+  getMyPurchases: () => api.get('/shop/my-purchases'),
+  // Admin
+  createItem: (data) => api.post('/shop', data),
+  updateItem: (id, data) => api.put(`/shop/${id}`, data),
+  deleteItem: (id) => api.delete(`/shop/${id}`),
+  getAdminStats: () => api.get('/shop/admin/stats'),
+};
+
+// Admin API aggregates
+export const adminAPI = {
+  getTokenStats: () => api.get('/tokens/admin/stats'),
+  getShopStats: () => api.get('/shop/admin/stats'),
+  awardUserTokens: (userId, amount, reason) => api.post('/tokens/award', { userId, amount, reason }),
 };
 
 // Professional Quiz API

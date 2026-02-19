@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { materialAPI } from "../../utils/api";
 import {
   ArrowRight,
   Play,
@@ -14,58 +15,24 @@ const SubjectDetail = () => {
   const { subject } = useParams();
   const [activeTab, setActiveTab] = useState("video");
 
-  // Local videos stored in localStorage under key 'learnkins_local_videos'
-  type VideoEntry = {
-    id: string;
-    title: string;
-    src: string; // relative path from public, e.g. '/my-video.mp4'
-    description?: string;
-  };
-
-  const [videos, setVideos] = useState<VideoEntry[]>([]);
-  const [newTitle, setNewTitle] = useState("");
-  const [newSrc, setNewSrc] = useState("");
+  const [videos, setVideos] = useState<any[]>([]);
+  const [videoLoading, setVideoLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const all = JSON.parse(
-        localStorage.getItem("learnkins_local_videos") || "{}"
-      );
-      const list: VideoEntry[] = all[subject as string] || [];
-      setVideos(list);
-    } catch (e) {
-      setVideos([]);
-    }
-  }, [subject]);
-
-  const saveVideosForSubject = (list: VideoEntry[]) => {
-    try {
-      const all = JSON.parse(localStorage.getItem("learnkins_local_videos") || "{}");
-      all[subject as string] = list;
-      localStorage.setItem("learnkins_local_videos", JSON.stringify(all));
-      setVideos(list);
-    } catch (e) {
-      console.error("Failed to save videos", e);
-    }
-  };
-
-  const addVideo = () => {
-    if (!newTitle || !newSrc) return;
-    const entry: VideoEntry = {
-      id: Date.now().toString(),
-      title: newTitle,
-      src: newSrc.startsWith("/") ? newSrc : `/${newSrc}`,
+    const fetchVideos = async () => {
+      setVideoLoading(true);
+      try {
+        const res = await materialAPI.getMaterials(subject);
+        const all: any[] = res.data?.data ?? res.data ?? [];
+        setVideos(all.filter((m: any) => m.type === "video"));
+      } catch {
+        setVideos([]);
+      } finally {
+        setVideoLoading(false);
+      }
     };
-    const next = [entry, ...videos];
-    saveVideosForSubject(next);
-    setNewTitle("");
-    setNewSrc("");
-  };
-
-  const removeVideo = (id: string) => {
-    const next = videos.filter((v) => v.id !== id);
-    saveVideosForSubject(next);
-  };
+    fetchVideos();
+  }, [subject]);
 
   const subjectData = {
     science: {
@@ -205,45 +172,42 @@ const SubjectDetail = () => {
                 <p className="text-lg text-gray-600 font-medium">Watch engaging video lessons that make learning fun and interactive.</p>
               </div>
 
-              {/* Local videos added via localStorage */}
-              <div className="mb-10 bg-white rounded-2xl border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <h3 className="text-xl font-black mb-4 uppercase tracking-wider">Local Videos</h3>
-                <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
-                  <input
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Video title (e.g. Fractions Lesson)"
-                    className="w-full sm:w-1/3 px-4 py-2.5 border-2 border-black rounded-xl font-medium focus:ring-2 focus:ring-black outline-none"
-                  />
-                  <input
-                    value={newSrc}
-                    onChange={(e) => setNewSrc(e.target.value)}
-                    placeholder="File path in public (e.g. /maths1.mp4)"
-                    className="w-full sm:w-1/3 px-4 py-2.5 border-2 border-black rounded-xl font-medium focus:ring-2 focus:ring-black outline-none"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={addVideo} className="px-5 py-2.5 bg-black text-white rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95">Add</button>
-                    <button onClick={() => { setNewTitle(""); setNewSrc(""); }} className="px-5 py-2.5 border-2 border-black rounded-xl font-bold hover:bg-black hover:text-white transition-all">Clear</button>
-                  </div>
+              {videoLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
                 </div>
-                {videos.length === 0 ? (
-                  <div className="text-sm text-gray-500 font-medium p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
-                    No local videos added for this subject yet. Use the form above to add a video you placed in the `public/` folder.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {videos.map((v) => (
-                      <div key={v.id} className="bg-white rounded-xl border-2 border-black p-3 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-                        <video controls src={v.src} className="w-full h-40 object-cover rounded-lg border-2 border-black" />
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="text-sm font-black">{v.title}</div>
-                          <button onClick={() => removeVideo(v.id)} className="text-red-600 text-sm font-bold hover:underline">Remove</button>
+              ) : videos.length === 0 ? (
+                <div className="text-center py-16 border-2 border-dashed border-gray-300 rounded-2xl">
+                  <Play size={48} className="mx-auto mb-3 text-gray-300" />
+                  <p className="text-xl font-black text-gray-500">No videos available yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Check back soon — the admin is uploading learning content!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                  {videos.map((v) => (
+                    <div key={v._id} className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="aspect-video bg-black">
+                        <iframe
+                          src={v.fileUrl}
+                          className="w-full h-full"
+                          allowFullScreen
+                          title={v.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-black text-slate-900 text-lg">{v.title}</h3>
+                        {v.description && <p className="text-sm text-slate-500 mt-1">{v.description}</p>}
+                        <div className="flex gap-2 mt-2">
+                          {v.chapter && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg text-xs font-bold border border-slate-200 capitalize">{v.chapter}</span>}
+                          {v.grade && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg text-xs font-bold border border-slate-200">{v.grade}</span>}
+                          {v.difficulty && <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg text-xs font-bold border border-slate-200">{v.difficulty}</span>}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {currentSubject.chapters.map((chapter, index) => (

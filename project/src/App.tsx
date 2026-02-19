@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { GameProvider } from "./context/GameContext";
 import { TokenProvider } from "./context/TokenContext";
 import Navbar from "./components/layout/Navbar";
@@ -36,7 +36,11 @@ import Footer from "./components/layout/Footer";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import StartupAnimation from "./components/animation/StartupAnimation";
 import LearnerBot from "./features/learnerbot/EmbeddedLearnerBot";
-import Vault from "./components/features/vault/Vault";
+import WalletPage from "./pages/wallet/WalletPage";
+import ProfilePage from "./pages/profile/ProfilePage";
+import ShopPage from "./pages/shop/ShopPage";
+import ParentReportPage from "./pages/parent/ParentReportPage";
+import MayaCompanion from "./components/maya/MayaCompanion";
 
 // Import game components
 import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryGame";
@@ -50,10 +54,37 @@ import WordBuilder from "./components/games/WordBuilder/WordBuilder";
 /** Routes where Navbar & Footer should be hidden */
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
 
+/** Routes where Footer should be hidden (but Navbar shown) */
+const NO_FOOTER_ROUTES = [
+  "/admin",
+  "/profile",
+  "/tokens",
+  "/shop",
+  "/progress",
+  "/parental-control",
+  "/learnerbot",
+  "/parent-report",
+];
+
 /** Inner layout component that has access to useLocation */
 function AppLayout() {
   const location = useLocation();
+  const { user, isAuthenticated } = useAuth();
   const hideChrome = AUTH_ROUTES.includes(location.pathname);
+
+  // Hide footer on specific pages (games, admin, profile, etc)
+  const hideFooter =
+    hideChrome ||
+    NO_FOOTER_ROUTES.some((r) => location.pathname.startsWith(r)) ||
+    location.pathname.startsWith("/games/") ||
+    location.pathname.startsWith("/game/") ||
+    location.pathname.startsWith("/quiz/") ||
+    location.pathname.startsWith("/professional-quiz/");
+
+  // Role-based home redirect for parents
+  if (isAuthenticated && user?.role === "parent" && location.pathname === "/") {
+    return <Navigate to="/parent-report" replace />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -105,10 +136,14 @@ function AppLayout() {
           <Route path="/progress" element={<Progress />} />
           <Route path="/team" element={<Team />} />
           <Route path="/learnerbot" element={<LearnerBot />} />
-          <Route path="/tokens" element={<Vault />} />
+          <Route path="/tokens" element={<WalletPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/parent-report" element={<ParentReportPage />} />
         </Routes>
       </main>
-      {!hideChrome && <Footer />}
+      {!hideChrome && !hideFooter && <Footer />}
+      {!hideChrome && <MayaCompanion />}
     </div>
   );
 }

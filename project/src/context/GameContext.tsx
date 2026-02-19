@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { progressAPI, authAPI } from '../utils/api';
 
 interface Achievement {
   id: string;
@@ -142,7 +143,6 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         activityLogs: parsed.activityLogs || {}
       };
     }
-
     return {
       level: 1,
       experience: 0,
@@ -158,6 +158,36 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   });
 
+  // ── Sync with real server data once on mount ─────────────────
+  const syncFromServer = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const [meRes, statsRes] = await Promise.allSettled([
+        authAPI.getMe(),
+        progressAPI.getStats(),
+      ]);
+      const me    = meRes.status    === 'fulfilled' ? (meRes.value?.data?.data    ?? meRes.value?.data)    : null;
+      const stats = statsRes.status === 'fulfilled' ? (statsRes.value?.data?.data ?? statsRes.value?.data) : null;
+
+      setUserProgress(prev => ({
+        ...prev,
+        level:       me?.level       ?? prev.level,
+        experience:  me?.experience  ?? prev.experience,
+        experienceToNext: calculateExperienceToNext(me?.level ?? prev.level),
+        streak:      me?.currentStreak ?? prev.streak,
+        quizzesTaken: me?.totalQuizzesTaken ?? stats?.quizzesTaken ?? prev.quizzesTaken,
+        gamesPlayed:  me?.totalGamesPlayed  ?? stats?.gamesPlayed  ?? prev.gamesPlayed,
+        totalPoints:  me?.points ?? prev.totalPoints,
+      }));
+    } catch (err) {
+      // silent — keep local state
+    }
+  }, []);
+
+  useEffect(() => { syncFromServer(); }, [syncFromServer]);
+
+  // persist local state
   useEffect(() => {
     localStorage.setItem('learnkins-game-progress', JSON.stringify(userProgress));
   }, [userProgress]);

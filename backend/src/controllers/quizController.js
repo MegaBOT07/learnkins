@@ -2,6 +2,36 @@ import mongoose from 'mongoose';
 import Quiz from '../models/Quiz.js';
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
+import TokenTransaction from '../models/TokenTransaction.js';
+
+// Helper: award tokens + XP after a quiz; silent – never throws
+async function awardQuizTokens(userId, percentage) {
+  try {
+    if (!userId) return 0;
+    // Token scale: 25 for perfect, 15 for ≥80%, 10 for ≥60%, 5 otherwise
+    const tokens = percentage >= 100 ? 25 : percentage >= 80 ? 15 : percentage >= 60 ? 10 : 5;
+    const xp     = Math.round(percentage * 0.5); // up to 50 XP
+    const user   = await User.findById(userId);
+    if (!user) return 0;
+    user.tokens             = (user.tokens || 0) + tokens;
+    user.experience         = (user.experience || 0) + xp;
+    user.totalQuizzesTaken  = (user.totalQuizzesTaken || 0) + 1;
+    const newLevel = Math.floor(user.experience / 100) + 1;
+    if (newLevel > (user.level || 1)) user.level = newLevel;
+    await user.save();
+    await TokenTransaction.create({
+      userId,
+      type:   'award',
+      amount: tokens,
+      reason: `Quiz completed (${Math.round(percentage)}%)`,
+      meta:   { percentage },
+    });
+    return tokens;
+  } catch (e) {
+    console.warn('awardQuizTokens silent error', e.message);
+    return 0;
+  }
+}
 
 // @desc    Get all quizzes
 // @route   GET /api/quizzes
@@ -250,6 +280,7 @@ export const submitQuiz = async (req, res) => {
           // Continue even if progress save fails
         }
 
+        const tokensEarned = await awardQuizTokens(req.user?.id, percentage);
         return res.status(200).json({
           success: true,
           message: 'Demo quiz submitted successfully',
@@ -259,7 +290,8 @@ export const submitQuiz = async (req, res) => {
             totalQuestions: quizData.questions.length,
             percentage,
             results,
-            demoQuiz: true
+            demoQuiz: true,
+            tokensEarned,
           }
         });
       }
@@ -293,6 +325,7 @@ export const submitQuiz = async (req, res) => {
           console.warn('Failed to save local result to progress:', err);
         }
 
+        const tokensEarned = await awardQuizTokens(req.user?.id, percentage);
         return res.status(200).json({
           success: true,
           message: 'Demo quiz submitted (local result)',
@@ -300,7 +333,8 @@ export const submitQuiz = async (req, res) => {
             percentage,
             correctCount,
             totalQuestions: req.body.totalQuestions || null,
-            demoQuiz: true
+            demoQuiz: true,
+            tokensEarned,
           }
         });
       }
@@ -378,14 +412,18 @@ export const submitQuiz = async (req, res) => {
       await user.save();
     }
 
+    const pct = Math.round((score / quiz.totalPoints) * 100);
+    const tokensEarned = await awardQuizTokens(req.user?.id, pct);
+
     res.status(200).json({
       success: true,
       data: {
         score,
         totalPoints: quiz.totalPoints,
-        percentage: Math.round((score / quiz.totalPoints) * 100),
+        percentage: pct,
         results,
-        levelUp: levelUpData
+        levelUp: levelUpData,
+        tokensEarned,
       }
     });
   } catch (error) {

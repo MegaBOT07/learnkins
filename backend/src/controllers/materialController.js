@@ -78,8 +78,8 @@ export const createMaterial = async (req, res) => {
   try {
     const { title, description, type, subject, chapter, grade, tags, difficulty } = req.body;
 
-    let fileUrl = '';
-    let thumbnailUrl = '';
+    let fileUrl = req.body.fileUrl || ''; // accept direct URL (YouTube embed, video URL)
+    let thumbnailUrl = req.body.thumbnailUrl || '';
 
     if (req.file) {
       // Upload to Cloudinary

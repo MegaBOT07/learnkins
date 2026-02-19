@@ -168,6 +168,7 @@ const userSchema = new mongoose.Schema(
     // OTP for password reset
     resetOTP: String,
     resetOTPExpiry: Date,
+    lastDailyClaim: { type: Date, default: null },
   },
   {
     timestamps: true,

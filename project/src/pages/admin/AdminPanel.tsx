@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI } from "../../utils/api";
+import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Gamepad2, Settings,
   ChevronRight, Search, BarChart3, Clock, Award, Activity,
-  Filter, Download, Star, History
+  Filter, Download, Star, History, Gem, TrendingUp, ShoppingBag
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -35,6 +35,11 @@ const AdminPanel = () => {
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
 
+  // Token analytics state
+  const [tokenStats, setTokenStats] = useState<any>(null);
+  const [shopStats, setShopStats] = useState<any>(null);
+  const [tokenStatsLoading, setTokenStatsLoading] = useState(false);
+
   // Selected user for progress view
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userProgress, setUserProgress] = useState<any[]>([]);
@@ -51,7 +56,8 @@ const AdminPanel = () => {
   });
 
   const [newMaterial, setNewMaterial] = useState({
-    title: "", description: "", subject: "science", type: "PDF", content: ""
+    title: "", description: "", subject: "science", type: "video",
+    chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner"
   });
 
   const [newGame, setNewGame] = useState({
@@ -164,6 +170,22 @@ const AdminPanel = () => {
       alert(err?.response?.data?.message || 'Failed to cleanup students');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTokenStats = async () => {
+    setTokenStatsLoading(true);
+    try {
+      const [tRes, sRes] = await Promise.allSettled([
+        tokenAPI.getAdminStats(),
+        shopAPI.getAdminStats(),
+      ]);
+      if (tRes.status === 'fulfilled') setTokenStats(tRes.value?.data?.data ?? tRes.value?.data);
+      if (sRes.status === 'fulfilled') setShopStats(sRes.value?.data?.data ?? sRes.value?.data);
+    } catch (err) {
+      console.error('Token stats fetch failed', err);
+    } finally {
+      setTokenStatsLoading(false);
     }
   };
 
@@ -283,10 +305,14 @@ const AdminPanel = () => {
   const handleCreateMaterial = async () => {
     try {
       setLoading(true);
+      if (!newMaterial.title || !newMaterial.subject || !newMaterial.fileUrl) {
+        alert("Please fill in title, subject, and video/file URL.");
+        return;
+      }
       await materialAPI.createMaterial(newMaterial);
       alert("Material uploaded successfully!");
       setShowMaterialModal(false);
-      setNewMaterial({ title: "", description: "", subject: "science", type: "PDF", content: "" });
+      setNewMaterial({ title: "", description: "", subject: "science", type: "video", chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner" });
       fetchAll();
     } catch (err: any) {
       console.error(err);
@@ -438,6 +464,12 @@ const AdminPanel = () => {
             <Gamepad2 size={18} />
             <span>Games</span>
           </div>
+
+          <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6 mb-2">Economy</p>
+          <div className={sidebarItemClass("tokens")} onClick={() => { setActiveTab("tokens"); fetchTokenStats(); }}>
+            <Gem size={18} />
+            <span>Tokens & Shop</span>
+          </div>
         </nav>
 
         <div className="p-4 border-t border-slate-200">
@@ -464,6 +496,7 @@ const AdminPanel = () => {
               {activeTab === 'flashcards' && 'Knowledge Base'}
               {activeTab === 'materials' && 'Educational Assets'}
               {activeTab === 'games' && 'Interactive Hub'}
+              {activeTab === 'tokens' && '💎 Token Analytics'}
             </h2>
           </div>
 
@@ -1088,6 +1121,146 @@ const AdminPanel = () => {
               </div>
             </div>
           )}
+
+          {/* ── TOKEN ANALYTICS TAB ── */}
+          {activeTab === "tokens" && (
+            <div className="p-6 space-y-6">
+              {tokenStatsLoading ? (
+                <div className="flex items-center justify-center py-20 text-slate-400 gap-3">
+                  <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                  Loading token analytics…
+                </div>
+              ) : (
+                <>
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { label: "Total in Circulation", value: tokenStats?.totalTokensInCirculation ?? 0, icon: "💎", color: "indigo" },
+                      { label: "Total Earned (all time)", value: tokenStats?.totalEarned ?? 0, icon: "⬆️", color: "emerald" },
+                      { label: "Total Spent", value: tokenStats?.totalSpent ?? 0, icon: "⬇️", color: "rose" },
+                      { label: "Total Purchases", value: shopStats?.totalPurchases ?? 0, icon: "🛒", color: "amber" },
+                    ].map(card => (
+                      <div key={card.label} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                        <p className="text-2xl mb-1">{card.icon}</p>
+                        <p className="text-2xl font-extrabold text-slate-900">{card.value.toLocaleString()}</p>
+                        <p className="text-xs text-slate-500 mt-1">{card.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 7-day activity */}
+                  {tokenStats?.dailyActivity?.length > 0 && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                      <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><TrendingUp size={16}/> 7-Day Activity</h3>
+                      <div className="flex items-end gap-2 h-24">
+                        {tokenStats.dailyActivity.map((d: any, i: number) => {
+                          const maxAmt = Math.max(...tokenStats.dailyActivity.map((x: any) => x.totalAmount ?? x.amount ?? 1));
+                          const amt = d.totalAmount ?? d.amount ?? 0;
+                          const pct = maxAmt > 0 ? (amt / maxAmt) * 100 : 0;
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d._id ?? d.date}: ${amt} tokens`}>
+                              <div className="w-full rounded-t-sm bg-indigo-500 transition-all" style={{ height: `${Math.max(pct, 5)}%` }} />
+                              <span className="text-[9px] text-slate-400">{(d._id ?? d.date ?? "")?.slice(5)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid lg:grid-cols-2 gap-5">
+                    {/* Top earners */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Award size={16}/> Top 10 Earners</h3>
+                      {!tokenStats?.topEarners?.length ? (
+                        <p className="text-slate-400 text-sm py-4 text-center">No data yet</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {tokenStats.topEarners.map((u: any, i: number) => (
+                            <div key={u._id} className="flex items-center gap-3 py-1.5 border-b border-slate-50 last:border-0">
+                              <span className="text-xs font-bold text-slate-400 w-5">#{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-slate-800 truncate">{u.name ?? u.email}</p>
+                                <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm font-bold text-indigo-600 flex items-center gap-1"><Gem size={12}/>{u.tokens ?? u.balance ?? 0}</p>
+                                <p className="text-xs text-slate-400">Lv {u.level ?? 1}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recent transactions */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Activity size={16}/> Recent Transactions</h3>
+                      {!tokenStats?.recentTransactions?.length ? (
+                        <p className="text-slate-400 text-sm py-4 text-center">No transactions yet</p>
+                      ) : (
+                        <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                          {tokenStats.recentTransactions.map((tx: any) => (
+                            <div key={tx._id} className="flex items-center gap-2 py-1.5 border-b border-slate-50 last:border-0">
+                              <span className={`text-xs font-bold w-14 text-right ${tx.type === 'earn' ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                {tx.type === 'earn' ? '+' : '-'}{tx.amount}💎
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-slate-700 truncate">{tx.reason}</p>
+                                <p className="text-[10px] text-slate-400">{tx.userId?.name ?? tx.userId?.email ?? "User"}</p>
+                              </div>
+                              <span className="text-[10px] text-slate-400 shrink-0">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Shop stats */}
+                  {shopStats && (
+                    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><ShoppingBag size={16}/> Shop Overview</h3>
+                      <div className="grid sm:grid-cols-3 gap-4 text-center">
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <p className="text-xl font-extrabold text-slate-900">{shopStats.totalItems ?? 0}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Total Items</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <p className="text-xl font-extrabold text-slate-900">{shopStats.totalPurchases ?? 0}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Total Purchases</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-3">
+                          <p className="text-xl font-extrabold text-indigo-600">{shopStats.totalTokensSpent ?? 0} 💎</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Tokens Spent in Shop</p>
+                        </div>
+                      </div>
+                      {shopStats.topItems?.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Top Sold Items</p>
+                          <div className="space-y-1.5">
+                            {shopStats.topItems.slice(0, 5).map((it: any) => (
+                              <div key={it._id} className="flex items-center justify-between text-sm py-1 border-b border-slate-50">
+                                <span className="font-medium text-slate-700">{it.title ?? it._id}</span>
+                                <span className="text-indigo-600 font-bold">{it.count ?? it.purchases ?? 0} sold</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={fetchTokenStats}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all"
+                  >
+                    <TrendingUp size={14}/> Refresh Stats
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
@@ -1194,32 +1367,81 @@ const AdminPanel = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
           >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Upload Asset</h3>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">Upload Learning Video</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Add YouTube videos or other materials for students</p>
+                </div>
                 <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Asset Title</label>
-                  <input className={theme.input} value={newMaterial.title} onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })} />
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title *</label>
+                  <input className={theme.input} placeholder="e.g. Introduction to Cells" value={newMaterial.title} onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject *</label>
+                    <select className={theme.input} value={newMaterial.subject} onChange={(e) => setNewMaterial({ ...newMaterial, subject: e.target.value })}>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Mathematics</option>
+                      <option value="english">English</option>
+                      <option value="social-science">Social Science</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade *</label>
+                    <select className={theme.input} value={newMaterial.grade} onChange={(e) => setNewMaterial({ ...newMaterial, grade: e.target.value })}>
+                      <option value="6th">Grade 6</option>
+                      <option value="7th">Grade 7</option>
+                      <option value="8th">Grade 8</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+                    <select className={theme.input} value={newMaterial.type} onChange={(e) => setNewMaterial({ ...newMaterial, type: e.target.value })}>
+                      <option value="video">Video Lesson</option>
+                      <option value="notes">Study Notes</option>
+                      <option value="worksheet">Worksheet</option>
+                      <option value="presentation">Presentation</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={newMaterial.difficulty} onChange={(e) => setNewMaterial({ ...newMaterial, difficulty: e.target.value })}>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                  <select className={theme.input} value={newMaterial.subject} onChange={(e) => setNewMaterial({ ...newMaterial, subject: e.target.value })}>
-                    <option value="mathematics">Mathematics</option>
-                    <option value="science">Science</option>
-                    <option value="english">English</option>
-                  </select>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chapter / Topic</label>
+                  <input className={theme.input} placeholder="e.g. Cell Biology, Algebra, Photosynthesis" value={newMaterial.chapter} onChange={(e) => setNewMaterial({ ...newMaterial, chapter: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    Video URL * <span className="text-slate-300 font-normal">(YouTube embed or direct video link)</span>
+                  </label>
+                  <input
+                    className={theme.input}
+                    placeholder="https://www.youtube.com/embed/VIDEO_ID"
+                    value={newMaterial.fileUrl}
+                    onChange={(e) => setNewMaterial({ ...newMaterial, fileUrl: e.target.value })}
+                  />
+                  <p className="text-xs text-slate-400 mt-1">Tip: For YouTube, use the embed URL format: youtube.com/embed/VIDEO_ID</p>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={newMaterial.description} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} />
+                  <textarea className={theme.input} rows={2} placeholder="Brief description of what students will learn..." value={newMaterial.description} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} />
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
                 <button onClick={() => setShowMaterialModal(false)} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleCreateMaterial} className={theme.buttonPrimary}>Process Asset</button>
+                <button onClick={handleCreateMaterial} className={theme.buttonPrimary}>Upload Material</button>
               </div>
             </div>
           </motion.div>

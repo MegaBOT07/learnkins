@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
-import { useGame } from "../../context/GameContext";
 import { useTokens } from "../../context/TokenContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -11,14 +10,12 @@ import {
   ChevronDown,
   User,
   LogOut,
-  Settings,
   BarChart3,
   BookOpen,
   Home,
   Users,
   MessageCircle,
   GraduationCap,
-  Star,
   Gamepad2,
   Play,
   Target,
@@ -40,16 +37,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
-  const { userProgress } = useGame();
-  const { balance, award } = useTokens();
-
-  // Check for streak rewards from GameContext
-  useEffect(() => {
-    if (localStorage.getItem('learnkins_streak_reward') === 'true') {
-      award(50, "7-Day Streak Bonus! 🔥");
-      localStorage.removeItem('learnkins_streak_reward');
-    }
-  }, [award]);
+  const { balance } = useTokens();
 
   // Handle scroll effect
   useEffect(() => {
@@ -241,22 +229,15 @@ const Navbar = () => {
             <div className="hidden lg:flex items-center gap-4">
               {isAuthenticated ? (
                 <>
-
-                  {/* Points Badge */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
-                    <span className="text-sm font-black text-black">
-                      {userProgress.totalPoints}
-                    </span>
-                  </div>
-
-                  {/* Diamonds Badge */}
-                  <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    <span className="text-lg">💎</span>
-                    <span className="text-sm font-black text-black">
-                      {balance}
-                    </span>
-                  </div>
+                  {/* Wallet / Token Badge */}
+                  <Link
+                    to="/tokens"
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl border-2 border-purple-800 shadow-[2px_2px_0px_0px_rgba(109,40,217,0.4)] hover:from-purple-500 hover:to-indigo-500 transition-all"
+                    title="My Wallet"
+                  >
+                    <span className="text-base">💎</span>
+                    <span className="text-sm font-black text-white">{balance.toLocaleString()}</span>
+                  </Link>
 
 
                   {/* User Menu */}
@@ -295,8 +276,16 @@ const Navbar = () => {
                               {user?.email}
                             </div>
                             <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs px-2 py-1 bg-black text-white rounded-md font-bold uppercase tracking-wider border-2 border-black">
-                                {user?.role}
+                              <span className={`text-xs px-2 py-1 rounded-md font-bold uppercase tracking-wider border-2 ${
+                                user?.role === 'admin' ? 'bg-red-600 text-white border-red-600' :
+                                user?.role === 'parent' ? 'bg-orange-500 text-white border-orange-500' :
+                                user?.role === 'teacher' ? 'bg-green-600 text-white border-green-600' :
+                                'bg-indigo-600 text-white border-indigo-600'
+                              }`}>
+                                {user?.role === 'admin' ? '🛡️ Admin' :
+                                 user?.role === 'parent' ? '👨‍👩‍👧 Parent' :
+                                 user?.role === 'teacher' ? '🎓 Teacher' :
+                                 '📚 Student'}
                               </span>
                             </div>
                           </div>
@@ -310,6 +299,44 @@ const Navbar = () => {
                             Profile
                           </Link>
 
+                          {/* Parent-specific links */}
+                          {user?.role === 'parent' && (
+                            <Link
+                              to="/parent-report"
+                              className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-orange-500 hover:bg-orange-50 transition-all"
+                              onClick={() => setIsUserDropdownOpen(false)}
+                            >
+                              <BarChart3 className="h-4 w-4 text-orange-500" strokeWidth={2.5} />
+                              Children's Report
+                            </Link>
+                          )}
+
+                          {/* Student / Teacher / Admin only - wallet & shop */}
+                          {user?.role !== 'parent' && (
+                            <>
+                              <Link
+                                to="/tokens"
+                                className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-purple-500 hover:bg-purple-50 transition-all"
+                                onClick={() => setIsUserDropdownOpen(false)}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-base">💎</span>
+                                  My Wallet
+                                </div>
+                                <span className="text-xs font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-md">{balance.toLocaleString()}</span>
+                              </Link>
+
+                              <Link
+                                to="/shop"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                                onClick={() => setIsUserDropdownOpen(false)}
+                              >
+                                <span className="text-base">🛒</span>
+                                Diamond Store
+                              </Link>
+                            </>
+                          )}
+
                           {user?.role === 'admin' ? (
                             <Link
                               to="/admin"
@@ -319,7 +346,7 @@ const Navbar = () => {
                               <Shield className="h-4 w-4 text-red-600" strokeWidth={2.5} />
                               Admin Panel
                             </Link>
-                          ) : (
+                          ) : user?.role === 'student' || user?.role === 'teacher' ? (
                             <Link
                               to="/progress"
                               className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-green-500 hover:bg-green-50 transition-all"
@@ -328,16 +355,7 @@ const Navbar = () => {
                               <BarChart3 className="h-4 w-4" strokeWidth={2.5} />
                               My Progress
                             </Link>
-                          )}
-
-                          <Link
-                            to="/settings"
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-gray-500 hover:bg-gray-50 transition-all"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <Settings className="h-4 w-4" strokeWidth={2.5} />
-                            Settings
-                          </Link>
+                          ) : null}
 
                           <div className="border-t-2 border-gray-100 my-1"></div>
 

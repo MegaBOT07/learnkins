@@ -1,5 +1,7 @@
 import Game from '../models/Game.js';
 import Progress from '../models/Progress.js';
+import User from '../models/User.js';
+import TokenTransaction from '../models/TokenTransaction.js';
 
 // @desc    Get all games
 // @route   GET /api/games
@@ -196,42 +198,67 @@ export const submitScore = async (req, res) => {
     const game = await Game.findById(req.params.id);
 
     if (!game) {
-      return res.status(404).json({
-        success: false,
-        message: 'Game not found'
+      return res.status(404).json({ success: false, message: 'Game not found' });
+    }
+
+    // Add score to game leaderboard
+    await game.addScore(req.user.id, score, timeTaken);
+
+    // ── Token reward ───────────────────────────────────────────
+    // Base reward: 5 diamonds + 1 per 10 score points (max 25 per game)
+    const tokensEarned = Math.min(25, 5 + Math.floor((score || 0) / 10));
+    const xpEarned     = Math.min(50, 10 + Math.floor((score || 0) / 5));
+
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.tokens           = (user.tokens || 0) + tokensEarned;
+      user.experience       = (user.experience || 0) + xpEarned;
+      user.points           = (user.points || 0) + Math.floor(score || 0);
+      user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+
+      // Level up check
+      const newLevel = Math.floor(user.experience / 100) + 1;
+      if (newLevel > (user.level || 1)) user.level = newLevel;
+
+      await user.save();
+
+      // Record token transaction
+      await TokenTransaction.create({
+        userId: user._id,
+        type: 'award',
+        amount: tokensEarned,
+        reason: `Game score: ${game.title} (${score} pts)`,
+        meta: { gameId: game._id, score, timeTaken },
       });
     }
 
-    // Add score to game
-    await game.addScore(req.user.id, score, timeTaken);
-
     // Update progress
     await Progress.findOneAndUpdate(
-      { userId: req.user.id, subject: game.category },
+      { userId: req.user.id, subject: game.category, chapter: 'games' },
       {
         $push: {
-          completedActivities: {
-            type: 'game',
-            activityId: game._id,
-            score
-          }
+          completedActivities: { type: 'game', activityId: game._id, score },
         },
-        lastAccessed: new Date()
+        lastAccessed: new Date(),
       },
       { upsert: true }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Score submitted successfully',
-      data: { score, timeTaken }
+      data: {
+        score,
+        timeTaken,
+        tokensEarned,
+        xpEarned,
+        newBalance: user ? user.tokens : null,
+        level: user ? user.level : null,
+      },
     });
   } catch (error) {
     console.error('Submit score error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

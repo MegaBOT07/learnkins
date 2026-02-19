@@ -14,9 +14,13 @@ type TokenContextType = {
   award: (amount: number, reason?: string, meta?: any) => Promise<void> | void;
   redeem: (amount: number, reason?: string, meta?: any) => Promise<boolean> | boolean;
   canRedeem: (amount: number) => boolean;
+  claimDailyReward: () => Promise<boolean>;
+  canClaimDaily: boolean;
+  fetchBalance: () => Promise<void>;
 };
 
 const TOKEN_KEY = "learnkins_tokens";
+const DAILY_KEY = "learnkins_daily_claimed";
 
 const TokenContext = createContext<TokenContextType | undefined>(undefined);
 
@@ -24,8 +28,18 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [lastRewardDay, setLastRewardDay] = useState<string>("");
+  const [canClaimDaily, setCanClaimDaily] = useState<boolean>(false);
+
+  const checkDailyEligibility = () => {
+    const last = localStorage.getItem(DAILY_KEY);
+    if (!last) { setCanClaimDaily(true); return; }
+    const lastDate = new Date(last).toDateString();
+    const today = new Date().toDateString();
+    setCanClaimDaily(lastDate !== today);
+  };
 
   useEffect(() => {
+    checkDailyEligibility();
     const init = async () => {
       try {
         const raw = localStorage.getItem(TOKEN_KEY);
@@ -198,8 +212,46 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return true;
   };
 
+  const fetchBalance = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const resp = await tokenAPI.getBalance();
+      if (resp?.data?.balance != null) setBalance(resp.data.balance);
+    } catch { /* silent */ }
+  };
+
+  const claimDailyReward = async (): Promise<boolean> => {
+    if (!canClaimDaily) return false;
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const resp = await tokenAPI.claimDaily();
+        if (resp?.data?.success) {
+          const newBalance = resp.data.balance;
+          const tx: Transaction = { id: Date.now().toString(), amount: resp.data.tokensEarned || 5, reason: "Daily login reward 🎁", date: new Date().toISOString() };
+          persist(newBalance, [tx, ...transactions].slice(0, 100));
+          localStorage.setItem(DAILY_KEY, new Date().toISOString());
+          setCanClaimDaily(false);
+          return true;
+        }
+        return false;
+      } catch (e: any) {
+        // 400 = already claimed today
+        if (e?.response?.status === 400) { setCanClaimDaily(false); return false; }
+        // fallback: local award
+      }
+    }
+    // Offline/unauthenticated fallback
+    const DAILY_AMOUNT = 5;
+    await award(DAILY_AMOUNT, "Daily login reward 🎁");
+    localStorage.setItem(DAILY_KEY, new Date().toISOString());
+    setCanClaimDaily(false);
+    return true;
+  };
+
   return (
-    <TokenContext.Provider value={{ balance, transactions, award, redeem, canRedeem }}>
+    <TokenContext.Provider value={{ balance, transactions, award, redeem, canRedeem, claimDailyReward, canClaimDaily, fetchBalance }}>
       {children}
     </TokenContext.Provider>
   );
