@@ -5,8 +5,8 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "build": "node --check src/server.js && echo 'Build check passed'",
-    "start": "node src/server.js",
+    "build": "babel src -d dist --extensions .js --copy-files",
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seeds/seedData.js",
     "seed:all": "node src/seeds/seedAllData.js",
@@ -35,6 +35,9 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@babel/cli": "^7.26.4",
+    "@babel/core": "^7.26.10",
+    "@babel/preset-env": "^7.26.10",
     "mongodb-memory-server": "^11.0.1",
     "nodemon": "^3.0.1"
   }
