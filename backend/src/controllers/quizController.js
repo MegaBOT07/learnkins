@@ -3,6 +3,7 @@ import Quiz from '../models/Quiz.js';
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
 import TokenTransaction from '../models/TokenTransaction.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // Helper: award tokens + XP after a quiz; silent – never throws
 async function awardQuizTokens(userId, percentage) {
@@ -212,142 +213,18 @@ export const deleteQuiz = async (req, res) => {
 // @access  Private
 export const submitQuiz = async (req, res) => {
   try {
-    const { answers, timeTaken, quizData } = req.body;
     const { id } = req.params;
+    const { answers, timeTaken, localResult } = req.body;
+    const userId = req.user?.id;
 
-    // Check if it's a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      // For demo quizzes, calculate score from provided quiz data
-      if (quizData && quizData.questions) {
-        let score = 0;
-        let correctCount = 0;
-        const results = [];
-
-        quizData.questions.forEach((question, index) => {
-          const userAnswer = answers[index];
-          const isCorrect = userAnswer === question.correctAnswer;
-
-          if (isCorrect) {
-            score += 10; // Default points per question
-            correctCount++;
-          }
-
-          results.push({
-            questionId: question.id,
-            answer: userAnswer,
-            isCorrect
-          });
-        });
-
-        const percentage = (correctCount / quizData.questions.length) * 100;
-
-        // Try to save to Progress if user is authenticated
-        try {
-          if (req.user && req.user.id) {
-            const progressData = {
-              userId: req.user.id,
-              subject: quizData.subject || 'general',
-              chapter: quizData.id,
-              score: percentage,
-              timeSpent: timeTaken || 0,
-              completedActivities: [{
-                type: 'quiz',
-                activityId: id,
-                score: percentage
-              }]
-            };
-
-            // Find or create progress record
-            await Progress.findOneAndUpdate(
-              { userId: req.user.id, subject: quizData.subject || 'general' },
-              {
-                $push: {
-                  completedActivities: {
-                    type: 'quiz',
-                    activityId: id,
-                    score: percentage,
-                    timestamp: new Date()
-                  }
-                },
-                $inc: { timeSpent: timeTaken || 0 },
-                lastAccessed: new Date()
-              },
-              { upsert: true, new: true }
-            );
-          }
-        } catch (progressErr) {
-          console.warn('Failed to save demo quiz to progress:', progressErr);
-          // Continue even if progress save fails
-        }
-
-        const tokensEarned = await awardQuizTokens(req.user?.id, percentage);
-        return res.status(200).json({
-          success: true,
-          message: 'Demo quiz submitted successfully',
-          data: {
-            score: percentage,
-            correctCount,
-            totalQuestions: quizData.questions.length,
-            percentage,
-            results,
-            demoQuiz: true,
-            tokensEarned,
-          }
-        });
-      }
-
-      // If quizData not provided, but frontend sent precalculated local result, use it
-      const { localResult } = req.body || {};
-      if (localResult && typeof localResult.percentage === 'number') {
-        const percentage = localResult.percentage;
-        const correctCount = localResult.correctCount || 0;
-        // Save to Progress if possible
-        try {
-          if (req.user && req.user.id) {
-            await Progress.findOneAndUpdate(
-              { userId: req.user.id, subject: req.body.subject || 'general' },
-              {
-                $push: {
-                  completedActivities: {
-                    type: 'quiz',
-                    activityId: id,
-                    score: percentage,
-                    timestamp: new Date()
-                  }
-                },
-                $inc: { timeSpent: timeTaken || 0 },
-                lastAccessed: new Date()
-              },
-              { upsert: true, new: true }
-            );
-          }
-        } catch (err) {
-          console.warn('Failed to save local result to progress:', err);
-        }
-
-        const tokensEarned = await awardQuizTokens(req.user?.id, percentage);
-        return res.status(200).json({
-          success: true,
-          message: 'Demo quiz submitted (local result)',
-          data: {
-            percentage,
-            correctCount,
-            totalQuestions: req.body.totalQuestions || null,
-            demoQuiz: true,
-            tokensEarned,
-          }
-        });
-      }
-
-      // If no quiz data provided, return error
       return res.status(400).json({
         success: false,
-        message: 'Invalid quiz submission'
+        message: 'Invalid quiz ID'
       });
     }
 
     const quiz = await Quiz.findById(id);
-
     if (!quiz) {
       return res.status(404).json({
         success: false,
@@ -355,89 +232,91 @@ export const submitQuiz = async (req, res) => {
       });
     }
 
-    let score = 0;
-    const results = [];
+    // Calculate score
+    let correctCount = 0;
+    const processedAnswers = [];
 
-    quiz.questions.forEach((question, index) => {
-      const userAnswer = answers[index];
-      const isCorrect = question.type === 'multiple-choice'
-        ? question.options.find(opt => opt.isCorrect)?.text === userAnswer
-        : question.correctAnswer === userAnswer;
+    if (Array.isArray(answers)) {
+      answers.forEach((answer, index) => {
+        const question = quiz.questions[index];
+        if (!question) return;
 
-      if (isCorrect) {
-        score += question.points;
-      }
+        const isCorrect = answer === question.correctAnswer;
+        if (isCorrect) correctCount++;
 
-      results.push({
-        questionId: question._id,
-        answer: userAnswer,
-        isCorrect,
-        explanation: question.explanation
+        processedAnswers.push({
+          questionId: question.id,
+          selectedAnswer: answer,
+          isCorrect,
+          pointsEarned: isCorrect ? question.points : 0
+        });
       });
-    });
-
-    // Save attempt
-    quiz.attempts.push({
-      userId: req.user.id,
-      score,
-      totalQuestions: quiz.questions.length,
-      timeTaken,
-      answers: results
-    });
-
-    await quiz.save();
-
-    // Update progress
-    await Progress.findOneAndUpdate(
-      { userId: req.user.id, subject: quiz.subject, chapter: quiz.chapter },
-      {
-        $push: {
-          completedActivities: {
-            type: 'quiz',
-            activityId: quiz._id,
-            score: (score / quiz.totalPoints) * 100
-          }
-        },
-        lastAccessed: new Date()
-      },
-      { upsert: true }
-    );
-
-    // Award XP for regular quiz
-    const user = await User.findById(req.user.id);
-    let levelUpData = null;
-    if (user) {
-      const xpToAward = results.filter(r => r.isCorrect).length * 10;
-      levelUpData = user.addExperience(xpToAward);
-      await user.save();
     }
 
-    const pct = Math.round((score / quiz.totalPoints) * 100);
-    const tokensEarned = await awardQuizTokens(req.user?.id, pct);
+    const percentage = Math.round((correctCount / quiz.questions.length) * 100);
+    const passed = percentage >= quiz.passingScore;
+    const tokensEarned = await awardQuizTokens(userId, percentage);
+
+    // Record attempt
+    const attempt = {
+      userId,
+      attemptDate: new Date(),
+      score: correctCount,
+      percentage,
+      passed,
+      timeTaken: timeTaken || 0,
+      answers: processedAnswers,
+      certificateIssued: false
+    };
+
+    quiz.attempts.push(attempt);
+    quiz.statistics.totalAttempts = (quiz.statistics.totalAttempts || 0) + 1;
+    if (passed) {
+      quiz.statistics.totalPassed = (quiz.statistics.totalPassed || 0) + 1;
+    }
+    quiz.statistics.averageScore = Math.round(
+      ((quiz.statistics.averageScore || 0) * (quiz.statistics.totalAttempts - 1) + percentage) / quiz.statistics.totalAttempts
+    );
+    await quiz.save();
+
+    // Update user stats
+    let newAchievements = [];
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
+        if (passed && percentage === 100) {
+          user.perfectScores = (user.perfectScores || 0) + 1;
+        }
+        await user.save();
+
+        // Check and award achievements
+        newAchievements = await checkAndAwardAchievements(userId);
+      }
+    }
 
     res.status(200).json({
       success: true,
-      data: {
-        score,
-        totalPoints: quiz.totalPoints,
-        percentage: pct,
-        results,
-        levelUp: levelUpData,
+      message: passed ? 'Quiz passed!' : 'Quiz failed. Try again!',
+      result: {
+        score: correctCount,
+        total: quiz.questions.length,
+        percentage,
+        passed,
         tokensEarned,
-      }
+        certificateEligible: passed
+      },
+      newAchievements: newAchievements
     });
+
   } catch (error) {
     console.error('Submit quiz error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: 'Server error during quiz submission'
     });
   }
 };
-
-// @desc    Get quiz results
-// @route   GET /api/quizzes/:id/results
-// @access  Private
 export const getQuizResults = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {

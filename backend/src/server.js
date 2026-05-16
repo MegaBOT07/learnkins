@@ -27,6 +27,7 @@ import User from "./models/User.js";
 import ShopItem from "./models/ShopItem.js";
 import ProfessionalQuiz from "./models/ProfessionalQuiz.js";
 import Material from "./models/Material.js";
+import { seedAchievements } from "./seeds/seedAchievements.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -138,8 +139,10 @@ const connectDb = async () => {
         // Auto-seed test users
         await seedTestUsers();
         await seedShopItems();
-        await seedContent();
-        return;
+    await seedContent();
+    await seedAchievements();
+    await seedAchievements();
+    return;
       } catch (e) {
         console.warn('❌ mongodb-memory-server failed to start, falling back to MONGODB_URI', e.message);
       }
@@ -153,6 +156,7 @@ const connectDb = async () => {
     await seedTestUsers();
     await seedShopItems();
     await seedContent();
+    await seedAchievements();
   } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
     // do not exit here — allow server to run but many features will fail
@@ -179,7 +183,7 @@ const seedTestUsers = async () => {
       console.log('✓ Parent user created');
 
       // Create Student
-      await User.create({
+      const student = await User.create({
         name: 'Test Student',
         email: 'mohitlalwani1931@gmail.com',
         password: 'mohit@123',
@@ -188,6 +192,11 @@ const seedTestUsers = async () => {
         parentId: parent._id,
         isActive: true
       });
+
+      // Link student to parent's children array
+      parent.children.push(student._id);
+      await parent.save();
+      console.log('✓ Student linked to parent');
 
       // Create Admin
       await User.create({

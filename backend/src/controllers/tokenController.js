@@ -1,5 +1,6 @@
 import TokenTransaction from '../models/TokenTransaction.js';
 import User from '../models/User.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // Helpers
 const todayStr = () => new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -131,6 +132,9 @@ export const claimDailyReward = async (req, res) => {
 
     await user.save();
 
+    // Check for streak-based achievements
+    const newAchievements = await checkAndAwardAchievements(user._id);
+
     await TokenTransaction.create({
       userId: user._id,
       type: 'award',
@@ -144,6 +148,7 @@ export const claimDailyReward = async (req, res) => {
       balance: user.tokens,
       tokensEarned: DAILY_AMOUNT,
       streak: user.currentStreak,
+      newAchievements
     });
   } catch (error) {
     console.error('Daily reward error', error);

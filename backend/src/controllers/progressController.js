@@ -1,5 +1,6 @@
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get user progress
 // @route   GET /api/progress
@@ -57,6 +58,19 @@ export const updateProgress = async (req, res) => {
     }
 
     await userProgress.save();
+
+    // Update user's total study hours
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.totalStudyHours = (user.totalStudyHours || 0) + (timeSpent || 0) / 60; // Convert minutes to hours
+      await user.save();
+
+      // Check and award achievements
+      const newAchievements = await checkAndAwardAchievements(req.user.id);
+      if (newAchievements.length > 0) {
+        userProgress.newAchievements = newAchievements;
+      }
+    }
 
     res.status(200).json({
       success: true,

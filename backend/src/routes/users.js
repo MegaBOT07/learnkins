@@ -24,8 +24,8 @@ router.post('/cleanup-students', authorize('admin'), cleanupStudents);
 // Get user by ID
 router.get('/:id', getUser);
 
-// Update user
-router.put('/:id', updateUser);
+// Update user (admin only)
+router.put('/:id', authorize('admin'), updateUser);
 
 // Delete user (admin only)
 router.delete('/:id', authorize('admin'), deleteUser);

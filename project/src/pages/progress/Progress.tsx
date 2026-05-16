@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Trophy,
@@ -15,16 +15,44 @@ import {
   Compass,
   BarChart2,
   Beaker,
+  AlertCircle,
 } from "lucide-react";
-import { useGame } from "../../context/GameContext";
+import { useAuth } from "../../context/AuthContext";
+import { progressAPI, userAPI } from "../../utils/api";
 import LevelDisplay from "../../components/features/progress/LevelDisplay";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
 import ActivityHeatmap from "../../components/features/progress/ActivityHeatmap";
 
+interface UserProgressData {
+  level: number;
+  experience: number;
+  points: number;
+  totalStudyHours: number;
+  totalQuizzesTaken: number;
+  totalGamesPlayed: number;
+  currentStreak: number;
+  longestStreak: number;
+}
+
+interface ProgressRecord {
+  subject: string;
+  chapter: string;
+  progress: number;
+  timeSpent: number;
+  streak: {
+    current: number;
+    longest: number;
+  };
+  completedActivities: any[];
+}
+
 const Progress = () => {
-  const { userProgress } = useGame();
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [userProgress, setUserProgress] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [newAchievements, setNewAchievements] = useState<any[]>([]);
 
   const categories = [
     { id: "all", name: "All", icon: <Trophy className="w-5 h-5" /> },
@@ -136,6 +164,29 @@ const Progress = () => {
           </div>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-green-500" />
         </motion.section>
+
+        {/* New Achievements Notification */}
+        {newAchievements.length > 0 && (
+          <motion.div
+            className="mb-8 p-4 bg-yellow-50 border-2 border-yellow-500 rounded-2xl"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h3 className="text-lg font-bold text-yellow-800 mb-2">🎉 New Achievements Unlocked!</h3>
+            <div className="flex flex-wrap gap-4">
+              {newAchievements.map((ach: any, idx: number) => (
+                <div key={idx} className="flex items-center space-x-2 bg-white p-3 rounded-xl border border-yellow-300">
+                  <span className="text-2xl">{ach.icon}</span>
+                  <div>
+                    <p className="font-bold text-black">{ach.name}</p>
+                    <p className="text-sm text-gray-600">{ach.points} points</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
 
         {/* Level Display */}
         <motion.div

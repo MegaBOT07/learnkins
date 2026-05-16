@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI } from "../../utils/api";
+import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI, contactAPI, professionalQuizAPI, subjectAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Gamepad2, Settings,
   ChevronRight, Search, BarChart3, Clock, Award, Activity,
-  Filter, Download, Star, History, Gem, TrendingUp, ShoppingBag
+  Filter, Download, Star, History, Gem, TrendingUp, ShoppingBag,
+  Edit3, BookMarked, GraduationCap, MessageSquare, Mail, Eye, Archive, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +35,10 @@ const AdminPanel = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [flashcards, setFlashcards] = useState<any[]>([]);
   const [games, setGames] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [contactMessages, setContactMessages] = useState<any[]>([]);
+  const [proQuizzes, setProQuizzes] = useState<any[]>([]);
+  const [shopItems, setShopItems] = useState<any[]>([]);
 
   // Token analytics state
   const [tokenStats, setTokenStats] = useState<any>(null);
@@ -45,11 +50,23 @@ const AdminPanel = () => {
   const [userProgress, setUserProgress] = useState<any[]>([]);
   const [userTransactions, setUserTransactions] = useState<any[]>([]);
 
-  // Creation Modals state
+  // Creation / Edit Modals state
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
   const [showGameModal, setShowGameModal] = useState(false);
   const [showMaterialModal, setShowMaterialModal] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [showProQuizModal, setShowProQuizModal] = useState(false);
+  const [showShopItemModal, setShowShopItemModal] = useState(false);
+  const [editingFlashcard, setEditingFlashcard] = useState<any>(null);
+  const [editingGame, setEditingGame] = useState<any>(null);
+  const [editingMaterial, setEditingMaterial] = useState<any>(null);
+  const [editingQuiz, setEditingQuiz] = useState<any>(null);
+  const [editingSubject, setEditingSubject] = useState<any>(null);
+  const [editingProQuiz, setEditingProQuiz] = useState<any>(null);
+  const [editingShopItem, setEditingShopItem] = useState<any>(null);
+  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [contactFilter, setContactFilter] = useState("all");
 
   const [newFlashcard, setNewFlashcard] = useState({
     question: "", answer: "", subject: "science", chapter: "", difficulty: "Medium"
@@ -66,8 +83,38 @@ const AdminPanel = () => {
   });
 
   const [newQuiz, setNewQuiz] = useState({
-    title: "", subject: "science", difficulty: "Medium", questions: [] as any[]
+    title: "", description: "", subject: "science", grade: "6th", difficulty: "Medium", questions: [] as any[]
   });
+
+  // Transform frontend question format → backend model format
+  const transformQuestions = (inputs: any[]) => inputs.map((q: any) => ({
+    question: q.question,
+    type: "multiple-choice",
+    options: q.options.map((opt: string, i: number) => ({
+      text: opt,
+      isCorrect: i === q.correctAnswer
+    })),
+    correctAnswer: q.correctAnswer?.toString() || "0",
+    explanation: q.explanation || "",
+    points: 1
+  }));
+
+  const [newSubject, setNewSubject] = useState({
+    name: "", slug: "", description: "", icon: "book", color: "#6366f1", grade: "6th"
+  });
+
+  const [newProQuiz, setNewProQuiz] = useState({
+    title: "", description: "", subject: "science", grade: "all",
+    difficulty: "Medium", timeLimit: 15, passingScore: 50, questions: [] as any[]
+  });
+
+  const [newShopItem, setNewShopItem] = useState({
+    title: "", description: "", type: "power_up", price: 10,
+    icon: "🎁", subject: "all", grade: "all", stock: -1
+  });
+
+  // Quiz question builder
+  const [quizQuestionInputs, setQuizQuestionInputs] = useState<any[]>([]);
 
   const [diamondAmount, setDiamondAmount] = useState<number>(0);
   const [awardReason, setAwardReason] = useState<string>("Admin Reward");
@@ -92,19 +139,27 @@ const AdminPanel = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [mRes, qRes, uRes, fRes, gRes] = await Promise.all([
+      const [mRes, qRes, uRes, fRes, gRes, sRes, cRes, pRes, siRes] = await Promise.allSettled([
         materialAPI.getMaterials('all'),
         quizAPI.getQuizzes('all'),
         userAPI.getUsers(),
         flashcardAPI.getFlashcards('all'),
         gameAPI.getGames(),
+        subjectAPI.getSubjects(),
+        contactAPI.getMessages(),
+        professionalQuizAPI.getQuizzes(),
+        shopAPI.getItems({}),
       ]);
 
-      setMaterials(mRes.data?.data || mRes.data || []);
-      setQuizzes(qRes.data?.data || qRes.data || []);
-      setUsers(uRes.data?.data || uRes.data || []);
-      setFlashcards(fRes.data?.data || fRes.data || []);
-      setGames(gRes.data?.data || gRes.data || []);
+      if (mRes.status === 'fulfilled') setMaterials(mRes.value.data?.data || mRes.value.data || []);
+      if (qRes.status === 'fulfilled') setQuizzes(qRes.value.data?.data || qRes.value.data || []);
+      if (uRes.status === 'fulfilled') setUsers(uRes.value.data?.data || uRes.value.data || []);
+      if (fRes.status === 'fulfilled') setFlashcards(fRes.value.data?.data || fRes.value.data || []);
+      if (gRes.status === 'fulfilled') setGames(gRes.value.data?.data || gRes.value.data || []);
+      if (sRes.status === 'fulfilled') setSubjects(sRes.value.data?.data || sRes.value.data || []);
+      if (cRes.status === 'fulfilled') setContactMessages(cRes.value.data?.data || cRes.value.data || []);
+      if (pRes.status === 'fulfilled') setProQuizzes(pRes.value.data?.data || pRes.value.data || []);
+      if (siRes.status === 'fulfilled') setShopItems(siRes.value.data?.data || siRes.value.data || []);
     } catch (err) {
       console.error("Fetch admin data failed", err);
     } finally {
@@ -325,10 +380,16 @@ const AdminPanel = () => {
   const handleCreateQuiz = async () => {
     try {
       setLoading(true);
-      await quizAPI.createQuiz(newQuiz);
+      await quizAPI.createQuiz({
+        ...newQuiz,
+        grade: newQuiz.grade || "6th",
+        description: newQuiz.description || newQuiz.title,
+        questions: transformQuestions(quizQuestionInputs)
+      });
       alert("Quiz built successfully!");
       setShowQuizModal(false);
-      setNewQuiz({ title: "", subject: "science", difficulty: "Medium", questions: [] });
+      setNewQuiz({ title: "", description: "", subject: "science", grade: "6th", difficulty: "Medium", questions: [] });
+      setQuizQuestionInputs([]);
       fetchAll();
     } catch (err) {
       console.error(err);
@@ -347,6 +408,334 @@ const AdminPanel = () => {
     } catch (err) {
       console.error(err);
       alert("Failed to update user permissions");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const students = users.filter(u => u.role === 'student');
+    const headers = ['Name', 'Email', 'Grade', 'Role', 'Level', 'XP', 'Tokens', 'Progress %', 'Joined'];
+    const rows = students.map((u: any) => [
+      u.name || '',
+      u.email || '',
+      u.grade || '',
+      u.role || '',
+      u.level || 1,
+      u.experience || 0,
+      u.tokens || 0,
+      u.totalProgress || 0,
+      u.createdAt ? new Date(u.createdAt).toLocaleDateString() : ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map((v: any) => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `learnkins-students-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete "${userName}"? This action cannot be undone.`)) return;
+    try {
+      setLoading(true);
+      await userAPI.deleteUser(userId);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete user");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Subject CRUD
+  const handleCreateSubject = async () => {
+    try {
+      setLoading(true);
+      await subjectAPI.createSubject(newSubject);
+      alert("Subject created successfully!");
+      setShowSubjectModal(false);
+      setNewSubject({ name: "", slug: "", description: "", icon: "book", color: "#6366f1", grade: "6th" });
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create subject");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateSubject = async () => {
+    if (!editingSubject) return;
+    try {
+      setLoading(true);
+      await subjectAPI.updateSubject(editingSubject._id || editingSubject.id, editingSubject);
+      alert("Subject updated!");
+      setEditingSubject(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update subject");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSubject = async (id: string) => {
+    if (!confirm("Delete this subject?")) return;
+    try {
+      setLoading(true);
+      await subjectAPI.deleteSubject(id);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Contact messages
+  const handleUpdateMessageStatus = async (id: string, status: string) => {
+    try {
+      await contactAPI.updateMessageStatus(id, { status });
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Professional Quiz CRUD
+  const handleCreateProQuiz = async () => {
+    try {
+      setLoading(true);
+      await professionalQuizAPI.createQuiz({
+        ...newProQuiz,
+        questions: newProQuiz.questions,
+      });
+      alert("Professional quiz created!");
+      setShowProQuizModal(false);
+      setNewProQuiz({ title: "", description: "", subject: "science", grade: "all", difficulty: "Medium", timeLimit: 15, passingScore: 50, questions: [] });
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create professional quiz");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProQuiz = async () => {
+    if (!editingProQuiz) return;
+    try {
+      setLoading(true);
+      await professionalQuizAPI.updateQuiz(editingProQuiz._id || editingProQuiz.id, editingProQuiz);
+      alert("Professional quiz updated!");
+      setEditingProQuiz(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update professional quiz");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProQuiz = async (id: string) => {
+    if (!confirm("Delete this professional quiz?")) return;
+    try {
+      setLoading(true);
+      await professionalQuizAPI.deleteQuiz(id);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Shop Item CRUD
+  const handleCreateShopItem = async () => {
+    try {
+      setLoading(true);
+      await shopAPI.createItem(newShopItem);
+      alert("Shop item created!");
+      setShowShopItemModal(false);
+      setNewShopItem({ title: "", description: "", type: "power_up", price: 10, icon: "🎁", subject: "all", grade: "all", stock: -1 });
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create shop item");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateShopItem = async () => {
+    if (!editingShopItem) return;
+    try {
+      setLoading(true);
+      await shopAPI.updateItem(editingShopItem._id || editingShopItem.id, editingShopItem);
+      alert("Shop item updated!");
+      setEditingShopItem(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update shop item");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteShopItem = async (id: string) => {
+    if (!confirm("Delete this shop item?")) return;
+    try {
+      setLoading(true);
+      await shopAPI.deleteItem(id);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Quiz question builder helpers
+  const addQuizQuestion = () => {
+    setQuizQuestionInputs([...quizQuestionInputs, {
+      question: "",
+      options: ["", "", "", ""],
+      correctAnswer: 0,
+      explanation: ""
+    }]);
+  };
+
+  const updateQuizQuestion = (index: number, field: string, value: any) => {
+    const updated = [...quizQuestionInputs];
+    (updated[index] as any)[field] = value;
+    setQuizQuestionInputs(updated);
+  };
+
+  const updateQuizQuestionOption = (qIndex: number, oIndex: number, value: string) => {
+    const updated = [...quizQuestionInputs];
+    updated[qIndex].options[oIndex] = value;
+    setQuizQuestionInputs(updated);
+  };
+
+  const removeQuizQuestion = (index: number) => {
+    setQuizQuestionInputs(quizQuestionInputs.filter((_, i) => i !== index));
+  };
+
+  // Edit helpers — populate modal with existing data
+  const startEditFlashcard = (card: any) => {
+    setEditingFlashcard({ ...card });
+  };
+  const startEditGame = (game: any) => {
+    setEditingGame({ ...game });
+  };
+  const startEditMaterial = (mat: any) => {
+    setEditingMaterial({ ...mat });
+  };
+  const startEditQuiz = (quiz: any) => {
+    setEditingQuiz({ ...quiz });
+    // Backend stores questions as {options: [{text, isCorrect}], correctAnswer: String}
+    // Frontend expects {options: [strings], correctAnswer: index}
+    const qs = (quiz.questions || []).map((q: any) => {
+      const opts = Array.isArray(q.options)
+        ? q.options.map((o: any) => (typeof o === 'string' ? o : o.text || ''))
+        : ["", "", "", ""];
+      const correctIdx = typeof q.correctAnswer === 'number'
+        ? q.correctAnswer
+        : opts.findIndex((_: string, i: number) => {
+            const opt = q.options?.[i];
+            return opt?.isCorrect === true || i === parseInt(q.correctAnswer);
+          });
+      return {
+        question: q.question || "",
+        options: opts,
+        correctAnswer: correctIdx >= 0 ? correctIdx : 0,
+        explanation: q.explanation || ""
+      };
+    });
+    setQuizQuestionInputs(qs);
+  };
+  const startEditSubject = (subj: any) => {
+    setEditingSubject({ ...subj });
+  };
+  const startEditProQuiz = (pq: any) => {
+    setEditingProQuiz({ ...pq });
+  };
+  const startEditShopItem = (item: any) => {
+    setEditingShopItem({ ...item });
+  };
+
+  const handleUpdateFlashcard = async () => {
+    if (!editingFlashcard) return;
+    try {
+      setLoading(true);
+      await flashcardAPI.updateFlashcard(editingFlashcard._id || editingFlashcard.id, editingFlashcard);
+      alert("Flashcard updated!");
+      setEditingFlashcard(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update flashcard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateGame = async () => {
+    if (!editingGame) return;
+    try {
+      setLoading(true);
+      await gameAPI.updateGame(editingGame._id || editingGame.id, editingGame);
+      alert("Game updated!");
+      setEditingGame(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update game");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateMaterial = async () => {
+    if (!editingMaterial) return;
+    try {
+      setLoading(true);
+      await materialAPI.updateMaterial(editingMaterial._id || editingMaterial.id, editingMaterial);
+      alert("Material updated!");
+      setEditingMaterial(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update material");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateQuiz = async () => {
+    if (!editingQuiz) return;
+    try {
+      setLoading(true);
+      await quizAPI.updateQuiz(editingQuiz._id || editingQuiz.id, {
+        ...editingQuiz,
+        grade: editingQuiz.grade || "6th",
+        description: editingQuiz.description || editingQuiz.title,
+        questions: transformQuestions(quizQuestionInputs)
+      });
+      alert("Quiz updated!");
+      setEditingQuiz(null);
+      setQuizQuestionInputs([]);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update quiz");
     } finally {
       setLoading(false);
     }
@@ -446,11 +835,23 @@ const AdminPanel = () => {
             <Users size={18} />
             <span>Students</span>
           </div>
+          <div className={sidebarItemClass("messages")} onClick={() => setActiveTab("messages")}>
+            <MessageSquare size={18} />
+            <span>Messages</span>
+          </div>
 
           <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6 mb-2">Content</p>
+          <div className={sidebarItemClass("subjects")} onClick={() => setActiveTab("subjects")}>
+            <BookMarked size={18} />
+            <span>Subjects</span>
+          </div>
           <div className={sidebarItemClass("quizzes")} onClick={() => setActiveTab("quizzes")}>
             <FileText size={18} />
             <span>Quizzes</span>
+          </div>
+          <div className={sidebarItemClass("pro-quizzes")} onClick={() => setActiveTab("pro-quizzes")}>
+            <GraduationCap size={18} />
+            <span>Pro Quizzes</span>
           </div>
           <div className={sidebarItemClass("flashcards")} onClick={() => setActiveTab("flashcards")}>
             <Brain size={18} />
@@ -492,11 +893,14 @@ const AdminPanel = () => {
             <h2 className="text-xl font-bold tracking-tight text-slate-800">
               {activeTab === 'dashboard' && 'Control Center'}
               {activeTab === 'users' && 'Student Directory'}
+              {activeTab === 'subjects' && 'Subject Management'}
               {activeTab === 'quizzes' && 'Exam Management'}
+              {activeTab === 'pro-quizzes' && 'Professional Assessments'}
               {activeTab === 'flashcards' && 'Knowledge Base'}
               {activeTab === 'materials' && 'Educational Assets'}
               {activeTab === 'games' && 'Interactive Hub'}
-              {activeTab === 'tokens' && '💎 Token Analytics'}
+              {activeTab === 'messages' && 'Contact Messages'}
+              {activeTab === 'tokens' && 'Tokens & Shop'}
             </h2>
           </div>
 
@@ -575,29 +979,47 @@ const AdminPanel = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className={cardClass}>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-black">System Status</h3>
+                    <h3 className="text-xl font-black">Platform Metrics</h3>
                     <div className="flex items-center text-green-500 font-bold text-sm">
                       <span className="h-3 w-3 bg-green-500 rounded-full mr-2 animate-pulse" />
-                      Operational
+                      Live
                     </div>
                   </div>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-black text-sm uppercase">Server Load</span>
-                        <span className="font-bold text-xs">24%</span>
+                        <span className="font-black text-sm uppercase">Total Users</span>
+                        <span className="font-bold text-xl">{users.length}</span>
                       </div>
-                      <div className="w-full bg-white border-2 border-black h-4 rounded-full overflow-hidden">
-                        <div className="bg-cyan-500 h-full w-[24%]" />
+                      <div className="text-xs font-bold text-gray-500">
+                        {users.filter(u => u.role === 'student').length} students · {users.filter(u => u.role !== 'student').length} staff
                       </div>
                     </div>
                     <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-black text-sm uppercase">Storage Used</span>
-                        <span className="font-bold text-xs">12 / 50 GB</span>
+                        <span className="font-black text-sm uppercase">Content Library</span>
+                        <span className="font-bold text-xl">{materials.length + flashcards.length + quizzes.length + games.length}</span>
                       </div>
-                      <div className="w-full bg-white border-2 border-black h-4 rounded-full overflow-hidden">
-                        <div className="bg-pink-500 h-full w-[24%]" />
+                      <div className="text-xs font-bold text-gray-500">
+                        {materials.length} videos · {quizzes.length} quizzes · {games.length} games
+                      </div>
+                    </div>
+                    <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-black text-sm uppercase">Subjects</span>
+                        <span className="font-bold text-xl">{subjects.length}</span>
+                      </div>
+                      <div className="text-xs font-bold text-gray-500">
+                        {proQuizzes.length} pro assessments · {flashcards.length} flashcards
+                      </div>
+                    </div>
+                    <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-black text-sm uppercase">Shop Items</span>
+                        <span className="font-bold text-xl">{shopItems.length}</span>
+                      </div>
+                      <div className="text-xs font-bold text-gray-500">
+                        {contactMessages.filter((m: any) => m.status === 'new').length} unread messages
                       </div>
                     </div>
                   </div>
@@ -606,7 +1028,7 @@ const AdminPanel = () => {
                 <div className={cardClass}>
                   <h3 className="text-xl font-black mb-6">Quick Content Push</h3>
                   <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => alert('Feature coming soon: Subject Management')} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-cyan-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
+                    <button onClick={() => setShowSubjectModal(true)} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-cyan-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
                       <Plus className="h-6 w-6 mb-2 text-cyan-600" />
                       <span className="font-black text-sm uppercase">Add Subject</span>
                     </button>
@@ -636,7 +1058,7 @@ const AdminPanel = () => {
                     <Filter className="h-4 w-4" />
                     <span>All Grades</span>
                   </div>
-                  <div className="bg-white border-2 border-black px-4 py-2 rounded-xl flex items-center space-x-2 font-bold cursor-pointer hover:bg-gray-50 transition-all">
+                  <div onClick={handleExportCSV} className="bg-white border-2 border-black px-4 py-2 rounded-xl flex items-center space-x-2 font-bold cursor-pointer hover:bg-gray-50 transition-all">
                     <Download className="h-4 w-4" />
                     <span>Export CSV</span>
                   </div>
@@ -708,6 +1130,13 @@ const AdminPanel = () => {
                             >
                               Analytics
                               <ChevronRight size={14} className="ml-1" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user._id || user.id, user.name)}
+                              className="p-2 bg-white border border-slate-200 text-slate-300 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 rounded-lg transition-all"
+                              title="Delete user"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -923,6 +1352,107 @@ const AdminPanel = () => {
             </div>
           )}
 
+          {activeTab === "subjects" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Subjects & Curriculum</h3>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Manage learning subjects</p>
+                </div>
+                <button onClick={() => setShowSubjectModal(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]">
+                  <Plus size={18} /><span>New Subject</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {subjects.map((subj) => (
+                  <div key={subj._id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-lg flex items-center justify-center text-xl font-bold" style={{ backgroundColor: subj.color || '#6366f1', color: 'white' }}>
+                          {(subj.icon || '📚').charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-800">{subj.name}</h4>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{subj.grade || 'All'} Grade</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mb-4 line-clamp-2">{subj.description || 'No description'}</p>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{subj.slug}</span>
+                      <div className="flex space-x-2">
+                        <button onClick={() => startEditSubject(subj)} className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"><Edit3 size={14} /></button>
+                        <button onClick={() => handleDeleteSubject(subj._id || subj.id)} className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {subjects.length === 0 && (
+                  <div className="col-span-full py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                    <p className="font-medium text-slate-400 text-sm italic">No subjects yet. Create your first subject.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "messages" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Contact Messages</h3>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">User inquiries & support requests</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {['all', 'new', 'read', 'replied'].map(f => (
+                    <button key={f} onClick={() => setContactFilter(f)} className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${contactFilter === f ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{f}</button>
+                  ))}
+                  <button onClick={fetchAll} className="p-2 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-all"><RefreshCw size={14} /></button>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {contactMessages
+                  .filter((m: any) => contactFilter === 'all' || m.status === contactFilter)
+                  .map((msg: any) => (
+                    <div key={msg.id} className="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-all cursor-pointer" onClick={() => setSelectedMessage(selectedMessage?.id === msg.id ? null : msg)}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-9 w-9 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center font-bold text-indigo-600 uppercase text-xs">{msg.name?.charAt(0)}</div>
+                          <div>
+                            <div className="font-bold text-slate-900 text-sm">{msg.name}</div>
+                            <div className="text-[11px] font-medium text-slate-400">{msg.email}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest rounded-full ${msg.status === 'new' ? 'bg-green-50 text-green-600 border border-green-200' : msg.status === 'read' ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>{msg.status}</span>
+                          <span className="text-[10px] font-medium text-slate-400">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-[10px] font-bold text-indigo-600/70 bg-indigo-50 px-2 py-0.5 rounded uppercase">{msg.category}</span>
+                        <span className="font-semibold text-slate-700 text-sm">{msg.subject}</span>
+                      </div>
+                      {selectedMessage?.id === msg.id && (
+                        <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                          <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{msg.message}</p>
+                          <div className="flex items-center space-x-2 mt-4 pt-3 border-t border-slate-200">
+                            {msg.status !== 'read' && <button onClick={(e) => { e.stopPropagation(); handleUpdateMessageStatus(msg.id, 'read'); }} className="flex items-center space-x-1 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all"><Eye size={12} /><span>Mark Read</span></button>}
+                            {msg.status !== 'replied' && <button onClick={(e) => { e.stopPropagation(); handleUpdateMessageStatus(msg.id, 'replied'); }} className="flex items-center space-x-1 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-bold hover:bg-purple-100 transition-all"><Mail size={12} /><span>Mark Replied</span></button>}
+                            <button onClick={(e) => { e.stopPropagation(); handleUpdateMessageStatus(msg.id, 'archived'); }} className="flex items-center space-x-1 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg text-xs font-bold hover:bg-slate-200 transition-all"><Archive size={12} /><span>Archive</span></button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                {contactMessages.length === 0 && (
+                  <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                    <p className="font-medium text-slate-400 text-sm italic">No contact messages yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {activeTab === "flashcards" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -947,6 +1477,12 @@ const AdminPanel = () => {
                         <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
                           {card.subject}
                         </span>
+                        <button
+                          onClick={() => startEditFlashcard(card)}
+                          className="text-slate-300 hover:text-indigo-500 transition-colors p-1"
+                        >
+                          <Edit3 size={16} />
+                        </button>
                         <button
                           onClick={() => handleDeleteFlashcard(card._id || card.id)}
                           className="text-slate-300 hover:text-rose-500 transition-colors p-1"
@@ -996,8 +1532,8 @@ const AdminPanel = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <button className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:border-slate-300 font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm">
-                        Configure
+                      <button onClick={() => startEditQuiz(q)} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:border-indigo-300 hover:text-indigo-600 font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm">
+                        Edit
                       </button>
                       <button
                         onClick={() => handleDeleteQuiz(q._id || q.id)}
@@ -1008,6 +1544,55 @@ const AdminPanel = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "pro-quizzes" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Professional Assessments</h3>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Advanced certification quizzes</p>
+                </div>
+                <button onClick={() => setShowProQuizModal(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]">
+                  <Plus size={18} /><span>New Assessment</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {proQuizzes.map((pq: any) => (
+                  <div key={pq._id} className="bg-white border border-slate-200 rounded-xl p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group shadow-sm">
+                    <div className="flex items-center space-x-6">
+                      <div className="h-12 w-12 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg flex items-center justify-center font-bold text-xs text-indigo-600 shadow-inner">
+                        {pq.totalQuestions || pq.questions?.length || 0}Q
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{pq.title}</h4>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md uppercase tracking-wider">{pq.subject}</span>
+                          <div className="h-1 w-1 bg-slate-200 rounded-full" />
+                          <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md uppercase tracking-wider">{pq.difficulty}</span>
+                          <div className="h-1 w-1 bg-slate-200 rounded-full" />
+                          <span className="text-[10px] font-bold text-emerald-600 px-2 py-0.5 bg-emerald-50 rounded-md uppercase tracking-wider">{pq.passingScore}% pass</span>
+                          {pq.isAIGenerated && <span className="text-[10px] font-bold text-purple-600 px-2 py-0.5 bg-purple-50 rounded-md uppercase tracking-wider">AI</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right mr-4">
+                        <div className="text-sm font-bold text-slate-700">{pq.statistics?.totalAttempts || 0} attempts</div>
+                        <div className="text-[10px] font-medium text-slate-400">{pq.statistics?.passRate || 0}% pass rate</div>
+                      </div>
+                      <button onClick={() => startEditProQuiz(pq)} className="p-2.5 bg-white border border-slate-200 text-slate-300 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 rounded-lg transition-all"><Edit3 size={18} /></button>
+                      <button onClick={() => handleDeleteProQuiz(pq._id || pq.id)} className="p-2.5 bg-white border border-slate-200 text-slate-300 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={18} /></button>
+                    </div>
+                  </div>
+                ))}
+                {proQuizzes.length === 0 && (
+                  <div className="py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
+                    <p className="font-medium text-slate-400 text-sm italic">No professional quizzes yet.</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1053,8 +1638,8 @@ const AdminPanel = () => {
                       <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{game.subject}</span>
                         <div className="flex space-x-2">
-                          <button className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors">
-                            <Settings size={14} />
+                          <button onClick={() => startEditGame(game)} className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors">
+                            <Edit3 size={14} />
                           </button>
                           <button
                             onClick={() => handleDeleteGame(game._id || game.id)}
@@ -1106,8 +1691,8 @@ const AdminPanel = () => {
                       </div>
                     </div>
                     <div className="flex justify-end pt-4 border-t border-slate-50 space-x-2">
-                      <button className="text-slate-300 hover:text-indigo-600 transition-colors">
-                        <Download size={16} />
+                      <button onClick={() => startEditMaterial(m)} className="text-slate-300 hover:text-indigo-600 transition-colors">
+                        <Edit3 size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteMaterial(m._id || m.id)}
@@ -1257,6 +1842,38 @@ const AdminPanel = () => {
                   >
                     <TrendingUp size={14}/> Refresh Stats
                   </button>
+
+                  {/* Shop Items Management */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><ShoppingBag size={16}/> Shop Items</h3>
+                      <button onClick={() => setShowShopItemModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all">
+                        <Plus size={14}/> Add Item
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {shopItems.map((item: any) => (
+                        <div key={item._id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex items-center justify-between group">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{item.icon || '🎁'}</span>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800">{item.title}</p>
+                              <p className="text-[10px] font-medium text-slate-400">{item.type} · {item.price}💎 {item.stock === -1 ? '· ∞' : `· ${item.stock} left`}</p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-all">
+                            <button onClick={() => startEditShopItem(item)} className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"><Edit3 size={14} /></button>
+                            <button onClick={() => handleDeleteShopItem(item._id || item.id)} className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
+                          </div>
+                        </div>
+                      ))}
+                      {shopItems.length === 0 && (
+                        <div className="col-span-full py-6 text-center">
+                          <p className="text-sm text-slate-400 italic">No shop items yet.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -1454,38 +2071,500 @@ const AdminPanel = () => {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
           >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Initialize Assessment</h3>
-                <button onClick={() => setShowQuizModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{editingQuiz ? 'Edit Assessment' : 'Initialize Assessment'}</h3>
+                <button onClick={() => { setShowQuizModal(false); setEditingQuiz(null); setQuizQuestionInputs([]); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Assessment Title</label>
-                  <input className={theme.input} value={newQuiz.title} onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })} />
-                </div>
+              <div className="p-6 space-y-4 overflow-y-auto flex-grow">
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Assessment Title</label>
+                    <input className={theme.input} value={editingQuiz ? editingQuiz.title : newQuiz.title} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, title: e.target.value}) : setNewQuiz({...newQuiz, title: e.target.value})} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                    <textarea className={theme.input} rows={2} value={editingQuiz ? (editingQuiz.description || '') : newQuiz.description} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, description: e.target.value}) : setNewQuiz({...newQuiz, description: e.target.value})} />
+                  </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={newQuiz.subject} onChange={(e) => setNewQuiz({ ...newQuiz, subject: e.target.value })}>
+                    <select className={theme.input} value={editingQuiz ? editingQuiz.subject : newQuiz.subject} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, subject: e.target.value}) : setNewQuiz({...newQuiz, subject: e.target.value})}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
                       <option value="english">English</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade Level</label>
-                    <select className={theme.input}>
-                      <option value="5">Grade 5</option>
-                      <option value="6">Grade 6</option>
-                      <option value="7">Grade 7</option>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, grade: e.target.value}) : setNewQuiz({...newQuiz, grade: e.target.value})}>
+                      <option value="6th">Grade 6</option>
+                      <option value="7th">Grade 7</option>
+                      <option value="8th">Grade 8</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={editingQuiz ? editingQuiz.difficulty : newQuiz.difficulty} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, difficulty: e.target.value}) : setNewQuiz({...newQuiz, difficulty: e.target.value})}>
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Question Builder */}
+                <div className="border-t border-slate-100 pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Questions ({quizQuestionInputs.length})</label>
+                    <button type="button" onClick={addQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12}/> Add Question</button>
+                  </div>
+                  {quizQuestionInputs.map((q, qi) => (
+                    <div key={qi} className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Q{qi + 1}</span>
+                        <button type="button" onClick={() => removeQuizQuestion(qi)} className="text-rose-400 hover:text-rose-600 transition-colors"><X size={14} /></button>
+                      </div>
+                      <input className={theme.input + " mb-2"} placeholder="Question text" value={q.question} onChange={(e) => updateQuizQuestion(qi, 'question', e.target.value)} />
+                      {[0, 1, 2, 3].map((oi) => (
+                        <div key={oi} className="flex items-center gap-2 mb-1">
+                          <input type="radio" checked={q.correctAnswer === oi} onChange={() => updateQuizQuestion(qi, 'correctAnswer', oi)} className="accent-indigo-600" />
+                          <input className={theme.input + " text-sm"} placeholder={`Option ${String.fromCharCode(65 + oi)}`} value={q.options[oi]} onChange={(e) => updateQuizQuestionOption(qi, oi, e.target.value)} />
+                        </div>
+                      ))}
+                      <input className={theme.input + " mt-2 text-sm"} placeholder="Explanation (optional)" value={q.explanation} onChange={(e) => updateQuizQuestion(qi, 'explanation', e.target.value)} />
+                    </div>
+                  ))}
+                  {quizQuestionInputs.length === 0 && (
+                    <p className="text-sm text-slate-400 italic text-center py-4">Click "Add Question" to start building your quiz.</p>
+                  )}
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3 shrink-0">
+                <button onClick={() => { setShowQuizModal(false); setEditingQuiz(null); setQuizQuestionInputs([]); }} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={editingQuiz ? handleUpdateQuiz : handleCreateQuiz} className={theme.buttonPrimary}>{editingQuiz ? 'Update Quiz' : 'Create Quiz'}</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Subject Modal */}
+        {showSubjectModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">New Subject</h3>
+                <button onClick={() => setShowSubjectModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
+                    <input className={theme.input} value={newSubject.name} onChange={(e) => setNewSubject({...newSubject, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} placeholder="e.g. Physics" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Slug</label>
+                    <input className={theme.input} value={newSubject.slug} onChange={(e) => setNewSubject({...newSubject, slug: e.target.value})} placeholder="physics" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={newSubject.description} onChange={(e) => setNewSubject({...newSubject, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
+                    <input className={theme.input} value={newSubject.icon} onChange={(e) => setNewSubject({...newSubject, icon: e.target.value})} placeholder="book" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Color</label>
+                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={newSubject.color} onChange={(e) => setNewSubject({...newSubject, color: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={newSubject.grade} onChange={(e) => setNewSubject({...newSubject, grade: e.target.value})}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
                     </select>
                   </div>
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setShowQuizModal(false)} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleCreateQuiz} className={theme.buttonPrimary}>Begin Session</button>
+                <button onClick={() => setShowSubjectModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleCreateSubject} className={theme.buttonPrimary}>Create Subject</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Subject Edit Modal */}
+        {editingSubject && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Subject</h3>
+                <button onClick={() => setEditingSubject(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
+                    <input className={theme.input} value={editingSubject.name || ''} onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Slug</label>
+                    <input className={theme.input} value={editingSubject.slug || ''} onChange={(e) => setEditingSubject({...editingSubject, slug: e.target.value})} />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={editingSubject.description || ''} onChange={(e) => setEditingSubject({...editingSubject, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
+                    <input className={theme.input} value={editingSubject.icon || ''} onChange={(e) => setEditingSubject({...editingSubject, icon: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Color</label>
+                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={editingSubject.color || '#6366f1'} onChange={(e) => setEditingSubject({...editingSubject, color: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingSubject.grade || '6th'} onChange={(e) => setEditingSubject({...editingSubject, grade: e.target.value})}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingSubject(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateSubject} className={theme.buttonPrimary}>Update Subject</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pro Quiz Modal */}
+        {showProQuizModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">New Professional Assessment</h3>
+                <button onClick={() => setShowProQuizModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={newProQuiz.title} onChange={(e) => setNewProQuiz({...newProQuiz, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={newProQuiz.description} onChange={(e) => setNewProQuiz({...newProQuiz, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={newProQuiz.subject} onChange={(e) => setNewProQuiz({...newProQuiz, subject: e.target.value})}>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Mathematics</option>
+                      <option value="english">English</option>
+                      <option value="social-science">Social Science</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={newProQuiz.difficulty} onChange={(e) => setNewProQuiz({...newProQuiz, difficulty: e.target.value})}>
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (min)</label>
+                    <input type="number" className={theme.input} value={newProQuiz.timeLimit} onChange={(e) => setNewProQuiz({...newProQuiz, timeLimit: parseInt(e.target.value) || 15})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pass Score (%)</label>
+                    <input type="number" className={theme.input} value={newProQuiz.passingScore} onChange={(e) => setNewProQuiz({...newProQuiz, passingScore: parseInt(e.target.value) || 50})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={newProQuiz.grade} onChange={(e) => setNewProQuiz({...newProQuiz, grade: e.target.value})}>
+                      <option value="all">All</option>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setShowProQuizModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleCreateProQuiz} className={theme.buttonPrimary}>Create Assessment</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pro Quiz Edit Modal */}
+        {editingProQuiz && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Professional Assessment</h3>
+                <button onClick={() => setEditingProQuiz(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={editingProQuiz.title || ''} onChange={(e) => setEditingProQuiz({...editingProQuiz, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={editingProQuiz.description || ''} onChange={(e) => setEditingProQuiz({...editingProQuiz, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={editingProQuiz.difficulty || 'Medium'} onChange={(e) => setEditingProQuiz({...editingProQuiz, difficulty: e.target.value})}>
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pass Score (%)</label>
+                    <input type="number" className={theme.input} value={editingProQuiz.passingScore || 50} onChange={(e) => setEditingProQuiz({...editingProQuiz, passingScore: parseInt(e.target.value) || 50})} />
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingProQuiz(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateProQuiz} className={theme.buttonPrimary}>Update Assessment</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Shop Item Modal */}
+        {showShopItemModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">New Shop Item</h3>
+                <button onClick={() => setShowShopItemModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={newShopItem.title} onChange={(e) => setNewShopItem({...newShopItem, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={newShopItem.description} onChange={(e) => setNewShopItem({...newShopItem, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+                    <select className={theme.input} value={newShopItem.type} onChange={(e) => setNewShopItem({...newShopItem, type: e.target.value})}>
+                      <option value="flashcard_pack">Flashcard Pack</option>
+                      <option value="quiz_unlock">Quiz Unlock</option>
+                      <option value="power_up">Power Up</option>
+                      <option value="boost">Boost</option>
+                      <option value="cosmetic">Cosmetic</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Price (💎)</label>
+                    <input type="number" className={theme.input} value={newShopItem.price} onChange={(e) => setNewShopItem({...newShopItem, price: parseInt(e.target.value) || 10})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
+                    <input className={theme.input} value={newShopItem.icon} onChange={(e) => setNewShopItem({...newShopItem, icon: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={newShopItem.subject} onChange={(e) => setNewShopItem({...newShopItem, subject: e.target.value})}>
+                      <option value="all">All</option>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Math</option>
+                      <option value="english">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
+                    <input type="number" className={theme.input} value={newShopItem.stock} onChange={(e) => setNewShopItem({...newShopItem, stock: parseInt(e.target.value) || -1})} placeholder="-1 = unlimited" />
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setShowShopItemModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleCreateShopItem} className={theme.buttonPrimary}>Create Item</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Shop Item Edit Modal */}
+        {editingShopItem && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Shop Item</h3>
+                <button onClick={() => setEditingShopItem(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={editingShopItem.title || ''} onChange={(e) => setEditingShopItem({...editingShopItem, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
+                  <textarea className={theme.input} rows={2} value={editingShopItem.description || ''} onChange={(e) => setEditingShopItem({...editingShopItem, description: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Price (💎)</label>
+                    <input type="number" className={theme.input} value={editingShopItem.price || 0} onChange={(e) => setEditingShopItem({...editingShopItem, price: parseInt(e.target.value) || 0})} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
+                    <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({...editingShopItem, stock: parseInt(e.target.value) || -1})} />
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingShopItem(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateShopItem} className={theme.buttonPrimary}>Update Item</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Flashcard Edit Modal */}
+        {editingFlashcard && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Knowledge Card</h3>
+                <button onClick={() => setEditingFlashcard(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Question</label>
+                  <textarea className={theme.input} rows={2} value={editingFlashcard.question || ''} onChange={(e) => setEditingFlashcard({...editingFlashcard, question: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Answer</label>
+                  <textarea className={theme.input} rows={2} value={editingFlashcard.answer || ''} onChange={(e) => setEditingFlashcard({...editingFlashcard, answer: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={editingFlashcard.subject || 'science'} onChange={(e) => setEditingFlashcard({...editingFlashcard, subject: e.target.value})}>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Mathematics</option>
+                      <option value="english">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={editingFlashcard.difficulty || 'Medium'} onChange={(e) => setEditingFlashcard({...editingFlashcard, difficulty: e.target.value})}>
+                      <option value="Easy">Easy</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Hard">Hard</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingFlashcard(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateFlashcard} className={theme.buttonPrimary}>Update Flashcard</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Game Edit Modal */}
+        {editingGame && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Module</h3>
+                <button onClick={() => setEditingGame(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={editingGame.title || ''} onChange={(e) => setEditingGame({...editingGame, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                  <select className={theme.input} value={editingGame.category || 'mathematics'} onChange={(e) => setEditingGame({...editingGame, category: e.target.value})}>
+                    <option value="mathematics">Mathematics</option>
+                    <option value="science">Science</option>
+                    <option value="english">English</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Game URL</label>
+                  <input className={theme.input} value={editingGame.gameUrl || ''} onChange={(e) => setEditingGame({...editingGame, gameUrl: e.target.value})} />
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingGame(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateGame} className={theme.buttonPrimary}>Update Module</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Material Edit Modal */}
+        {editingMaterial && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Material</h3>
+                <button onClick={() => setEditingMaterial(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
+                  <input className={theme.input} value={editingMaterial.title || ''} onChange={(e) => setEditingMaterial({...editingMaterial, title: e.target.value})} />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Video URL</label>
+                  <input className={theme.input} value={editingMaterial.fileUrl || ''} onChange={(e) => setEditingMaterial({...editingMaterial, fileUrl: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={editingMaterial.subject || 'science'} onChange={(e) => setEditingMaterial({...editingMaterial, subject: e.target.value})}>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Mathematics</option>
+                      <option value="english">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingMaterial.grade || '6th'} onChange={(e) => setEditingMaterial({...editingMaterial, grade: e.target.value})}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onClick={() => setEditingMaterial(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleUpdateMaterial} className={theme.buttonPrimary}>Update Material</button>
               </div>
             </div>
           </motion.div>

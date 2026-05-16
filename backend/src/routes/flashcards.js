@@ -12,7 +12,7 @@ import {
   getRecentFlashcards,
   searchFlashcards
 } from '../controllers/flashcardController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -29,10 +29,10 @@ router.use(protect);
 // User flashcards
 router.get('/my/flashcards', getMyFlashcards);
 
-// CRUD operations
-router.post('/', createFlashcard);
-router.put('/:id', updateFlashcard);
-router.delete('/:id', deleteFlashcard);
+// CRUD operations (admin/teacher only)
+router.post('/', authorize('admin', 'teacher'), createFlashcard);
+router.put('/:id', authorize('admin', 'teacher'), updateFlashcard);
+router.delete('/:id', authorize('admin', 'teacher'), deleteFlashcard);
 
 // Study and rating
 router.post('/:id/study', studyFlashcard);

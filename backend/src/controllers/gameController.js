@@ -2,6 +2,7 @@ import Game from '../models/Game.js';
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
 import TokenTransaction from '../models/TokenTransaction.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get all games
 // @route   GET /api/games
@@ -244,23 +245,28 @@ export const submitScore = async (req, res) => {
       { upsert: true }
     );
 
-    return res.status(200).json({
-      success: true,
-      message: 'Score submitted successfully',
-      data: {
-        score,
-        timeTaken,
-        tokensEarned,
-        xpEarned,
-        newBalance: user ? user.tokens : null,
-        level: user ? user.level : null,
-      },
-    });
-  } catch (error) {
-    console.error('Submit score error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-};
+      // Check and award achievements
+      let newAchievements = [];
+      if (user) {
+        newAchievements = await checkAndAwardAchievements(user._id);
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Score submitted successfully',
+        tokensEarned: tokensEarned,
+        xpEarned: xpEarned,
+        newLevel: user?.level,
+        newAchievements
+      });
+    } catch (error) {
+      console.error('Submit score error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Server error'
+      });
+    }
+  };
 
 // @desc    Get game leaderboard
 // @route   GET /api/games/:id/leaderboard

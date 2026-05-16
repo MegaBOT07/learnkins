@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import Community from '../models/Community.js';
 import StudyGroup from '../models/StudyGroup.js';
 import Achievement from '../models/Achievement.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get discussions
 // @route   GET /api/community/discussions
@@ -80,6 +81,21 @@ export const createDiscussion = async (req, res) => {
     });
 
     await discussion.populate('author', 'name avatar');
+
+    // Update user's community post count
+    const user = await User.findByIdAndUpdate(
+      authorId,
+      { $inc: { communityPosts: 1 } },
+      { new: true }
+    );
+
+    // Check achievements
+    if (user) {
+      const newAchievements = await checkAndAwardAchievements(authorId);
+      if (newAchievements.length > 0) {
+        discussion.newAchievements = newAchievements;
+      }
+    }
 
     res.status(201).json({
       success: true,

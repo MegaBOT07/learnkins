@@ -1,5 +1,6 @@
 import Flashcard from '../models/Flashcard.js';
 import Progress from '../models/Progress.js';
+import { checkFlashcardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get all flashcards
 // @route   GET /api/flashcards
@@ -258,12 +259,16 @@ export const studyFlashcard = async (req, res) => {
       { upsert: true }
     );
 
+    // Check flashcard achievements
+    const newAchievements = await checkFlashcardAchievements(req.user.id, 1);
+
     res.status(200).json({
       success: true,
       message: 'Study session recorded',
       data: {
         studyCount: flashcard.studyCount + 1
-      }
+      },
+      newAchievements
     });
   } catch (error) {
     console.error('Study flashcard error:', error);

@@ -49,11 +49,28 @@ export const purchaseItem = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Item is out of stock' });
     }
 
-    // Check if already owned (for non-consumables)
-    const alreadyOwned = await UserPurchase.findOne({ userId: user._id, itemId: item._id });
-    if (alreadyOwned && item.type !== 'power_up' && item.type !== 'boost') {
-      return res.status(400).json({ success: false, message: 'You already own this item' });
+// Check ownership based on item type
+const existingPurchase = await UserPurchase.findOne({ userId: user._id, itemId: item._id });
+if (existingPurchase) {
+  // Non-consumable items (permanent unlocks)
+  const nonConsumables = ['flashcard_pack', 'quiz_unlock', 'cosmetic'];
+  if (nonConsumables.includes(item.type)) {
+    return res.status(400).json({ success: false, message: 'You already own this item' });
+  }
+  
+  // Consumable items (power_up, boost) - check for unused inventory
+  const consumables = ['power_up', 'boost'];
+  if (consumables.includes(item.type)) {
+    const unusedPurchase = await UserPurchase.findOne({
+      userId: user._id,
+      itemId: item._id,
+      used: false
+    });
+    if (unusedPurchase) {
+      return res.status(400).json({ success: false, message: 'You have an unused item of this type. Use it first.' });
     }
+  }
+}
 
     // Check balance
     if ((user.tokens || 0) < item.price) {

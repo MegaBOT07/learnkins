@@ -12,7 +12,6 @@ import Subjects from "./pages/subjects/Subjects";
 import SubjectDetail from "./pages/subjects/SubjectDetail";
 import StudyMaterials from "./pages/learning/StudyMaterials";
 // @ts-ignore
-import Profile from "./pages/profile/Profile";
 import GamesQuiz from "./pages/assessment/GamesQuiz";
 import Games from "./pages/games/Games";
 import Game from "./pages/games/Game";
@@ -50,6 +49,8 @@ import ChemistryMixer from "./components/games/ChemistryMixer/ChemistryMixer";
 import GeographyExplorer from "./components/games/GeographyExplorer/GeographyExplorer";
 import ScienceLab from "./components/games/ScienceLab/ScienceLab";
 import WordBuilder from "./components/games/WordBuilder/WordBuilder";
+import TreasureHunt from "./components/games/Trea/TreasureHunt";
+import VirtualLab from "./components/games/VirtualLab/VirtualLab";
 
 /** Routes where Navbar & Footer should be hidden */
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
@@ -111,6 +112,13 @@ function AppLayout() {
           <Route path="/games/geography-explorer" element={<GeographyExplorer />} />
           <Route path="/games/science-lab" element={<ScienceLab />} />
           <Route path="/games/word-builder" element={<WordBuilder />} />
+          <Route path="/games/treasure-hunt" element={<TreasureHunt />} />
+          <Route path="/games/code-quest" element={
+            <div className="w-full h-screen">
+              <iframe src="/codequest/index.html" className="w-full h-full border-0" title="CodeQuest" />
+            </div>
+          } />
+          <Route path="/games/virtual-lab" element={<VirtualLab />} />
 
           {/* Redirect standard quiz routes to Professional Quizzes UI */}
           <Route path="/quizzes" element={<ProfessionalQuizzes />} />
@@ -132,7 +140,6 @@ function AppLayout() {
           <Route path="/science" element={<Science />} />
           <Route path="/social-science" element={<SocialScience />} />
           <Route path="/english" element={<English />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/team" element={<Team />} />
           <Route path="/learnerbot" element={<LearnerBot />} />

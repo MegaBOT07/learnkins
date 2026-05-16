@@ -61,7 +61,7 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const today = new Date().toISOString().split('T')[0];
         if (localLastReward !== today) {
           // award() will handle state and server update
-          await award(20, "Daily Login Reward 🎁");
+          await award(5, "Daily Login Reward 🎁");
           setLastRewardDay(today);
         }
 

@@ -82,6 +82,8 @@ const ParentalControl = () => {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [studySessions, setStudySessions] = useState<StudySession[]>([]);
+  const [childProgress, setChildProgress] = useState<any>(null);
+  const [activityMetrics, setActivityMetrics] = useState<any>(null);
 
   const [timeControls, setTimeControls] = useState<TimeControl>({
     dailyLimit: 3,
@@ -110,57 +112,34 @@ const ParentalControl = () => {
         setLoading(true);
         setError(null);
         const response = await parentalAPI.getChildren();
-        const raw = response.data?.data || response.data;
+        const raw = response.data?.children || response.data?.data || response.data;
 
         let childrenData: any[] = [];
         if (Array.isArray(raw)) {
           childrenData = raw.map((child: any) => ({
-            id: child._id || child.id,
+            id: child.id || child._id,
             name: child.name || child.fullName || "Child",
             email: child.email || "",
             grade: child.grade || "",
             avatar: child.avatar || "👦",
-            status: "offline" as const,
-            lastActive: new Date().toISOString(),
+            status: (child.status || "offline") as "online" | "offline" | "studying" | "break",
+            lastActive: child.lastActive || new Date().toISOString(),
             totalStudyTime: child.totalStudyTime || 0,
             weeklyGoal: child.weeklyGoal || 10,
             currentStreak: child.currentStreak || 0,
             achievements: child.achievements || 0,
           }));
-        } else if (raw && typeof raw === "object") {
-          const child = raw;
-          childrenData = [
-            {
-              id: child._id || child.id || "child-1",
-              name: child.name || child.fullName || "Child",
-              email: child.email || "",
-              grade: child.grade || "",
-              avatar: child.avatar || "👦",
-              status: "offline" as const,
-              lastActive: new Date().toISOString(),
-              totalStudyTime: child.totalStudyTime || 0,
-              weeklyGoal: child.weeklyGoal || 10,
-              currentStreak: child.currentStreak || 0,
-              achievements: child.achievements || 0,
-            },
-          ];
-        } else {
-          childrenData = [];
         }
 
         setChildren(childrenData);
         if (childrenData.length > 0) {
           setSelectedChild(childrenData[0]);
+        } else {
+          setError("No children found. Please add a child account first.");
         }
       } catch (err: any) {
         console.error("Error fetching children:", err);
-        setError(err.response?.data?.message || "Failed to load children data");
-        const demoChildren = [
-          { id: "child1", name: "Sarah", email: "sarah@example.com", grade: "6th", avatar: "👧" },
-          { id: "child2", name: "Alex", email: "alex@example.com", grade: "7th", avatar: "👦" },
-        ];
-        setChildren(demoChildren);
-        setSelectedChild(demoChildren[0]);
+        setError(err.response?.data?.message || "Failed to load children data. Please make sure you are logged in as a parent.");
       } finally {
         setLoading(false);
       }
@@ -173,24 +152,81 @@ const ParentalControl = () => {
     if (!selectedChild) return;
     const fetchControls = async () => {
       try {
-        setTimeControls({
-          dailyLimit: 3,
-          breakReminder: 30,
-          weekendBonus: 1,
-          bedtimeRestriction: "21:00",
-          isEnabled: true,
-        });
-        setContentFilters({
-          allowedSubjects: ["Science", "Mathematics", "Social Science", "English"],
-          communityAccess: true,
-          gamingTime: 2,
-          isEnabled: true,
-        });
+        const response: any = await parentalAPI.getControls(selectedChild.id);
+        const data = response.data?.controls || response.data;
+
+        if (data) {
+          // Time controls - backend stores in minutes, convert to hours for display
+          setTimeControls({
+            dailyLimit: (data.timeControls?.dailyLimit || 180) / 60,
+            breakReminder: data.timeControls?.breakReminder || 30,
+            weekendBonus: (data.timeControls?.weekendBonus || 60) / 60,
+            bedtimeRestriction: data.timeControls?.bedtimeRestriction || "21:00",
+            isEnabled: true,
+          });
+
+          // Content filters - map backend subjects to display names
+          const subjectMap: { [key: string]: string } = {
+            'science': 'Science',
+            'mathematics': 'Mathematics',
+            'social-science': 'Social Science',
+            'english': 'English',
+            'history': 'History',
+            'geography': 'Geography',
+            'art': 'Art',
+            'music': 'Music',
+            'physical-education': 'Physical Education',
+          };
+          const allowedSubjects = (data.contentFilters?.allowedSubjects || []).map(
+            (s: string) => subjectMap[s] || s
+          );
+
+          setContentFilters({
+            allowedSubjects: allowedSubjects.length > 0 ? allowedSubjects : ["Science", "Mathematics", "Social Science", "English"],
+            blockedSubjects: [],
+            communityAccess: data.contentFilters?.communityAccess ?? true,
+            gamingTime: (data.contentFilters?.gamingTimeLimit || 60) / 60,
+            isEnabled: true,
+          });
+        }
       } catch (err: any) {
         console.error("Error fetching controls:", err);
       }
     };
+
+    const fetchProgressAndActivity = async () => {
+      try {
+        const [progressRes, activityRes] = await Promise.all([
+          parentalAPI.getChildProgress(selectedChild.id),
+          parentalAPI.getChildActivity(selectedChild.id),
+        ]);
+
+        const progressData = (progressRes as any).data?.current || (progressRes as any).data;
+        const activityData = (activityRes as any).data?.activities || (activityRes as any).data;
+        const metricsData = (activityRes as any).data?.metrics || ((activityRes as any).data?.metrics);
+
+        setChildProgress(progressData || null);
+        setActivityMetrics(metricsData || null);
+
+        // Map activities to StudySession format
+        if (Array.isArray(activityData)) {
+          const sessions: StudySession[] = activityData.slice(0, 20).map((a: any) => ({
+            id: a._id || Math.random().toString(),
+            subject: a.subject || 'General',
+            duration: Math.round((a.studyHours || 0) * 60),
+            score: a.averageScore || 0,
+            date: new Date(a.date).toLocaleDateString(),
+            time: new Date(a.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }));
+          setStudySessions(sessions);
+        }
+      } catch (err: any) {
+        console.error("Error fetching progress/activity:", err);
+      }
+    };
+
     fetchControls();
+    fetchProgressAndActivity();
   }, [selectedChild]);
 
   const tabs = [
@@ -251,10 +287,10 @@ const ParentalControl = () => {
     try {
       setSaving(true);
       await parentalAPI.setTimeControls(selectedChild.id, {
-        dailyLimit: timeControls.dailyLimit,
+        dailyLimit: timeControls.dailyLimit, // backend multiplies by 60
         breakReminder: timeControls.breakReminder,
         bedtimeRestriction: timeControls.bedtimeRestriction,
-        weekendBonus: timeControls.weekendBonus,
+        weekendBonus: timeControls.weekendBonus, // backend multiplies by 60
       });
       alert("Time controls saved successfully!");
     } catch (err: any) {
@@ -269,10 +305,12 @@ const ParentalControl = () => {
     if (!selectedChild) return;
     try {
       setSaving(true);
+      // Map display names to backend slugs  
+      const toSlug = (s: string) => s.toLowerCase().split(' ').join('-');
       await parentalAPI.setContentFilters(selectedChild.id, {
-        allowedSubjects: contentFilters.allowedSubjects,
+        allowedSubjects: contentFilters.allowedSubjects.map(toSlug),
         communityAccess: contentFilters.communityAccess,
-        gamingTime: contentFilters.gamingTime,
+        gamingTime: contentFilters.gamingTime, // backend multiplies by 60
       });
       alert("Content filters saved successfully!");
     } catch (err: any) {
@@ -863,57 +901,87 @@ const ParentalControl = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className={cardClass}>
                   <h3 className="text-lg font-black text-black mb-4">Weekly Study Hours</h3>
-                  <div className="space-y-3">
-                    {[
-                      { day: "Mon", hours: 3.5, goal: 4 },
-                      { day: "Tue", hours: 4.2, goal: 4 },
-                      { day: "Wed", hours: 2.8, goal: 4 },
-                      { day: "Thu", hours: 4.5, goal: 4 },
-                      { day: "Fri", hours: 3.9, goal: 4 },
-                      { day: "Sat", hours: 2.1, goal: 3 },
-                      { day: "Sun", hours: 1.8, goal: 3 },
-                    ].map((data, index) => (
-                      <div key={index} className="flex items-center space-x-4">
-                        <span className="w-12 text-sm font-black text-black">{data.day}</span>
-                        <div className="flex-1">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span className="font-bold">{data.hours}h</span>
-                            <span className="text-gray-500 font-medium">Goal: {data.goal}h</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 border border-black">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${data.hours >= data.goal ? "bg-green-500" : "bg-black"}`}
-                              style={{ width: `${Math.min((data.hours / data.goal) * 100, 100)}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                  {childProgress ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">This Week</span>
+                        <span className="font-black text-cyan-600">{childProgress.totalHours || 0}h</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Lessons Completed</span>
+                        <span className="font-black text-green-600">{childProgress.lessonsCompleted || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Quizzes Taken</span>
+                        <span className="font-black text-purple-600">{childProgress.quizzesTaken || 0}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Average Score</span>
+                        <span className="font-black text-orange-600">{Math.round(childProgress.averageScore || 0)}%</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 font-medium text-center py-8">No progress data available yet.</p>
+                  )}
                 </div>
 
                 <div className={cardClass}>
-                  <h3 className="text-lg font-black text-black mb-4">Subject Performance</h3>
+                  <h3 className="text-lg font-black text-black mb-4">Activity Metrics</h3>
+                  {activityMetrics ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Current Streak</span>
+                        <span className="font-black text-green-600">{activityMetrics.currentStreak || 0} days</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Total Hours (30 days)</span>
+                        <span className="font-black text-cyan-600">{activityMetrics.totalHours || 0}h</span>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <span className="font-bold text-black">Average Score</span>
+                        <span className="font-black text-purple-600">{Math.round(activityMetrics.averageScore || 0)}%</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 font-medium text-center py-8">No activity data available yet.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Recent Activity Sessions */}
+              <div className={`${cardClass} mt-8`}>
+                <h3 className="text-lg font-black text-black mb-4">Recent Activity</h3>
+                {studySessions.length > 0 ? (
                   <div className="space-y-3">
-                    {[
-                      { subject: "Mathematics", score: 92, sessions: 8 },
-                      { subject: "Science", score: 88, sessions: 6 },
-                      { subject: "English", score: 95, sessions: 5 },
-                      { subject: "History", score: 85, sessions: 4 },
-                    ].map((data, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border-2 border-gray-200">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-3 h-3 rounded-full ${getSubjectColor(data.subject)}`}></div>
-                          <span className="font-bold text-black">{data.subject}</span>
+                    {studySessions.slice(0, 10).map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-3 h-3 rounded-full ${getSubjectColor(session.subject)}`}></div>
+                          <div>
+                            <p className="font-bold text-black">{session.subject}</p>
+                            <p className="text-sm text-gray-600 font-medium">{session.date}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-black text-black">{data.score}%</p>
-                          <p className="text-sm text-gray-600 font-medium">{data.sessions} sessions</p>
+                        <div className="flex items-center space-x-4">
+                          <div className="text-center">
+                            <p className="text-xs font-black uppercase tracking-wider text-gray-500">Duration</p>
+                            <p className="font-bold">{session.duration} min</p>
+                          </div>
+                          {session.score > 0 && (
+                            <div className="text-center">
+                              <p className="text-xs font-black uppercase tracking-wider text-gray-500">Score</p>
+                              <p className={`font-black ${session.score >= 90 ? "text-green-600" : session.score >= 80 ? "text-yellow-600" : "text-red-600"}`}>
+                                {session.score}%
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <p className="text-gray-500 font-medium text-center py-8">No activity recorded yet.</p>
+                )}
               </div>
             </div>
           )}

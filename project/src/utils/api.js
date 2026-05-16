@@ -138,6 +138,7 @@ export const contactAPI = {
   sendMessage: (messageData) => api.post("/contact", messageData),
   getMessages: () => api.get("/contact"),
   getMessage: (id) => api.get(`/contact/${id}`),
+  updateMessageStatus: (id, data) => api.put(`/contact/${id}/status`, data),
   deleteMessage: (id) => api.delete(`/contact/${id}`),
 };
 

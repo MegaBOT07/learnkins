@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { userAPI } from "../../utils/api";
+import { parentalAPI } from "../../utils/api";
 import { motion } from "framer-motion";
 import {
   BookOpen, Trophy, Clock, Star, TrendingUp,
@@ -50,23 +50,27 @@ export default function ParentReportPage() {
   const loadChildren = async () => {
     setLoading(true);
     try {
-      // Try to get users with parentId = current user id
-      const res = await userAPI.getUsers();
-      const allUsers: any[] = res.data?.data ?? res.data ?? [];
-      const myChildren = allUsers.filter(
-        (u) =>
-          u.role === "student" &&
-          (u.parentId?.toString() === user?._id?.toString() ||
-            u.parentId?.toString() === (user as any)?.id?.toString())
-      );
-      // If no children found (parentId not linked in seed), show all students for demo
-      const list = myChildren.length > 0 ? myChildren : allUsers.filter((u) => u.role === "student");
-      setChildren(list);
-      if (list.length > 0) {
-        setSelectedChild(list[0]);
-        loadProgress(list[0]._id);
+      const res = await parentalAPI.getChildren();
+      const childrenData = res.data?.children || res.data?.data || res.data || [];
+      const mapped: ChildStat[] = (childrenData as any[]).map((c: any) => ({
+        _id: c.id || c._id,
+        name: c.name || c.fullName || "Child",
+        email: c.email || "",
+        grade: c.grade || "",
+        level: c.level || 1,
+        experience: c.experience || 0,
+        tokens: c.tokens || 0,
+        currentStreak: c.currentStreak || 0,
+        totalQuizzesTaken: c.totalQuizzesTaken || 0,
+        totalGamesPlayed: c.totalGamesPlayed || 0,
+      }));
+      setChildren(mapped);
+      if (mapped.length > 0) {
+        setSelectedChild(mapped[0]);
+        loadProgress(mapped[0]._id);
       }
-    } catch {
+    } catch (err: any) {
+      console.error("Error loading children:", err);
       setChildren([]);
     } finally {
       setLoading(false);
@@ -75,9 +79,11 @@ export default function ParentReportPage() {
 
   const loadProgress = async (userId: string) => {
     try {
-      const res = await userAPI.getUserProgress(userId);
-      setChildProgress(res.data?.data ?? res.data ?? []);
-    } catch {
+      const res = await parentalAPI.getChildProgress(userId);
+      const progressData = (res as any).data?.current || (res as any).data;
+      setChildProgress(progressData ? [progressData] : []);
+    } catch (err: any) {
+      console.error("Error loading progress:", err);
       setChildProgress([]);
     }
   };
