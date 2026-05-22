@@ -76,14 +76,14 @@ export const getContactMessages = async (req, res) => {
   try {
     const { status, category, page = 1, limit = 20 } = req.query;
 
-    let filter: Record<string, any> = {};
+    let filter = {};
     if (status && status !== 'all') filter.status = status;
     if (category && category !== 'all') filter.category = category;
 
     const messages = await ContactMessage.find(filter)
       .sort({ createdAt: -1 })
-      .skip((page - 1) * parseInt(limit as string))
-      .limit(parseInt(limit as string));
+      .skip((page - 1) * parseInt(limit))
+      .limit(parseInt(limit));
 
     const total = await ContactMessage.countDocuments(filter);
 

@@ -24,12 +24,12 @@ import ParentalControl from "./pages/parental/ParentalControl";
 import Contact from "./pages/contact/Contact";
 import Flashcards from "./pages/learning/Flashcards";
 import Notes from "./pages/learning/Notes";
-import Mathematics from "./pages/subjects/Mathematics";
-import Science from "./pages/subjects/Science";
-import SocialScience from "./pages/subjects/SocialScience";
-import English from "./pages/subjects/English";
 import Progress from "./pages/progress/Progress";
 import Team from "./pages/about/Team";
+import About from "./pages/about/About";
+import Privacy from "./pages/about/Privacy";
+import Terms from "./pages/about/Terms";
+import Careers from "./pages/about/Careers";
 import AdminPanel from "./pages/admin/AdminPanel";
 import Footer from "./components/layout/Footer";
 import ScrollToTop from "./components/layout/ScrollToTop";
@@ -136,10 +136,14 @@ function AppLayout() {
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/mathematics" element={<Mathematics />} />
-          <Route path="/science" element={<Science />} />
-          <Route path="/social-science" element={<SocialScience />} />
-          <Route path="/english" element={<English />} />
+          <Route path="/maths" element={<SubjectDetail />} />
+          <Route path="/science" element={<SubjectDetail />} />
+          <Route path="/social-science" element={<SubjectDetail />} />
+          <Route path="/english" element={<SubjectDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/careers" element={<Careers />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/team" element={<Team />} />
           <Route path="/learnerbot" element={<LearnerBot />} />

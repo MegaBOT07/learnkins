@@ -22,8 +22,10 @@ const Game = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const { award } = useTokens();
   const { playGame } = useGame();
+
 
   const getGameData = (gameId: string): GameData => {
     const gameDataMap: Record<string, GameData> = {
@@ -48,7 +50,14 @@ const Game = () => {
 
   const convertScoreToTokens = (score: number): number => Math.floor(score / 10);
 
-  const startGame = () => setIsGameStarted(true);
+  const startGame = () => {
+    if (isStarting || isGameStarted) return;
+    setIsStarting(true);
+    // Next render will switch screens; keep a small guard to prevent click/hover weirdness.
+    setIsGameStarted(true);
+    setTimeout(() => setIsStarting(false), 250);
+  };
+
 
   if (!isGameStarted) {
     return (
@@ -96,10 +105,18 @@ const Game = () => {
               </div>
 
               <div className="space-y-3">
-                <button onClick={startGame} className="w-full bg-black text-white py-4 px-8 rounded-xl border-2 border-black font-black text-lg flex items-center justify-center space-x-2 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(34,197,94,1)]">
-                  <Play className="w-5 h-5" /><span>Start Game</span>
+                <button
+                  type="button"
+                  onClick={startGame}
+                  disabled={isStarting || isGameStarted}
+                  className={`w-full bg-black text-white py-4 px-8 rounded-xl border-2 border-black font-black text-lg flex items-center justify-center space-x-2 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(34,197,94,1)] ${isStarting || isGameStarted ? "opacity-60 cursor-not-allowed hover:bg-black hover:text-white" : ""}`}
+                >
+                  <Play className="w-5 h-5" />
+                  <span>{isStarting ? "Starting..." : "Start Game"}</span>
                 </button>
+
                 <button onClick={() => navigate("/games-quiz")} className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-black hover:bg-gray-50 transition-all">
+
                   <ArrowLeft className="w-4 h-4 inline mr-2" />Back to Games
                 </button>
               </div>
@@ -126,8 +143,9 @@ const Game = () => {
             <p className="text-gray-500 font-medium">This is a placeholder for the actual game implementation.</p>
           </div>
 
-          <div className="space-y-3">
+              <div className="space-y-3">
             <button
+              type="button"
               onClick={async () => {
                 const simulatedScore = Math.floor(Math.random() * 100) + 1;
                 const tokensAwarded = convertScoreToTokens(simulatedScore);

@@ -33,6 +33,7 @@ const Home = () => {
       color: "blue",
       borderColor: "border-blue-500",
       shadowColor: "shadow-blue-900/20",
+      link: "/science?tab=videos",
     },
     {
       icon: <BookOpen className="h-8 w-8 text-white" />,
@@ -41,6 +42,7 @@ const Home = () => {
       color: "pink",
       borderColor: "border-pink-500",
       shadowColor: "shadow-pink-900/20",
+      link: "/science?tab=videos",
     },
     {
       icon: <Users className="h-8 w-8 text-white" />,
@@ -49,6 +51,7 @@ const Home = () => {
       color: "green",
       borderColor: "border-green-500",
       shadowColor: "shadow-green-900/20",
+      link: "/about",
     },
     {
       icon: <Trophy className="h-8 w-8 text-white" />,
@@ -57,34 +60,39 @@ const Home = () => {
       color: "purple",
       borderColor: "border-purple-500",
       shadowColor: "shadow-purple-900/20",
+      link: "/quizzes",
     },
   ];
 
   const subjects = [
     {
       name: "Science",
-      icon: <Brain className="h-8 w-8 text-black group-hover:text-white transition-colors" />,
+      slug: "science",
+      icon: <Brain className="h-8 w-8 text-black transition-colors" />,
       description: "Explore the wonders of science",
       borderColor: "border-cyan-500",
       hoverBg: "hover:bg-cyan-500",
     },
     {
       name: "Mathematics",
-      icon: <Target className="h-8 w-8 text-black group-hover:text-white transition-colors" />,
+      slug: "maths",
+      icon: <Target className="h-8 w-8 text-black transition-colors" />,
       description: "Master mathematical concepts",
       borderColor: "border-orange-500",
       hoverBg: "hover:bg-orange-500",
     },
     {
       name: "Social Science",
-      icon: <Users className="h-8 w-8 text-black group-hover:text-white transition-colors" />,
+      slug: "social-science",
+      icon: <Users className="h-8 w-8 text-black transition-colors" />,
       description: "Understand society and culture",
       borderColor: "border-green-500",
       hoverBg: "hover:bg-green-500",
     },
     {
       name: "English",
-      icon: <BookOpen className="h-8 w-8 text-black group-hover:text-white transition-colors" />,
+      slug: "english",
+      icon: <BookOpen className="h-8 w-8 text-black transition-colors" />,
       description: "Enhance language skills",
       borderColor: "border-pink-500",
       hoverBg: "hover:bg-pink-500",
@@ -237,17 +245,9 @@ const Home = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -8 }}
-              className="group relative"
-            >
-              <div className={`relative bg-white p-8 rounded-2xl border-2 hover:border-4 ${feature.borderColor} shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 h-full flex flex-col items-center text-center`}>
+          {features.map((feature, index) => {
+            const FeatureCard = (
+              <div className={`relative bg-white p-8 rounded-2xl border-2 hover:border-4 ${feature.borderColor} shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 h-full flex flex-col items-center text-center cursor-pointer`}>
                 <div className={`inline-flex p-4 rounded-xl bg-${feature.color}-500 text-white mb-6 transform group-hover:scale-110 active:rotate-12 transition-all duration-300 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}>
                   {feature.icon}
                 </div>
@@ -258,8 +258,28 @@ const Home = () => {
                   {feature.description}
                 </p>
               </div>
-            </motion.div>
-          ))}
+            );
+
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                whileHover={{ y: -8 }}
+                className="group relative h-full"
+              >
+                {feature.link ? (
+                  <Link to={feature.link} className="block h-full">
+                    {FeatureCard}
+                  </Link>
+                ) : (
+                  FeatureCard
+                )}
+              </motion.div>
+            );
+          })}
         </div>
       </Section>
 
@@ -323,7 +343,7 @@ const Home = () => {
               whileTap={{ scale: 0.98 }}
             >
               <Link
-                to={`/subjects/${subject.name.toLowerCase()}`}
+                to={`/${subject.slug}`}
                 className="block group"
               >
                 <div className={`relative bg-white rounded-2xl p-8 border-2 ${subject.borderColor} ${subject.hoverBg} hover:text-white transition-all duration-300 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[6px] hover:translate-y-[6px]`}>

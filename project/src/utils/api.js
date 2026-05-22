@@ -142,6 +142,13 @@ export const contactAPI = {
   deleteMessage: (id) => api.delete(`/contact/${id}`),
 };
 
+// Newsletter API
+export const newsletterAPI = {
+  subscribe: (email) => api.post("/newsletter/subscribe", { email }),
+  getSubscribers: () => api.get("/newsletter/subscribers"),
+  unsubscribe: (email) => api.put("/newsletter/unsubscribe", { email }),
+};
+
 // Parental Control API
 export const parentalAPI = {
   getChildren: () => api.get("/parental/children"),
@@ -219,6 +226,14 @@ export const professionalQuizAPI = {
   deleteQuiz: (id) => api.delete(`/professional-quizzes/${id}`),
   submitQuiz: (id, answers, timeTaken) => api.post(`/professional-quizzes/${id}/submit`, { answers, timeTaken }),
   getUserAttempts: (id) => api.get(`/professional-quizzes/${id}/attempts`),
+};
+
+// Payment API
+export const paymentAPI = {
+  getPlans: () => api.get('/payments/plans'),
+  createOrder: (plan) => api.post('/payments/create-order', { plan }),
+  verifyPayment: (data) => api.post('/payments/verify', data),
+  getHistory: () => api.get('/payments/history'),
 };
 
 export default api;
