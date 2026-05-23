@@ -49,8 +49,9 @@ import ChemistryMixer from "./components/games/ChemistryMixer/ChemistryMixer";
 import GeographyExplorer from "./components/games/GeographyExplorer/GeographyExplorer";
 import ScienceLab from "./components/games/ScienceLab/ScienceLab";
 import WordBuilder from "./components/games/WordBuilder/WordBuilder";
-import TreasureHunt from "./components/games/Trea/TreasureHunt";
-import VirtualLab from "./components/games/VirtualLab/VirtualLab";
+// @ts-ignore: JS module without type declarations
+import TreasureHunt from "./components/games/Trea/TreasureHunt.jsx";
+import VirtualLab from "./components/games/VirtualLab/VirtualLab.jsx";
 
 /** Routes where Navbar & Footer should be hidden */
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
