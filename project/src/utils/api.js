@@ -169,12 +169,21 @@ export const communityAPI = {
     api.get("/community/discussions", { params }),
   createDiscussion: (discussionData) =>
     api.post("/community/discussions", discussionData),
+  updateDiscussion: (id, payload) => api.put(`/community/discussions/${id}`, payload),
+  deleteDiscussion: (id) => api.delete(`/community/discussions/${id}`),
   likeDiscussion: (id) => api.post(`/community/discussions/${id}/like`),
+  replyToDiscussion: (id, payload) => api.post(`/community/discussions/${id}/replies`, payload),
+  updateDiscussionReply: (discussionId, replyId, payload) =>
+    api.put(`/community/discussions/${discussionId}/replies/${replyId}`, payload),
+  deleteDiscussionReply: (discussionId, replyId) =>
+    api.delete(`/community/discussions/${discussionId}/replies/${replyId}`),
 
   // Study Groups
   getStudyGroups: (params = {}) => api.get("/community/groups", { params }),
   createStudyGroup: (groupData) => api.post("/community/groups", groupData),
   joinStudyGroup: (id) => api.post(`/community/groups/${id}/join`),
+  updateStudyGroup: (id, payload) => api.put(`/community/groups/${id}`, payload),
+  deleteStudyGroup: (id) => api.delete(`/community/groups/${id}`),
 
   // Achievements
   getAchievements: () => api.get("/community/achievements"),

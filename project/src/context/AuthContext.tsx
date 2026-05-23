@@ -94,26 +94,61 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const persistUser = (user: User | null) => {
+    if (!user) {
+      localStorage.removeItem('user');
+      return;
+    }
+    localStorage.setItem('user', JSON.stringify(user));
+  };
+
   // Check if user is logged in on app start
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (token) {
+        const cachedUserRaw = localStorage.getItem('user');
+        let cachedUser: User | null = null;
+
+        if (cachedUserRaw) {
+          try {
+            cachedUser = JSON.parse(cachedUserRaw);
+          } catch {
+            localStorage.removeItem('user');
+          }
+        }
+
         try {
           const response = await authAPI.getMe();
           // Backend returns { success, user } — extract user from response.data.user
           const userData = response.data?.user || response.data;
+          persistUser(userData as User);
           dispatch({
             type: 'AUTH_SUCCESS',
             payload: {
               user: userData as any
             }
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Auth check failed:', error);
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          dispatch({ type: 'AUTH_FAIL', payload: null });
+
+          // Only clear token on explicit auth failure.
+          // Preserve login on transient network/server errors.
+          if (error?.response?.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            dispatch({ type: 'AUTH_FAIL', payload: null });
+            return;
+          }
+
+          if (cachedUser) {
+            dispatch({
+              type: 'AUTH_SUCCESS',
+              payload: { user: cachedUser }
+            });
+          } else {
+            dispatch({ type: 'AUTH_FAIL', payload: null });
+          }
         }
       } else {
         dispatch({ type: 'AUTH_FAIL', payload: null });
@@ -138,7 +173,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         localStorage.setItem('token', token);
       }
-      localStorage.removeItem('user');
+      persistUser(user);
 
       dispatch({
         type: 'AUTH_SUCCESS',
@@ -174,7 +209,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (token) {
         localStorage.setItem('token', token);
       }
-      localStorage.removeItem('user');
+      persistUser(user);
 
       dispatch({
         type: 'AUTH_SUCCESS',
@@ -212,6 +247,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         type: 'UPDATE_USER',
         payload: userData
       });
+      persistUser({ ...(state.user || {}), ...userData } as User);
       return { success: true };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Update failed';
@@ -221,6 +257,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Direct login function (for auto-login after password reset)
   const loginDirectly = (user: User) => {
+    persistUser(user);
     dispatch({
       type: 'AUTH_SUCCESS',
       payload: { user }

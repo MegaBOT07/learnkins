@@ -89,13 +89,18 @@ export interface ContentFilters {
 export interface DiscussionData {
   title: string;
   content: string;
-  subjectId?: string;
+  category?: string;
+  tags?: string[];
+}
+
+export interface ReplyData {
+  content: string;
 }
 
 export interface GroupData {
   name: string;
   description: string;
-  subjectId?: string;
+  subject?: string;
   maxMembers?: number;
 }
 
@@ -215,40 +220,61 @@ export interface ChildActivityResponse {
 
 export interface DiscussionResponse {
   id: string;
+  _id?: string;
   title: string;
   content: string;
-  authorId: string;
-  authorName: string;
-  subjectId?: string;
+  author?: { _id?: string; id?: string; name?: string; avatar?: string };
+  category?: string;
+  tags?: string[];
   likes: number;
+  replies?: number;
+  replyItems?: Array<{
+    _id?: string;
+    content: string;
+    createdAt: string;
+    author?: { _id?: string; id?: string; name?: string; avatar?: string };
+  }>;
+  isLiked?: boolean;
   createdAt: string;
 }
 
 export interface GroupResponse {
   id: string;
+  _id?: string;
   name: string;
   description: string;
-  subjectId?: string;
+  subject?: string;
   maxMembers: number;
-  currentMembers: number;
+  memberCount?: number;
+  members?: Array<any>;
+  creator?: { _id?: string; id?: string; name?: string; avatar?: string };
+  isMember?: boolean;
+  tags?: string[];
   createdAt: string;
 }
 
 export interface AchievementResponse {
   id: string;
+  _id?: string;
   name: string;
   description: string;
   icon: string;
   points: number;
-  unlocked: boolean;
+  rarity?: string;
+  criteria?: string;
+  category?: string;
+  earned?: boolean;
+  unlocked?: boolean;
   unlockedAt?: string;
+  earnedAt?: string | null;
 }
 
 export interface CommunityStatsResponse {
   totalUsers: number;
   totalDiscussions: number;
   totalGroups: number;
-  activeUsers: number;
+  activeUsers?: number;
+  topAchievements?: AchievementResponse[];
 }
 
 // API function types
@@ -396,26 +422,33 @@ export interface CommunityAPI {
   // Discussions
   getDiscussions: (
     params?: any
-  ) => Promise<AxiosResponse<DiscussionResponse[]>>;
+  ) => Promise<AxiosResponse<any>>;
   createDiscussion: (
     discussionData: DiscussionData
-  ) => Promise<AxiosResponse<DiscussionResponse>>;
-  likeDiscussion: (id: string) => Promise<AxiosResponse<void>>;
+  ) => Promise<AxiosResponse<any>>;
+  updateDiscussion: (id: string, payload: Partial<DiscussionData>) => Promise<AxiosResponse<any>>;
+  deleteDiscussion: (id: string) => Promise<AxiosResponse<any>>;
+  likeDiscussion: (id: string) => Promise<AxiosResponse<any>>;
+  replyToDiscussion: (id: string, replyData: ReplyData) => Promise<AxiosResponse<any>>;
+  updateDiscussionReply: (discussionId: string, replyId: string, replyData: ReplyData) => Promise<AxiosResponse<any>>;
+  deleteDiscussionReply: (discussionId: string, replyId: string) => Promise<AxiosResponse<any>>;
 
   // Study Groups
-  getStudyGroups: (params?: any) => Promise<AxiosResponse<GroupResponse[]>>;
+  getStudyGroups: (params?: any) => Promise<AxiosResponse<any>>;
   createStudyGroup: (
     groupData: GroupData
-  ) => Promise<AxiosResponse<GroupResponse>>;
-  joinStudyGroup: (id: string) => Promise<AxiosResponse<void>>;
+  ) => Promise<AxiosResponse<any>>;
+  joinStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
+  updateStudyGroup: (id: string, payload: Partial<GroupData> & { tags?: string[] }) => Promise<AxiosResponse<any>>;
+  deleteStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
 
   // Achievements
-  getAchievements: () => Promise<AxiosResponse<AchievementResponse[]>>;
-  getUserAchievements: () => Promise<AxiosResponse<AchievementResponse[]>>;
-  awardAchievement: (id: string) => Promise<AxiosResponse<void>>;
+  getAchievements: () => Promise<AxiosResponse<any>>;
+  getUserAchievements: () => Promise<AxiosResponse<any>>;
+  awardAchievement: (id: string) => Promise<AxiosResponse<any>>;
 
   // Stats
-  getCommunityStats: () => Promise<AxiosResponse<CommunityStatsResponse>>;
+  getCommunityStats: () => Promise<AxiosResponse<any>>;
 }
 
 export interface ProfessionalQuizAPI {

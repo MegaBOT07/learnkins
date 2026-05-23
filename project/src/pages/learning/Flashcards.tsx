@@ -55,6 +55,8 @@ const Flashcards = () => {
   const [aiTopic, setAiTopic] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiPreviewCards, setAiPreviewCards] = useState<Flashcard[]>([]);
+  const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
   const { redeem, canRedeem } = useTokens();
   const [unlocked, setUnlocked] = useState<Record<string, boolean>>(() => {
     try {
@@ -188,32 +190,82 @@ const Flashcards = () => {
   };
 
   const generateFlashcardsWithAI = async () => {
-    if (!aiTopic.trim()) { setAiError("Please enter a topic"); return; }
+    if (!aiTopic.trim()) {
+      setAiError("Please enter a topic");
+      return;
+    }
+
     setAiGenerating(true);
     setAiError(null);
+    setAiPreviewCards([]);
+    setStudyCards(null);
+
     try {
       const response = await flashcardAiService.generateFlashcards(aiTopic);
-      if (response.error) { setAiError(response.error); setAiGenerating(false); return; }
-      let parsed = [];
+      if (response.error) {
+        setAiError(response.error);
+        setAiGenerating(false);
+        return;
+      }
+
+      let parsed: any[] = [];
       const text = response.message || "";
-      try { parsed = JSON.parse(text); } catch {
-        const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || null;
-        if (codeBlockMatch) { parsed = JSON.parse(codeBlockMatch[1]); } else { throw new Error("Could not parse AI response as JSON"); }
+
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        const codeBlockMatch =
+          text.match(/```(?:json)?\s*([\s\S]*?)\s*```/) || null;
+        if (codeBlockMatch) {
+          parsed = JSON.parse(codeBlockMatch[1]);
+        } else {
+          throw new Error("Could not parse AI response as JSON");
+        }
       }
+
       if (!Array.isArray(parsed)) parsed = [parsed];
-      for (const card of parsed) {
-        const aiPayload: any = { question: card.question || "", answer: card.answer || "", subject: card.subject || "science", difficulty: card.difficulty || "Medium", tags: ["ai-generated", aiTopic.toLowerCase()], isPublic: true };
-        try {
-          const res = await flashcardAPI.createFlashcard(aiPayload);
-          const created = res.data?.data || {};
-          if (created && (created._id || created.id)) {
-            const normalized = { id: created._id || created.id, question: created.question, answer: created.answer, subject: created.subject, difficulty: created.difficulty, tags: Array.isArray(created.tags) ? created.tags : [], createdBy: created.createdBy?.name || "AI", isPublic: true, createdAt: created.createdAt || new Date().toISOString().split("T")[0], studyCount: 0, rating: 0 } as Flashcard;
-            setFlashcards((prev) => [normalized, ...prev]);
-            setFilteredCards((prev) => [normalized, ...prev]);
-          }
-        } catch (err) { console.error("Failed to create individual flashcard", err); }
+
+      const normalizedPreview: Flashcard[] = parsed
+        .map((card: any, idx: number) => {
+          const question = String(card?.question ?? "").trim();
+          const answer = String(card?.answer ?? "").trim();
+          if (!question || !answer) return null;
+
+          const subject = String(card?.subject ?? "science").trim();
+          const difficulty = (String(card?.difficulty ?? "Medium").trim() as any) || "Medium";
+
+          const tags = Array.isArray(card?.tags)
+            ? card.tags.map((t: any) => String(t).trim()).filter(Boolean)
+            : ["ai-generated", aiTopic.toLowerCase()];
+
+          const safeDifficulty = (difficulty === "Easy" || difficulty === "Medium" || difficulty === "Hard")
+            ? difficulty
+            : "Medium";
+
+          return {
+            id: `ai-${Date.now()}-${idx}`,
+            question,
+            answer,
+            subject,
+            difficulty: safeDifficulty,
+            tags,
+            createdBy: "AI",
+            isPublic: true,
+            createdAt: new Date().toISOString().split("T")[0],
+            studyCount: 0,
+            rating: 0,
+          } as Flashcard;
+        })
+        .filter(Boolean) as Flashcard[];
+
+      if (normalizedPreview.length === 0) {
+        setAiError("AI returned no valid flashcards. Try a different topic.");
+        setAiGenerating(false);
+        return;
       }
-      setAiModalOpen(false);
+
+      setAiPreviewCards(normalizedPreview);
+      setAiModalOpen(true);
       setAiTopic("");
       setAiGenerating(false);
     } catch (err: any) {
@@ -224,7 +276,8 @@ const Flashcards = () => {
   };
 
   const startStudyMode = () => {
-    if (filteredCards.length === 0) return;
+    const cards = studyCards ?? filteredCards;
+    if (cards.length === 0) return;
     setStudyMode(true);
     setCurrentCardIndex(0);
     setShowAnswer(false);
@@ -274,17 +327,21 @@ const Flashcards = () => {
   ];
 
   // Study Mode UI
-  if (studyMode && filteredCards.length > 0) {
-    const currentCard = filteredCards[currentCardIndex];
+  if (studyMode && (studyCards?.length ?? filteredCards.length) > 0) {
+    const cardsForStudy = studyCards ?? filteredCards;
+    const currentCard = cardsForStudy[currentCardIndex];
 
     return (
       <div className="min-h-screen bg-white text-black flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-black text-black mb-2 uppercase tracking-tight">Study Mode</h2>
-            <p className="text-gray-600 font-bold">Card {currentCardIndex + 1} of {filteredCards.length}</p>
+            <p className="text-gray-600 font-bold">Card {currentCardIndex + 1} of {cardsForStudy.length}</p>
             <div className="w-full bg-gray-200 rounded-full h-3 mt-4 border-2 border-black overflow-hidden">
-              <div className="bg-black h-full rounded-full transition-all duration-300" style={{ width: `${((currentCardIndex + 1) / filteredCards.length) * 100}%` }}></div>
+              <div
+                className="bg-black h-full rounded-full transition-all duration-300"
+                style={{ width: `${((currentCardIndex + 1) / cardsForStudy.length) * 100}%` }}
+              ></div>
             </div>
           </div>
 
@@ -310,7 +367,7 @@ const Flashcards = () => {
                     <EyeOff className="h-5 w-5 mr-2" />Previous
                   </button>
                   <button onClick={nextCard} className="px-6 py-3 bg-black text-white rounded-xl font-bold border-2 border-black hover:bg-green-500 transition-all active:scale-95">
-                    {currentCardIndex === filteredCards.length - 1 ? "Finish" : "Next →"}
+                    {currentCardIndex === cardsForStudy.length - 1 ? "Finish" : "Next →"}
                   </button>
                 </div>
               )}
@@ -528,11 +585,59 @@ const Flashcards = () => {
                       <input type="text" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} placeholder="e.g. Photosynthesis, Pythagorean theorem, World War II" className="w-full px-4 py-2.5 border-2 border-black rounded-xl font-medium mb-3 focus:ring-2 focus:ring-black outline-none" />
                       {aiError && (<div className="text-sm text-red-500 mb-2 font-bold">{aiError}</div>)}
                       <div className="flex justify-end space-x-2">
-                        <button onClick={() => setAiModalOpen(false)} className="px-4 py-2.5 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all">Cancel</button>
-                        <button onClick={generateFlashcardsWithAI} disabled={aiGenerating} className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold disabled:opacity-50 hover:bg-purple-500 transition-all">
+                        <button onClick={() => setAiModalOpen(false)} className="px-4 py-2.5 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all">Close</button>
+                        <button
+                          onClick={generateFlashcardsWithAI}
+                          disabled={aiGenerating}
+                          className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold disabled:opacity-50 hover:bg-purple-500 transition-all"
+                        >
                           {aiGenerating ? "Generating..." : "Generate"}
                         </button>
                       </div>
+
+                      {aiPreviewCards.length > 0 && (
+                        <div className="mt-5 border-t-2 border-gray-100 pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-black uppercase tracking-wider">
+                              AI Preview (not saved)
+                            </h4>
+                            <span className="text-xs font-bold text-gray-500">
+                              {aiPreviewCards.length} cards
+                            </span>
+                          </div>
+
+                          <div className="space-y-3 max-h-[240px] overflow-auto pr-1">
+                            {aiPreviewCards.map((c, idx) => (
+                              <div key={c.id} className="bg-gray-50 rounded-xl border-2 border-black p-3">
+                                <div className="text-xs font-black text-gray-600 uppercase tracking-wider mb-1">
+                                  {idx + 1}. {c.subject} • {c.difficulty}
+                                </div>
+                                <div className="text-sm font-black text-black mb-1">
+                                  Q: {c.question}
+                                </div>
+                                <div className="text-sm text-gray-700">
+                                  A: {c.answer}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex justify-end space-x-2 mt-4">
+                            <button
+                              className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold hover:bg-purple-500 transition-all"
+                              onClick={() => {
+                                setStudyCards(aiPreviewCards);
+                                setStudyMode(true);
+                                setCurrentCardIndex(0);
+                                setShowAnswer(false);
+                                setAiModalOpen(false);
+                              }}
+                            >
+                              Start Study Mode (AI)
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

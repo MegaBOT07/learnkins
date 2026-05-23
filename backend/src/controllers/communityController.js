@@ -5,6 +5,12 @@ import StudyGroup from '../models/StudyGroup.js';
 import Achievement from '../models/Achievement.js';
 import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
+const canManage = (reqUser, ownerId) => {
+  if (!reqUser) return false;
+  if (reqUser.role === 'admin') return true;
+  return String(reqUser.id) === String(ownerId);
+};
+
 // @desc    Get discussions
 // @route   GET /api/community/discussions
 // @access  Public
@@ -28,15 +34,25 @@ export const getDiscussions = async (req, res) => {
 
     const discussions = await Community.find(query)
       .populate('author', 'name avatar')
+      .populate('replyItems.author', 'name avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
+
+    const mappedDiscussions = discussions.map((discussion) => {
+      const likedBy = (discussion.likedBy || []).map((id) => String(id));
+      const isLiked = Boolean(req.user?.id) && likedBy.includes(String(req.user.id));
+      return {
+        ...discussion.toObject(),
+        isLiked,
+      };
+    });
 
     const total = await Community.countDocuments(query);
 
     res.status(200).json({
       success: true,
-      discussions,
+      discussions: mappedDiscussions,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -127,29 +143,289 @@ export const likeDiscussion = async (req, res) => {
       });
     }
 
-    // Check if user already liked
-    if (discussion.likedBy?.includes(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: 'You have already liked this discussion'
-      });
+    const alreadyLiked = (discussion.likedBy || []).some((id) => String(id) === String(userId));
+    if (!discussion.likedBy) discussion.likedBy = [];
+
+    if (alreadyLiked) {
+      discussion.likedBy = discussion.likedBy.filter((id) => String(id) !== String(userId));
+      discussion.likes = Math.max((discussion.likes || 0) - 1, 0);
+    } else {
+      discussion.likedBy.push(userId);
+      discussion.likes += 1;
     }
 
-    discussion.likes += 1;
-    if (!discussion.likedBy) discussion.likedBy = [];
-    discussion.likedBy.push(userId);
     await discussion.save();
 
     res.status(200).json({
       success: true,
-      message: 'Discussion liked successfully',
-      likes: discussion.likes
+      message: alreadyLiked ? 'Discussion unliked successfully' : 'Discussion liked successfully',
+      likes: discussion.likes,
+      isLiked: !alreadyLiked,
     });
   } catch (error) {
     console.error('Like discussion error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error while liking discussion'
+    });
+  }
+};
+
+// @desc    Update discussion
+// @route   PUT /api/community/discussions/:id
+// @access  Private
+export const updateDiscussion = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const { id } = req.params;
+    const { title, content, category, tags } = req.body;
+
+    const discussion = await Community.findById(id);
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Discussion not found',
+      });
+    }
+
+    if (!canManage(req.user, discussion.author)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to edit this discussion',
+      });
+    }
+
+    discussion.title = title ?? discussion.title;
+    discussion.content = content ?? discussion.content;
+    discussion.category = category ?? discussion.category;
+    if (Array.isArray(tags)) {
+      discussion.tags = tags;
+    }
+
+    await discussion.save();
+    await discussion.populate('author', 'name avatar');
+    await discussion.populate('replyItems.author', 'name avatar');
+
+    res.status(200).json({
+      success: true,
+      message: 'Discussion updated successfully',
+      discussion,
+    });
+  } catch (error) {
+    console.error('Update discussion error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating discussion',
+    });
+  }
+};
+
+// @desc    Delete discussion
+// @route   DELETE /api/community/discussions/:id
+// @access  Private
+export const deleteDiscussion = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const discussion = await Community.findById(id);
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Discussion not found',
+      });
+    }
+
+    if (!canManage(req.user, discussion.author)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this discussion',
+      });
+    }
+
+    await discussion.deleteOne();
+
+    if (req.user.role !== 'admin') {
+      await User.findByIdAndUpdate(req.user.id, { $inc: { communityPosts: -1 } });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Discussion deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete discussion error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting discussion',
+    });
+  }
+};
+
+// @desc    Reply to discussion
+// @route   POST /api/community/discussions/:id/replies
+// @access  Private
+export const replyToDiscussion = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const { id } = req.params;
+    const userId = req.user.id;
+    const { content } = req.body;
+
+    const discussion = await Community.findById(id);
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Discussion not found',
+      });
+    }
+
+    if (!discussion.replyItems) discussion.replyItems = [];
+
+    discussion.replyItems.push({
+      content,
+      author: userId,
+      createdAt: new Date(),
+    });
+
+    discussion.replies = discussion.replyItems.length;
+    await discussion.save();
+    await discussion.populate('replyItems.author', 'name avatar');
+
+    const newReply = discussion.replyItems[discussion.replyItems.length - 1];
+
+    res.status(201).json({
+      success: true,
+      message: 'Reply added successfully',
+      reply: newReply,
+      replies: discussion.replies,
+    });
+  } catch (error) {
+    console.error('Reply discussion error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while replying to discussion',
+    });
+  }
+};
+
+// @desc    Update reply
+// @route   PUT /api/community/discussions/:id/replies/:replyId
+// @access  Private
+export const updateDiscussionReply = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const { id, replyId } = req.params;
+    const { content } = req.body;
+
+    const discussion = await Community.findById(id);
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Discussion not found',
+      });
+    }
+
+    const reply = (discussion.replyItems || []).id(replyId);
+    if (!reply) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reply not found',
+      });
+    }
+
+    if (!canManage(req.user, reply.author)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to edit this reply',
+      });
+    }
+
+    reply.content = content;
+    await discussion.save();
+    await discussion.populate('replyItems.author', 'name avatar');
+
+    const updatedReply = discussion.replyItems.id(replyId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Reply updated successfully',
+      reply: updatedReply,
+    });
+  } catch (error) {
+    console.error('Update reply error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating reply',
+    });
+  }
+};
+
+// @desc    Delete reply
+// @route   DELETE /api/community/discussions/:id/replies/:replyId
+// @access  Private
+export const deleteDiscussionReply = async (req, res) => {
+  try {
+    const { id, replyId } = req.params;
+    const discussion = await Community.findById(id);
+    if (!discussion) {
+      return res.status(404).json({
+        success: false,
+        message: 'Discussion not found',
+      });
+    }
+
+    const reply = (discussion.replyItems || []).id(replyId);
+    if (!reply) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reply not found',
+      });
+    }
+
+    if (!canManage(req.user, reply.author)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this reply',
+      });
+    }
+
+    reply.deleteOne();
+    discussion.replies = discussion.replyItems.length;
+    await discussion.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Reply deleted successfully',
+      replies: discussion.replies,
+    });
+  } catch (error) {
+    console.error('Delete reply error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting reply',
     });
   }
 };
@@ -291,6 +567,109 @@ export const joinStudyGroup = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while joining study group'
+    });
+  }
+};
+
+// @desc    Update study group
+// @route   PUT /api/community/groups/:id
+// @access  Private
+export const updateStudyGroup = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array(),
+      });
+    }
+
+    const { id } = req.params;
+    const { name, description, subject, maxMembers, tags } = req.body;
+
+    const group = await StudyGroup.findById(id);
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Study group not found',
+      });
+    }
+
+    if (!canManage(req.user, group.creator)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to edit this study group',
+      });
+    }
+
+    group.name = name ?? group.name;
+    group.description = description ?? group.description;
+    group.subject = subject ?? group.subject;
+    if (typeof maxMembers !== 'undefined') {
+      group.maxMembers = maxMembers;
+    }
+    if (Array.isArray(tags)) {
+      group.tags = tags;
+    }
+
+    if (group.memberCount > group.maxMembers) {
+      return res.status(400).json({
+        success: false,
+        message: 'Max members cannot be less than current member count',
+      });
+    }
+
+    await group.save();
+    await group.populate('creator', 'name avatar');
+
+    res.status(200).json({
+      success: true,
+      message: 'Study group updated successfully',
+      group,
+    });
+  } catch (error) {
+    console.error('Update study group error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while updating study group',
+    });
+  }
+};
+
+// @desc    Delete study group
+// @route   DELETE /api/community/groups/:id
+// @access  Private
+export const deleteStudyGroup = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const group = await StudyGroup.findById(id);
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Study group not found',
+      });
+    }
+
+    if (!canManage(req.user, group.creator)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this study group',
+      });
+    }
+
+    await group.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: 'Study group deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete study group error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting study group',
     });
   }
 };

@@ -77,35 +77,32 @@ const limiter = rateLimit({
 app.use("/api/", limiter);
 
 // CORS configuration - MUST be before routes
+// CORS configuration - MUST be before routes
 app.use(
   cors({
     origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177",
-        "http://localhost:5178",
-        "http://localhost:5179",
-        "http://localhost:5180",
-        "http://localhost:3000",
-        "http://localhost:8080",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175",
-        "http://127.0.0.1:5176",
-        // GitHub Codespaces URLs
-        "https://learnkins-two.vercel.app",
-        "https://learnkins.com",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        // allow same-origin / deployments (fallback)
       ];
 
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
+      // If no origin (mobile/curl), allow it
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // If running from deployed frontend, allow it via env var(s)
+      const extraOrigins = (process.env.CORS_ORIGINS || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (extraOrigins.includes(origin)) return callback(null, true);
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

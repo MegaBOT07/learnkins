@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { contactAPI } from "../../utils/api";
 import {
   ArrowRight,
   Mail,
@@ -33,17 +34,44 @@ const Contact = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert("Thank you for your message! We'll get back to you soon.");
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-      category: "general",
-    });
+    setSubmitError(null);
+
+    try {
+      setSubmitting(true);
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+        category: formData.category,
+      };
+
+      if (!payload.name || !payload.email || !payload.subject || !payload.message) {
+        setSubmitError("Please fill all required fields.");
+        return;
+      }
+
+      // Backend will send SMTP email + create admin message
+      await contactAPI.sendMessage(payload);
+
+      alert("Thank you for your message! We'll get back to you soon.");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+        category: "general",
+      });
+    } catch (err: any) {
+      setSubmitError(err?.response?.data?.message || "Failed to send message.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const contactInfo = [
