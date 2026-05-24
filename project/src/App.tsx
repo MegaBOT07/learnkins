@@ -50,7 +50,7 @@ import GeographyExplorer from "./components/games/GeographyExplorer/GeographyExp
 import ScienceLab from "./components/games/ScienceLab/ScienceLab";
 import WordBuilder from "./components/games/WordBuilder/WordBuilder";
 // @ts-ignore: JS module without type declarations
-import TreasureHunt from "./components/games/Trea/TreasureHunt.jsx";
+import TreasureHunt from "./components/games/trea/TreasureHunt.jsx";
 import VirtualLab from "./components/games/VirtualLab/VirtualLab.jsx";
 
 /** Routes where Navbar & Footer should be hidden */
