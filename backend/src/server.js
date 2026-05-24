@@ -48,19 +48,8 @@ if (!process.env.JWT_EXPIRE) {
   process.env.JWT_EXPIRE = "30d";
 }
 
-if (!process.env.MONGODB_URI) {
-  process.env.MONGODB_URI =
-    "mongodb+srv://demonicrui1_db_user:SfvEmhUD0j58C16t@cluster0.8oojsj8.mongodb.net/?appName=Cluster0";
-}
 
-// Set default email configuration for Gmail
-if (!process.env.EMAIL_HOST) {
-  process.env.EMAIL_HOST = "smtp.gmail.com";
-  process.env.EMAIL_PORT = "587";
-  // Note: Use Gmail App Password, not regular password
-  // For testing, you can set EMAIL_USER and EMAIL_PASS or use .env file
-  console.log("ℹ️  Email config: Gmail SMTP enabled. Set EMAIL_USER and EMAIL_PASS in .env");
-}
+
 
 const app = express();
 
@@ -86,6 +75,7 @@ app.use(
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://learnkins.com",
         // allow same-origin / deployments (fallback)
       ];
 
