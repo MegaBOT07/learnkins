@@ -60,16 +60,8 @@ app.use(compression());
 // Trust proxy for rate limiter behind Render/Vercel reverse proxy
 app.set('trust proxy', 1);
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api/", limiter);
-
-// CORS configuration - MUST be before routes
-// CORS configuration - MUST be before routes
+// CORS configuration - MUST be before rate limiter so preflight OPTIONS
+// requests get CORS headers even when rate-limited
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -79,6 +71,7 @@ app.use(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://learnkins.com",
+        "https://learnkins-bp00.onrender.com",
         // allow same-origin / deployments (fallback)
       ];
 
@@ -102,6 +95,18 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Rate limiting (skip OPTIONS preflight to avoid CORS issues)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later.",
+  validate: { xForwardedForHeader: false },
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress;
+  },
+});
+app.use("/api/", limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
