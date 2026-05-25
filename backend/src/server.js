@@ -57,6 +57,9 @@ const app = express();
 app.use(helmet());
 app.use(compression());
 
+// Trust proxy for rate limiter behind Render/Vercel reverse proxy
+app.set('trust proxy', 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -143,6 +146,12 @@ const connectDb = async () => {
     console.log('Connecting to MONGODB_URI:', process.env.MONGODB_URI);
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ MongoDB connected successfully');
+
+    // Drop orphaned username unique index from previous schema version
+    try {
+      await mongoose.connection.db.collection('users').dropIndex('username_1');
+      console.log('✓ Dropped orphaned username_1 index');
+    } catch (_) { /* index doesn't exist — that's fine */ }
 
     // Auto-seed test users if database is empty
     await seedTestUsers();
