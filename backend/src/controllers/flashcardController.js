@@ -321,6 +321,78 @@ export const rateFlashcard = async (req, res) => {
   }
 };
 
+// @desc    Generate AI flashcards using OpenRouter
+// @route   POST /api/flashcards/ai-generate
+// @access  Private
+export const generateAIFlashcards = async (req, res) => {
+  try {
+    const { topic } = req.body;
+    if (!topic || !topic.trim()) {
+      return res.status(400).json({ success: false, message: 'Topic is required' });
+    }
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, message: 'AI service not configured' });
+    }
+
+    const prompt = `Generate exactly 5 unique and educational flashcards about "${topic.trim()}".
+
+Return ONLY a valid JSON array with NO markdown code blocks, NO extra text, just the array itself:
+[
+  {
+    "question": "Clear, concise question",
+    "answer": "Detailed, educational answer",
+    "difficulty": "Easy",
+    "subject": "science"
+  }
+]
+
+Valid subjects: science, mathematics, english, social-science
+Valid difficulties: Easy, Medium, Hard`;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+        'X-Title': 'Learnkins',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 2000,
+        temperature: 0.7,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} — ${errorBody}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+
+    let cards = [];
+    try {
+      cards = JSON.parse(content);
+    } catch {
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (jsonMatch) cards = JSON.parse(jsonMatch[0]);
+    }
+
+    res.status(200).json({ success: true, data: cards });
+  } catch (error) {
+    console.error('Generate AI flashcards error:', error);
+    res.status(500).json({
+      success: false,
+      message: error?.message || 'Failed to generate flashcards',
+    });
+  }
+};
+
 // @desc    Get user's flashcards
 // @route   GET /api/flashcards/my
 // @access  Private

@@ -125,9 +125,12 @@ export const createProfessionalQuiz = async (req, res) => {
   }
 };
 
-// Helper function to call OpenAI API for generating quiz questions
+// Helper function to call OpenRouter AI API for generating quiz questions
 const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, topic) => {
-  const apiKey = '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';
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) {
+    throw new Error('OPENROUTER_API_KEY is not configured in environment');
+  }
   const topicClause = topic && topic.trim() ? ` focusing specifically on the topic: "${topic.trim()}"` : '';
   const prompt = `Generate ${totalQuestions} multiple-choice quiz questions on ${subject}${topicClause} at ${difficulty} difficulty level.
 Return a JSON array with objects containing:
@@ -141,24 +144,27 @@ Return a JSON array with objects containing:
 Make the questions realistic, varied, and appropriate for ${difficulty} difficulty.
 Return ONLY the JSON array, no other text.`;
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+        'X-Title': 'Learnkins'
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'openai/gpt-4o-mini',
         messages: [{
           role: 'user',
           content: prompt
         }],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 4000
       })
     });
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorBody = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} — ${errorBody}`);
     }
     const data = await response.json();
     const content = data.choices[0]?.message?.content || '[]';
@@ -176,7 +182,7 @@ Return ONLY the JSON array, no other text.`;
     }
     return questions.slice(0, totalQuestions);
   } catch (error) {
-    console.error('OpenAI API error:', error);
+    console.error('OpenRouter API error:', error);
     throw error;
   }
 };

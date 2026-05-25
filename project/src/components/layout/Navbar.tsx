@@ -524,59 +524,49 @@ const Navbar = () => {
       </nav>
 
       {/* Game Overlay - B&W */}
-      <AnimatePresence>
-        {showGameAnimation && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-white z-[9999] flex items-center justify-center"
+      {showGameAnimation && (
+        <div className="fixed inset-0 bg-white z-[9999] flex items-center justify-center">
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='2' fill='%23000000'/%3E%3C/svg%3E")`
+          }} />
+
+          <button
+            onClick={closeAnimation}
+            className="absolute top-8 right-8 z-10 p-3 bg-white border-2 border-black rounded-full hover:bg-black hover:text-white transition-colors cursor-pointer"
           >
-            <div className="absolute inset-0 opacity-10" style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='2' cy='2' r='2' fill='%23000000'/%3E%3C/svg%3E")`
-            }} />
+            <X className="h-8 w-8" strokeWidth={3} />
+          </button>
 
-            <button
-              onClick={closeAnimation}
-              className="absolute top-8 right-8 z-10 p-3 bg-white border-2 border-black rounded-full hover:bg-black hover:text-white transition-colors"
-            >
-              <X className="h-8 w-8" strokeWidth={3} />
-            </button>
+          <AnimatePresence>
+            {showStartButton && !gameLoading && (
+              <motion.button
+                initial={{ scale: 0, rotate: -45 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 45 }}
+                onClick={handleStartGame}
+                className="w-48 h-48 bg-black text-white rounded-full flex flex-col items-center justify-center border-4 border-black hover:bg-white hover:text-black transition-colors shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Play className="h-16 w-16 mb-2" fill="currentColor" />
+                <span className="font-black text-xl uppercase tracking-widest">Start</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-            <AnimatePresence>
-              {showStartButton && !gameLoading && (
-                <motion.button
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  exit={{ scale: 0, rotate: 45 }}
-                  onClick={handleStartGame}
-                  className="w-48 h-48 bg-black text-white rounded-full flex flex-col items-center justify-center border-4 border-black hover:bg-white hover:text-black transition-colors shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Play className="h-16 w-16 mb-2" fill="currentColor" />
-                  <span className="font-black text-xl uppercase tracking-widest">Start</span>
-                </motion.button>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {gameLoading && (
-                <div className="w-80">
-                  <div className="h-4 w-full bg-gray-200 border-2 border-black rounded-full overflow-hidden p-0.5">
-                    <motion.div
-                      className="h-full bg-black rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-center mt-4 font-bold text-xl font-mono">LOADING... {progress}%</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {gameLoading && (
+            <div className="w-80">
+              <div className="h-4 w-full bg-gray-200 border-2 border-black rounded-full overflow-hidden p-0.5">
+                <div
+                  className="h-full bg-black rounded-full transition-all duration-150"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-center mt-4 font-bold text-xl font-mono">LOADING... {progress}%</p>
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 };

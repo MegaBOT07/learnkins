@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowRight, Trophy, Clock, Users, Filter, Search, Star } from "lucide-react";
 import { professionalQuizAPI } from "../../utils/api";
+// @ts-ignore
+import { useAuth } from "../../context/AuthContext";
 import type { LucideIcon } from "lucide-react";
 
 interface ProfessionalQuiz {
@@ -22,12 +24,18 @@ interface ProfessionalQuiz {
 }
 
 const ProfessionalQuizzes = () => {
+  const [searchParams] = useSearchParams();
+  const initialSubject = searchParams.get("subject") || "all";
+  // @ts-ignore
+  const { user } = useAuth();
+  const userGrade = user?.grade || "";
+
   const [quizzes, setQuizzes] = useState<ProfessionalQuiz[]>([]);
   const [filteredQuizzes, setFilteredQuizzes] = useState<ProfessionalQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("all");
+  const [selectedSubject, setSelectedSubject] = useState(initialSubject);
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [newAIDifficulty, setNewAIDifficulty] = useState("Easy");
   const [aiLoading, setAILoading] = useState(false);
@@ -77,8 +85,17 @@ const ProfessionalQuizzes = () => {
       filtered = filtered.filter((quiz) => quiz.difficulty === selectedDifficulty);
     }
 
+    if (userGrade) {
+      filtered = filtered.filter((quiz) => {
+        const quizGrade = quiz.grade?.toString().toLowerCase().trim() || "";
+        return quizGrade === userGrade.toLowerCase().trim() ||
+               quizGrade.includes(userGrade.toLowerCase().trim()) ||
+               userGrade.toLowerCase().trim().includes(quizGrade);
+      });
+    }
+
     setFilteredQuizzes(filtered);
-  }, [searchTerm, selectedSubject, selectedDifficulty, quizzes]);
+  }, [searchTerm, selectedSubject, selectedDifficulty, quizzes, userGrade]);
 
   const getDifficultyStyle = (difficulty: string) => {
     switch (difficulty) {

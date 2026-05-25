@@ -1,5 +1,5 @@
 import express from 'express';
-import { getFlashcards, getFlashcard, createFlashcard, updateFlashcard, deleteFlashcard, studyFlashcard, rateFlashcard, getMyFlashcards, getPopularFlashcards, getRecentFlashcards, searchFlashcards } from '../controllers/flashcardController.js';
+import { getFlashcards, getFlashcard, createFlashcard, updateFlashcard, deleteFlashcard, studyFlashcard, rateFlashcard, getMyFlashcards, getPopularFlashcards, getRecentFlashcards, searchFlashcards, generateAIFlashcards } from '../controllers/flashcardController.js';
 import { protect, authorize } from '../middleware/auth.js';
 const router = express.Router();
 
@@ -12,6 +12,9 @@ router.get('/:id', getFlashcard);
 
 // Protected routes
 router.use(protect);
+
+// AI flashcard generation
+router.post('/ai-generate', generateAIFlashcards);
 
 // User flashcards
 router.get('/my/flashcards', getMyFlashcards);

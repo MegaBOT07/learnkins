@@ -101,7 +101,7 @@ const Games = () => {
           </div>
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredGames.map((game) => (
-              <motion.div key={game.id} variants={itemVariants} whileHover={{ y: -8 }} onClick={() => { if (game.gameUrl.startsWith('http')) { window.open(game.gameUrl, '_blank'); } else { navigate(game.gameUrl); } }} className="cursor-pointer">
+              <motion.div key={game.id} variants={itemVariants} whileHover={{ y: -8 }} onClick={() => { if (game.gameUrl.startsWith('http')) { window.open(game.gameUrl, '_blank'); } else { navigate('/game/' + game.id); } }} className="cursor-pointer">
                 <div className={`bg-white rounded-2xl border-2 ${game.border} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden`}>
                   <div className="relative">
                     <img src={game.image} alt={game.title} className="w-full h-48 object-cover" />

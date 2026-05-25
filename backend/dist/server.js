@@ -45,52 +45,50 @@ if (!process.env.JWT_SECRET) {
 if (!process.env.JWT_EXPIRE) {
   process.env.JWT_EXPIRE = "30d";
 }
-if (!process.env.MONGODB_URI) {
-  process.env.MONGODB_URI = "mongodb+srv://demonicrui1_db_user:SfvEmhUD0j58C16t@cluster0.8oojsj8.mongodb.net/?appName=Cluster0";
-}
-
-// Set default email configuration for Gmail
-if (!process.env.EMAIL_HOST) {
-  process.env.EMAIL_HOST = "smtp.gmail.com";
-  process.env.EMAIL_PORT = "587";
-  // Note: Use Gmail App Password, not regular password
-  // For testing, you can set EMAIL_USER and EMAIL_PASS or use .env file
-  console.log("ℹ️  Email config: Gmail SMTP enabled. Set EMAIL_USER and EMAIL_PASS in .env");
-}
 const app = express();
 
 // Security middleware
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  // 15 minutes
-  max: 100,
-  // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later."
-});
-app.use("/api/", limiter);
+// Trust proxy for rate limiter behind Render/Vercel reverse proxy
+app.set('trust proxy', 1);
 
-// CORS configuration - MUST be before routes
+// CORS configuration - MUST be before rate limiter so preflight OPTIONS
+// requests get CORS headers even when rate-limited
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://localhost:5178", "http://localhost:5179", "http://localhost:5180", "http://localhost:3000", "http://localhost:8080", "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176",
-    // GitHub Codespaces URLs
-    "https://learnkins-two.vercel.app", "https://learnkins.com"];
+    const allowedOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000", "https://learnkins.com", "https://learnkins-bp00.onrender.com"
+    // allow same-origin / deployments (fallback)
+    ];
 
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
+    // If no origin (mobile/curl), allow it
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // If running from deployed frontend, allow it via env var(s)
+    const extraOrigins = (process.env.CORS_ORIGINS || "").split(",").map(s => s.trim()).filter(Boolean);
+    if (extraOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+// Rate limiting (skip OPTIONS preflight to avoid CORS issues)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: "Too many requests from this IP, please try again later.",
+  validate: {
+    xForwardedForHeader: false
+  },
+  keyGenerator: req => {
+    return req.ip || req.connection.remoteAddress;
+  }
+});
+app.use("/api/", limiter);
 
 // Body parsing middleware
 app.use(express.json({
@@ -138,6 +136,12 @@ const connectDb = async () => {
     console.log('Connecting to MONGODB_URI:', process.env.MONGODB_URI);
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ MongoDB connected successfully');
+
+    // Drop orphaned username unique index from previous schema version
+    try {
+      await mongoose.connection.db.collection('users').dropIndex('username_1');
+      console.log('✓ Dropped orphaned username_1 index');
+    } catch (_) {/* index doesn't exist — that's fine */}
 
     // Auto-seed test users if database is empty
     await seedTestUsers();
@@ -634,7 +638,7 @@ const seedContent = async () => {
         subject: 'science',
         chapter: 'Cell Biology',
         grade: '6th',
-        fileUrl: 'https://www.youtube.com/embed/8IlzKri08kU',
+        fileUrl: 'https://www.youtube.com/embed/M1wdIdCOk-Y',
         thumbnailUrl: '',
         tags: ['cells', 'biology'],
         difficulty: 'Beginner',
@@ -646,7 +650,7 @@ const seedContent = async () => {
         subject: 'science',
         chapter: 'Plant Life',
         grade: '7th',
-        fileUrl: 'https://www.youtube.com/embed/E7vcjMjTBoo',
+        fileUrl: 'https://www.youtube.com/embed/D1Ymc311XS8',
         thumbnailUrl: '',
         tags: ['photosynthesis', 'plants'],
         difficulty: 'Intermediate',
@@ -694,7 +698,7 @@ const seedContent = async () => {
         subject: 'mathematics',
         chapter: 'Geometry',
         grade: '8th',
-        fileUrl: 'https://www.youtube.com/embed/2YlPORqgUs8',
+        fileUrl: 'https://www.youtube.com/embed/mLeNaZcy-hE',
         thumbnailUrl: '',
         tags: ['geometry', 'triangles', 'angles'],
         difficulty: 'Intermediate',
@@ -706,7 +710,7 @@ const seedContent = async () => {
         subject: 'english',
         chapter: 'Grammar',
         grade: '6th',
-        fileUrl: 'https://www.youtube.com/embed/W_xsE0HPgxo',
+        fileUrl: 'https://www.youtube.com/embed/d0wV9EC3t14',
         thumbnailUrl: '',
         tags: ['grammar', 'tenses', 'english'],
         difficulty: 'Beginner',
@@ -718,7 +722,7 @@ const seedContent = async () => {
         subject: 'english',
         chapter: 'Writing Skills',
         grade: '7th',
-        fileUrl: 'https://www.youtube.com/embed/JJrBgwRfPgQ',
+        fileUrl: 'https://www.youtube.com/embed/RSoRzTtwgP4',
         thumbnailUrl: '',
         tags: ['writing', 'creative', 'english'],
         difficulty: 'Intermediate',
@@ -742,7 +746,7 @@ const seedContent = async () => {
         subject: 'social-science',
         chapter: 'Geography',
         grade: '6th',
-        fileUrl: 'https://www.youtube.com/embed/D1MoRb0Nozs',
+        fileUrl: 'https://www.youtube.com/embed/_pOKoIAnybg',
         thumbnailUrl: '',
         tags: ['maps', 'geography', 'globe'],
         difficulty: 'Beginner',

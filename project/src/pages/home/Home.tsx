@@ -16,6 +16,8 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { useGame } from "../../context/GameContext";
+// @ts-ignore
+import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import Section from "../../components/common/Section";
 import Container from "../../components/common/Container";
@@ -23,6 +25,8 @@ import Container from "../../components/common/Container";
 const Home = () => {
   // @ts-ignore
   const { userProgress } = useGame();
+  // @ts-ignore
+  const { isAuthenticated } = useAuth();
 
   const features = [
     {
@@ -447,6 +451,7 @@ const Home = () => {
       </div>
 
       {/* Final CTA Section */}
+      {!isAuthenticated && (
       <Section padding="lg" background="white">
         <div className="relative bg-black rounded-3xl overflow-hidden shadow-[12px_12px_0px_0px_#3B82F6] border-4 border-black">
           <div className="absolute inset-0 opacity-20 pointer-events-none">
@@ -486,6 +491,7 @@ const Home = () => {
           </div>
         </div>
       </Section>
+      )}
     </div>
   );
 };

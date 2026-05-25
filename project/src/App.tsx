@@ -13,6 +13,7 @@ import SubjectDetail from "./pages/subjects/SubjectDetail";
 import StudyMaterials from "./pages/learning/StudyMaterials";
 // @ts-ignore
 import GamesQuiz from "./pages/assessment/GamesQuiz";
+import Quiz from "./pages/assessment/Quiz";
 import Games from "./pages/games/Games";
 import Game from "./pages/games/Game";
 import VideoPage from "./pages/media/VideoPage";
@@ -121,9 +122,8 @@ function AppLayout() {
           } />
           <Route path="/games/virtual-lab" element={<VirtualLab />} />
 
-          {/* Redirect standard quiz routes to Professional Quizzes UI */}
           <Route path="/quizzes" element={<ProfessionalQuizzes />} />
-          <Route path="/quiz/:id" element={<ProfessionalQuiz />} />
+          <Route path="/quiz/:id" element={<Quiz />} />
           {/* Redirect legacy or generic quiz links to professional quizzes */}
           <Route path="/quiz" element={<Navigate to="/quizzes" replace />} />
           <Route path="/professional-quizzes" element={<Navigate to="/quizzes" replace />} />
@@ -187,7 +187,7 @@ function App() {
     <AuthProvider>
       <TokenProvider>
         <GameProvider>
-          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Router future={{ v7_relativeSplatPath: true }}>
             <ScrollToTop />
             <AppLayout />
           </Router>

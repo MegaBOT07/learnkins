@@ -25,7 +25,7 @@ const StudyMaterials = () => {
           materialAPI.getMaterials()
         ]);
 
-        const fetchedSubjects = (subRes.data || []).map((sub: any) => ({
+        const fetchedSubjects = (subRes.data?.data || subRes.data || []).map((sub: any) => ({
           name: sub.name,
           slug: sub.slug || sub.name.toLowerCase().replace(/\s+/g, '-'),
           accent: "border-purple-500",

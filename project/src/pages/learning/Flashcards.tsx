@@ -74,13 +74,13 @@ const Flashcards = () => {
     } catch (e) { }
   };
 
-  const unlockCard = (cardId: string) => {
+  const unlockCard = async (cardId: string) => {
     const cost = 5;
     if (!canRedeem(cost)) {
       alert("Not enough tokens to unlock this flashcard.");
       return;
     }
-    const ok = redeem(cost, `unlock:flashcard:${cardId}`);
+    const ok = await redeem(cost, `unlock:flashcard:${cardId}`);
     if (ok) {
       persistUnlocked({ ...unlocked, [cardId]: true });
     } else {

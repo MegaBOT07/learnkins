@@ -73,7 +73,7 @@ const Notes = () => {
   const unlockNote = async (noteId: string, note: Note) => {
     const cost = 10;
     if (!canRedeem(cost)) { alert('Not enough tokens to unlock this note.'); return; }
-    const ok = redeem(cost, `unlock:note:${noteId}`);
+    const ok = await redeem(cost, `unlock:note:${noteId}`);
     if (ok) {
       persistUnlockedNotes({ ...unlockedNotes, [noteId]: true });
       // Log progress immediately upon unlock

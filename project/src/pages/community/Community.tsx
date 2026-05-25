@@ -305,6 +305,17 @@ const Community = () => {
     return () => clearTimeout(timer);
   }, [actionMessage]);
 
+  useEffect(() => {
+    const poll = setInterval(() => {
+      if (activeTab === "discussions") {
+        fetchDiscussionsPage(discussionPaging.page);
+      } else if (activeTab === "groups") {
+        fetchGroupsPage(groupPaging.page);
+      }
+    }, 15000);
+    return () => clearInterval(poll);
+  }, [activeTab, discussionPaging.page, groupPaging.page]);
+
   const filteredDiscussions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return discussions;

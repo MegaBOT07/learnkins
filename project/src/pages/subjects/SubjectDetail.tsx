@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams, useLocation, Link } from "react-router-dom";
+import { useParams, useSearchParams, useLocation, Link, useNavigate } from "react-router-dom";
 import { subjectAPI, materialAPI } from "../../utils/api";
 import {
   ArrowRight,
@@ -79,10 +79,20 @@ const getEmbeddableVideoUrl = (url: string = "") => {
 const SubjectDetail = () => {
   const params = useParams();
   const location = useLocation();
-  const slug = params.subject || location.pathname.split("/").filter(Boolean)[0] || "";
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const tabParam = searchParams.get("tab") || "videos";
   const [activeTab, setActiveTab] = useState(tabParam);
+
+  const deriveSlug = () => {
+    const pathParts = location.pathname.split("/").filter(Boolean);
+    if (pathParts[0] === "subjects" && pathParts[1]) return pathParts[1];
+    if (params.slug) return params.slug;
+    const directSubjects = ["maths", "science", "social-science", "english"];
+    if (directSubjects.includes(pathParts[0])) return pathParts[0];
+    return "";
+  };
+  const [slug, setSlug] = useState(deriveSlug());
 
   const [subject, setSubject] = useState<any>(null);
   const [subjectLoading, setSubjectLoading] = useState(true);
@@ -99,39 +109,51 @@ const SubjectDetail = () => {
   }, [tabParam]);
 
   useEffect(() => {
+    setSlug(deriveSlug());
+  }, [location.pathname, params.slug]);
+
+  useEffect(() => {
+    let cancelled = false;
     const fetchSubject = async () => {
       setSubjectLoading(true);
       try {
         const res = await subjectAPI.getSubject(slug);
+        if (cancelled) return;
         setSubject(res.data?.data ?? res.data ?? null);
       } catch {
-        setSubject(null);
+        if (!cancelled) setSubject(null);
       } finally {
-        setSubjectLoading(false);
+        if (!cancelled) setSubjectLoading(false);
       }
     };
-    fetchSubject();
+    if (slug) fetchSubject();
+    return () => { cancelled = true; };
   }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
+    let cancelled = false;
     const fetchMaterials = async () => {
       setMaterialLoading(true);
       try {
         const res = await materialAPI.getMaterials(slug);
+        if (cancelled) return;
         const all: any[] = res.data?.data ?? res.data ?? [];
         setVideos(all.filter((m: any) => m.type === "video"));
         setWorksheets(all.filter((m: any) => m.type === "worksheet"));
         setNotes(all.filter((m: any) => m.type === "notes"));
       } catch {
-        setVideos([]);
-        setWorksheets([]);
-        setNotes([]);
+        if (!cancelled) {
+          setVideos([]);
+          setWorksheets([]);
+          setNotes([]);
+        }
       } finally {
-        setMaterialLoading(false);
+        if (!cancelled) setMaterialLoading(false);
       }
     };
     fetchMaterials();
+    return () => { cancelled = true; };
   }, [slug]);
 
   const setTab = (tab: string) => {
@@ -247,7 +269,7 @@ const SubjectDetail = () => {
                   <p className="text-sm text-gray-400 mt-1">Check back soon — the admin is uploading learning content!</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div id="videos-grid" className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                   {videos.map((v) => (
                     <div key={v._id} className="bg-white border-2 border-black rounded-2xl overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                       <div className="aspect-video bg-black">
@@ -272,7 +294,8 @@ const SubjectDetail = () => {
                             className="w-full h-full"
                             allowFullScreen
                             title={v.title}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center p-4 bg-slate-900 text-white">
@@ -345,7 +368,13 @@ const SubjectDetail = () => {
                           </div>
                         </div>
                       )}
-                      <button className="w-full bg-black text-white py-3 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2">
+                      <button
+                        onClick={() => {
+                          const el = document.getElementById("videos-grid");
+                          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className="w-full bg-black text-white py-3 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2"
+                      >
                         <Play className="h-4 w-4" />
                         <span>Watch Now</span>
                       </button>
@@ -503,7 +532,10 @@ const SubjectDetail = () => {
                         </div>
                       ))}
                     </div>
-                    <button className="w-full mt-4 bg-black text-white py-3 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2">
+                    <button
+                      onClick={() => navigate(`/quizzes?subject=${slug}`)}
+                      className="w-full mt-4 bg-black text-white py-3 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2"
+                    >
                       <HelpCircle className="h-4 w-4" />
                       <span>Start Practice</span>
                     </button>
