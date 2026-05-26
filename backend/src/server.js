@@ -148,9 +148,24 @@ const connectDb = async () => {
       }
     }
 
-    console.log('Connecting to MONGODB_URI:', process.env.MONGODB_URI);
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('✅ MongoDB connected successfully');
+    let uri = process.env.MONGODB_URI;
+    // Strip accidental "MONGODB_URI=" prefix if env var was misconfigured
+    if (uri && uri.startsWith('MONGODB_URI=')) {
+      uri = uri.slice('MONGODB_URI='.length);
+      console.warn('⚠️  Stripped MONGODB_URI= prefix from connection string');
+    }
+    console.log('Connecting to MongoDB...');
+
+    mongoose.connection.on('connecting', () => console.log('🔄 MongoDB: connecting...'));
+    mongoose.connection.on('connected', () => console.log('✅ MongoDB connected successfully'));
+    mongoose.connection.on('disconnected', () => console.log('⚠️ MongoDB disconnected'));
+    mongoose.connection.on('reconnected', () => console.log('✅ MongoDB reconnected'));
+    mongoose.connection.on('error', (err) => console.error('❌ MongoDB connection error:', err.message));
+
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+    });
 
     // Drop orphaned username unique index from previous schema version
     try {
