@@ -94,7 +94,7 @@ const Contact = () => {
     {
       icon: <MapPin className="h-6 w-6" />,
       title: "Address",
-      details: ["Skit Campus", "Jagatpura, Jaipur, Rajasthan (302002)"],
+      details: ["146A SHANKAR NAGAR BRAHAMPURI", "AMER ROAD, JAIPUR, (302002)"],
       description: "Visit our office",
       border: "border-green-500",
       color: "text-green-600",
@@ -413,6 +413,30 @@ const Contact = () => {
                 ))}
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Parent Company Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-black text-black mb-2">
+              Our Parent Company
+            </h2>
+            <p className="text-gray-600 font-medium">
+              LearnKins is proudly powered by
+            </p>
+          </motion.div>
+          <div className="text-center">
+            <h3 className="text-4xl font-black text-cyan-500">
+              SHASTRAVERSE TECHNOLOGIES LLP
+            </h3>
           </div>
         </div>
       </section>
