@@ -4,6 +4,10 @@ package-lock.json
 
 # Environment variables
 
+.env
+backend/.env
+project/.env
+
 
 # Logs
 logs/
