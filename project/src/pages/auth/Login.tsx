@@ -2,7 +2,7 @@ import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, AlertCircle, User, Users, GraduationCap, UserCog } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Logo from '../../components/common/Logo';
 
 interface LoginFormData {
@@ -48,10 +48,6 @@ const Login: React.FC = () => {
     }
 
     setLoading(false);
-  };
-
-  const handleDemoLogin = (email: string, password: string) => {
-    setFormData({ email, password });
   };
 
   return (
@@ -198,40 +194,6 @@ const Login: React.FC = () => {
               </button>
             </div>
           </form>
-
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t-2 border-black" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-white text-black font-black uppercase tracking-wider text-xs">
-                  Try Demo Accounts
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              {[
-                { email: 'student@learnkins.com', password: 'student123', icon: <User className="h-6 w-6" />, label: 'Student', border: 'border-cyan-500', color: 'text-cyan-600' },
-                { email: 'parent@learnkins.com', password: 'parent123', icon: <Users className="h-6 w-6" />, label: 'Parent', border: 'border-green-500', color: 'text-green-600' },
-                { email: 'teacher@learnkins.com', password: 'teacher123', icon: <GraduationCap className="h-6 w-6" />, label: 'Teacher', border: 'border-purple-500', color: 'text-purple-600' },
-                { email: 'admin@learnkins.com', password: 'admin123', icon: <UserCog className="h-6 w-6" />, label: 'Admin', border: 'border-orange-500', color: 'text-orange-600' },
-              ].map((demo, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleDemoLogin(demo.email, demo.password)}
-                  className={`p-3 text-center rounded-xl border-2 ${demo.border} bg-white hover:-translate-y-0.5 transition-all shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}
-                >
-                  <div className={`${demo.color} mx-auto mb-1 flex justify-center`}>
-                    {demo.icon}
-                  </div>
-                  <span className="text-sm font-black text-black">{demo.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </motion.div>
     </div>
