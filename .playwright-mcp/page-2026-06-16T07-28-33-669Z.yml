@@ -1,0 +1,153 @@
+- generic [ref=e8]:
+  - navigation [ref=e80]:
+    - generic [ref=e82]:
+      - link "LearnKins Logo" [ref=e83] [cursor=pointer]:
+        - /url: /
+        - img "LearnKins Logo" [ref=e84]
+      - generic [ref=e85]:
+        - link "Home" [ref=e87] [cursor=pointer]:
+          - /url: /
+          - img [ref=e88]
+          - generic [ref=e91]: Home
+        - link "Subjects" [ref=e93] [cursor=pointer]:
+          - /url: /subjects
+          - img [ref=e94]
+          - generic [ref=e97]: Subjects
+        - link "Flashcards" [ref=e99] [cursor=pointer]:
+          - /url: /flashcards
+          - img [ref=e100]
+          - generic [ref=e103]: Flashcards
+        - button "Games & Quiz" [ref=e105] [cursor=pointer]:
+          - img [ref=e106]
+          - generic [ref=e108]: Games & Quiz
+          - img [ref=e109]
+        - link "Community" [ref=e112] [cursor=pointer]:
+          - /url: /community
+          - img [ref=e113]
+          - generic [ref=e118]: Community
+        - link "Contact" [ref=e120] [cursor=pointer]:
+          - /url: /contact
+          - img [ref=e121]
+          - generic [ref=e123]: Contact
+      - generic [ref=e124]:
+        - link "💎 0" [ref=e125] [cursor=pointer]:
+          - /url: /tokens
+          - generic [ref=e126]: 💎
+          - generic [ref=e127]: "0"
+        - button "SA" [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]: SA
+          - img [ref=e131]
+  - main [ref=e9]:
+    - generic [ref=e133]:
+      - paragraph [ref=e137]: Synchronizing Data...
+      - complementary [ref=e138]:
+        - generic [ref=e140]:
+          - img [ref=e142]
+          - generic [ref=e144]:
+            - heading "LEARNKINS" [level=1] [ref=e145]
+            - text: Management Console
+        - navigation [ref=e146]:
+          - paragraph [ref=e147]: Overview
+          - generic [ref=e148] [cursor=pointer]:
+            - img [ref=e149]
+            - generic [ref=e154]: Dashboard
+          - generic [ref=e155] [cursor=pointer]:
+            - img [ref=e156]
+            - generic [ref=e161]: Students
+          - generic [ref=e162] [cursor=pointer]:
+            - img [ref=e163]
+            - generic [ref=e165]: Messages
+          - paragraph [ref=e166]: Content
+          - generic [ref=e167] [cursor=pointer]:
+            - img [ref=e168]
+            - generic [ref=e171]: Subjects
+          - generic [ref=e172] [cursor=pointer]:
+            - img [ref=e173]
+            - generic [ref=e176]: Quizzes
+          - generic [ref=e177] [cursor=pointer]:
+            - img [ref=e178]
+            - generic [ref=e181]: Pro Quizzes
+          - generic [ref=e182] [cursor=pointer]:
+            - img [ref=e183]
+            - generic [ref=e193]: Flashcards
+          - generic [ref=e194] [cursor=pointer]:
+            - img [ref=e195]
+            - generic [ref=e198]: Materials
+          - generic [ref=e199] [cursor=pointer]:
+            - img [ref=e200]
+            - generic [ref=e202]: Games
+          - paragraph [ref=e203]: Economy
+          - generic [ref=e204] [cursor=pointer]:
+            - img [ref=e205]
+            - generic [ref=e208]: Tokens & Shop
+        - button "Sign Out" [ref=e210] [cursor=pointer]:
+          - img [ref=e211]
+          - generic [ref=e214]: Sign Out
+      - main [ref=e215]:
+        - generic [ref=e216]:
+          - heading "Control Center" [level=2] [ref=e218]
+          - generic [ref=e219]:
+            - generic [ref=e220]:
+              - img [ref=e221]
+              - textbox "Search repository..." [ref=e224]
+            - button [ref=e225] [cursor=pointer]:
+              - img [ref=e226]
+        - generic [ref=e230]:
+          - generic [ref=e231]:
+            - generic [ref=e233]:
+              - img [ref=e236]
+              - heading "Total Students" [level=3] [ref=e241]
+              - paragraph [ref=e242]: "0"
+            - generic [ref=e244]:
+              - img [ref=e247]
+              - heading "Live Quizzes" [level=3] [ref=e250]
+              - paragraph [ref=e251]: "0"
+            - generic [ref=e253]:
+              - img [ref=e256]
+              - heading "Total Games" [level=3] [ref=e258]
+              - paragraph [ref=e259]: "0"
+            - generic [ref=e261]:
+              - img [ref=e264]
+              - heading "Content Count" [level=3] [ref=e266]
+              - paragraph [ref=e267]: "0"
+          - generic [ref=e268]:
+            - generic [ref=e269]:
+              - generic [ref=e270]:
+                - heading "Platform Metrics" [level=3] [ref=e271]
+                - generic [ref=e272]: Live
+              - generic [ref=e274]:
+                - generic [ref=e275]:
+                  - generic [ref=e276]:
+                    - generic [ref=e277]: Total Users
+                    - generic [ref=e278]: "0"
+                  - generic [ref=e279]: 0 students · 0 staff
+                - generic [ref=e280]:
+                  - generic [ref=e281]:
+                    - generic [ref=e282]: Content Library
+                    - generic [ref=e283]: "0"
+                  - generic [ref=e284]: 0 videos · 0 quizzes · 0 games
+                - generic [ref=e285]:
+                  - generic [ref=e286]:
+                    - generic [ref=e287]: Subjects
+                    - generic [ref=e288]: "0"
+                  - generic [ref=e289]: 0 pro assessments · 0 flashcards
+                - generic [ref=e290]:
+                  - generic [ref=e291]:
+                    - generic [ref=e292]: Shop Items
+                    - generic [ref=e293]: "0"
+                  - generic [ref=e294]: 0 unread messages
+            - generic [ref=e295]:
+              - heading "Quick Content Push" [level=3] [ref=e296]
+              - generic [ref=e297]:
+                - button "Add Subject" [ref=e298] [cursor=pointer]:
+                  - img [ref=e299]
+                  - generic [ref=e300]: Add Subject
+                - button "Build Quiz" [ref=e301] [cursor=pointer]:
+                  - img [ref=e302]
+                  - generic [ref=e303]: Build Quiz
+                - button "New Game" [ref=e304] [cursor=pointer]:
+                  - img [ref=e305]
+                  - generic [ref=e306]: New Game
+                - button "Material" [ref=e307] [cursor=pointer]:
+                  - img [ref=e308]
+                  - generic [ref=e309]: Material

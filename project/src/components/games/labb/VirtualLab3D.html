@@ -1,0 +1,2679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Virtual Science Lab - NCERT 6-8</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{overflow:hidden;background:#0a0a1a;font-family:'Segoe UI',sans-serif;}
+canvas{display:block;}
+#ui-layer{position:fixed;inset:0;pointer-events:none;z-index:10;}
+
+/* TOP BAR */
+#topbar{position:fixed;top:0;left:0;right:0;height:52px;
+  background:linear-gradient(135deg,rgba(8,12,30,0.96),rgba(15,22,50,0.96));
+  backdrop-filter:blur(14px);border-bottom:1px solid rgba(100,180,255,0.2);
+  display:flex;align-items:center;padding:0 20px;gap:16px;pointer-events:all;z-index:20;}
+#logo{font-size:17px;font-weight:900;color:#7dd3fc;letter-spacing:2px;}
+#logo em{color:#fbbf24;font-style:normal;}
+#zone-pill{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;padding:4px 14px;font-size:11px;color:#e2e8f0;font-weight:600;margin-left:auto;}
+#exp-status{font-size:11px;color:rgba(255,255,255,0.45);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* DPAD */
+#dpad{position:fixed;bottom:18px;left:18px;display:grid;
+  grid-template-columns:44px 44px 44px;grid-template-rows:44px 44px;gap:3px;z-index:20;pointer-events:all;}
+.dk{background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.22);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;
+  cursor:pointer;user-select:none;transition:all 0.1s;backdrop-filter:blur(6px);}
+.dk:active,.dk.on{background:rgba(100,180,255,0.45);border-color:#7dd3fc;}
+
+/* INTERACT BADGE */
+#interact-hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
+  border:2px solid #fbbf24;border-radius:14px;padding:9px 22px;
+  color:#fbbf24;font-size:13px;font-weight:800;letter-spacing:1px;
+  z-index:20;display:none;pointer-events:none;white-space:nowrap;}
+
+/* NOTIFICATION */
+#notif{position:fixed;top:62px;left:50%;transform:translateX(-50%) translateY(-6px);
+  background:rgba(251,191,36,0.95);color:#1a1000;padding:7px 20px;border-radius:22px;
+  font-size:12px;font-weight:800;z-index:30;display:none;pointer-events:none;
+  letter-spacing:0.5px;box-shadow:0 4px 20px rgba(251,191,36,0.4);}
+
+/* SIDE PANEL */
+#panel{position:fixed;top:0;right:0;bottom:0;width:360px;
+  background:linear-gradient(160deg,rgba(8,12,32,0.98),rgba(12,20,45,0.98));
+  backdrop-filter:blur(18px);border-left:2px solid rgba(100,180,255,0.18);
+  z-index:25;transform:translateX(100%);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  overflow-y:auto;pointer-events:all;}
+#panel.show{transform:translateX(0);}
+#panel-inner{padding:18px;}
+#pcls{position:sticky;top:0;background:rgba(8,12,32,0.9);padding:10px 0 8px;
+  display:flex;justify-content:space-between;align-items:center;z-index:5;margin-bottom:4px;}
+#pcls-btn{background:rgba(255,60,60,0.18);border:1px solid rgba(255,60,60,0.35);
+  color:#f87171;border-radius:8px;padding:5px 14px;cursor:pointer;font-size:12px;font-weight:800;}
+#pcls-btn:hover{background:rgba(255,60,60,0.35);}
+.ptitle{font-size:17px;font-weight:900;color:#7dd3fc;margin-bottom:2px;}
+.psub{font-size:10px;color:rgba(255,255,255,0.35);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;}
+
+/* Exp cards */
+.ecard{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+  border-radius:12px;padding:13px;margin-bottom:9px;cursor:pointer;transition:all 0.2s;}
+.ecard:hover,.ecard.sel{background:rgba(100,180,255,0.1);border-color:rgba(100,180,255,0.35);transform:translateX(-2px);}
+.ecard-t{font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:5px;}
+.ecard-m{font-size:10px;color:rgba(255,255,255,0.35);}
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:800;margin-right:4px;}
+.bg{background:rgba(99,102,241,0.3);color:#a5b4fc;}
+.be{background:rgba(34,197,94,0.2);color:#86efac;}
+.bm{background:rgba(251,191,36,0.2);color:#fde68a;}
+
+/* Apparatus */
+.app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0;}
+.aitem{background:rgba(255,255,255,0.04);border:2px solid rgba(255,255,255,0.09);
+  border-radius:10px;padding:9px 5px;text-align:center;cursor:pointer;transition:all 0.18s;}
+.aitem:hover{background:rgba(100,180,255,0.09);border-color:rgba(100,180,255,0.28);}
+.aitem.got{background:rgba(34,197,94,0.09);border-color:rgba(34,197,94,0.38);}
+.aitem-ic{font-size:20px;margin-bottom:3px;}
+.aitem-nm{font-size:8px;color:rgba(255,255,255,0.5);line-height:1.3;}
+.aitem.got .aitem-nm{color:#86efac;}
+
+/* Steps */
+.step-row{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.snum{width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:800;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.snum.done{background:rgba(34,197,94,0.28);color:#86efac;}
+.snum.act{background:rgba(251,191,36,0.38);color:#fde68a;box-shadow:0 0 8px rgba(251,191,36,0.4);}
+.snum.pend{background:rgba(99,102,241,0.2);color:#a5b4fc;}
+.stxt{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.65;}
+
+/* Outcome */
+#outcome{background:linear-gradient(135deg,rgba(34,197,94,0.12),rgba(16,185,129,0.08));
+  border:2px solid rgba(34,197,94,0.35);border-radius:13px;padding:14px;
+  margin-top:12px;display:none;}
+#outcome .ot{font-size:13px;font-weight:800;color:#86efac;margin-bottom:7px;}
+#outcome .ob{font-size:11px;color:rgba(255,255,255,0.7);line-height:1.7;}
+
+/* Progress */
+.pbar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin:10px 0;}
+.pfill{height:100%;border-radius:2px;background:linear-gradient(90deg,#6366f1,#7dd3fc);transition:width 0.4s;}
+
+/* Buttons */
+.btn1{width:100%;padding:11px;border-radius:11px;border:none;
+  background:linear-gradient(135deg,#6366f1,#7dd3fc);color:#fff;
+  font-size:13px;font-weight:800;cursor:pointer;letter-spacing:1px;margin-top:8px;}
+.btn1:hover{filter:brightness(1.15);}
+.btn1:disabled{opacity:0.35;cursor:not-allowed;filter:none;}
+.btn2{width:100%;padding:9px;border-radius:11px;
+  border:2px solid rgba(255,255,255,0.18);background:transparent;
+  color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;}
+.btn2:hover{border-color:rgba(100,180,255,0.4);color:#7dd3fc;}
+.nav-row{display:flex;gap:7px;margin-top:8px;}
+
+/* 3D preview label floating */
+#table-preview-label{position:fixed;bottom:130px;right:380px;
+  background:rgba(0,0,0,0.8);border:1px solid rgba(255,255,255,0.15);
+  border-radius:10px;padding:8px 14px;font-size:11px;color:rgba(255,255,255,0.8);
+  display:none;pointer-events:none;z-index:20;line-height:1.6;}
+
+/* Minimap */
+#mm{position:fixed;bottom:18px;right:18px;width:108px;height:108px;z-index:20;
+  border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.18);}
+#mm canvas{width:100%;height:100%;}
+
+/* SCREEN OVERLAY HUD (appears only while performing an experiment) */
+#screen-hud{position:fixed;top:60px;left:50%;transform:translateX(-50%);
+  width:520px;max-width:94vw;
+  background:linear-gradient(135deg,rgba(6,10,28,0.97),rgba(10,16,40,0.97));
+  border:2px solid rgba(100,180,255,0.25);border-radius:18px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.7);z-index:22;display:none;pointer-events:none;
+  overflow:hidden;}
+#screen-hud.show{display:block;}
+#shud-header{background:linear-gradient(90deg,rgba(99,102,241,0.35),rgba(125,211,252,0.18));
+  padding:12px 20px;display:flex;align-items:center;gap:12px;
+  border-bottom:1px solid rgba(255,255,255,0.08);}
+#shud-zone-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+#shud-title{font-size:14px;font-weight:800;color:#e2e8f0;letter-spacing:0.5px;}
+#shud-topic{font-size:10px;color:rgba(255,255,255,0.4);margin-left:auto;letter-spacing:1px;text-transform:uppercase;}
+#shud-body{display:flex;gap:0;}
+#shud-canvas-wrap{width:260px;height:160px;flex-shrink:0;position:relative;background:#000;}
+#shud-canvas{width:260px;height:160px;display:block;}
+#shud-info{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0;}
+#shud-step-label{font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:2px;text-transform:uppercase;}
+#shud-step-text{font-size:12px;color:#e2e8f0;line-height:1.65;font-weight:500;}
+#shud-progress{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+.shud-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background 0.4s;}
+.shud-dot.active{background:#fbbf24;}
+.shud-dot.done{background:#4ade80;}
+#shud-footer{padding:8px 16px;border-top:1px solid rgba(255,255,255,0.05);
+  display:flex;align-items:center;justify-content:space-between;}
+#shud-cycle-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin:0 12px;}
+#shud-cycle-bar{height:100%;background:linear-gradient(90deg,#6366f1,#7dd3fc);border-radius:2px;width:0%;transition:none;}
+#shud-auto-label{font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1px;white-space:nowrap;}
+#shud-hint{font-size:9px;color:rgba(255,255,255,0.3);white-space:nowrap;}
+
+</style>
+</head>
+<body>
+<!-- TOP BAR -->
+<div id="topbar">
+  <div id="logo">Virtual<em>Lab</em></div>
+  <div id="exp-status">Walk to a lab table and press E</div>
+  <div id="zone-pill">Entrance</div>
+</div>
+
+<!-- DPAD -->
+<div id="dpad">
+  <div></div><div class="dk" id="dw">&#9650;</div><div></div>
+  <div class="dk" id="da">&#9664;</div>
+  <div class="dk" id="ds">&#9660;</div>
+  <div class="dk" id="dd">&#9654;</div>
+</div>
+
+<div id="interact-hint">Press E to Interact</div>
+<div id="notif"></div>
+
+<!-- SCREEN HUD (projector overlay) -->
+<div id="screen-hud">
+  <div id="shud-header">
+    <div id="shud-zone-dot"></div>
+    <div id="shud-title">Experiment Screen</div>
+    <div id="shud-topic">NCERT Science</div>
+  </div>
+  <div id="shud-body">
+    <div id="shud-canvas-wrap">
+      <canvas id="shud-canvas" width="520" height="320"></canvas>
+    </div>
+    <div id="shud-info">
+      <div id="shud-step-label">CURRENT STEP</div>
+      <div id="shud-step-text">Walk near the projector screen to see the live demo</div>
+      <div id="shud-progress"></div>
+    </div>
+  </div>
+  <div id="shud-footer">
+    <div id="shud-hint">Live experiment demo</div>
+    <div id="shud-cycle-bar-wrap"><div id="shud-cycle-bar"></div></div>
+    <div id="shud-auto-label">AUTO DEMO</div>
+  </div>
+</div>
+
+<div id="table-preview-label"></div>
+
+<!-- SIDE PANEL -->
+<div id="panel">
+  <div id="panel-inner">
+    <div id="pcls"><span class="ptitle" id="ptitle">Lab</span><button id="pcls-btn">X Close</button></div>
+    <div class="psub" id="psub">SELECT EXPERIMENT</div>
+    <div id="p-explist"></div>
+    <div id="p-apparatus" style="display:none">
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:6px;">Click each item to collect from cabinet</div>
+      <div class="app-grid" id="app-grid"></div>
+      <div class="pbar"><div class="pfill" id="app-fill" style="width:0%"></div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);text-align:right;" id="app-count">0/0</div>
+    </div>
+    <div id="p-steps" style="display:none">
+      <div id="steps-list"></div>
+      <div class="pbar"><div class="pfill" id="step-fill" style="width:0%"></div></div>
+      <div class="nav-row">
+        <button class="btn2" id="btn-prev" style="flex:1">Prev</button>
+        <button class="btn1" id="btn-next" style="flex:2">Next Step</button>
+      </div>
+      <button class="btn2" id="btn-reset">Restart Experiment</button>
+    </div>
+    <div id="outcome">
+      <div class="ot">Experiment Complete!</div>
+      <div class="ob" id="outcome-txt"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MINIMAP -->
+<div id="mm"><canvas id="mmc" width="108" height="108"></canvas></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+// ════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════
+const EXPS = {
+  chemistry:[
+    {id:'c1',title:'Acid-Base Indicators',topic:'Acids, Bases & Salts',grade:7,diff:'Easy',dur:'20 min',
+     apparatus:[{ic:'🧪',nm:'Test Tube'},{ic:'💧',nm:'Dropper'},{ic:'📄',nm:'Litmus Paper'},{ic:'🫙',nm:'Beaker'},{ic:'🧤',nm:'Gloves'}],
+     steps:['Put on safety gloves before starting.','Pour 5 mL of lemon juice into the test tube.','Dip red litmus paper into the lemon juice.','Red litmus stays red - acid confirmed!','Dip blue litmus paper into lemon juice.','Blue litmus turns red - acidic nature confirmed.','Repeat with baking soda and record observations.'],
+     outcome:'Acids turn blue litmus red. Bases turn red litmus blue. pH<7 is acidic, pH>7 is basic.',anim:'litmus'},
+    {id:'c2',title:'Rusting of Iron',topic:'Metals and Non-metals',grade:8,diff:'Medium',dur:'3 days',
+     apparatus:[{ic:'📌',nm:'Iron Nail'},{ic:'🧪',nm:'Test Tube'},{ic:'💦',nm:'Water'},{ic:'🫙',nm:'Oil'},{ic:'🧂',nm:'CaCl2'}],
+     steps:['Label three test tubes A, B, and C.','Tube A: iron nail with water exposed to air.','Tube B: iron nail in boiled water sealed with oil.','Tube C: iron nail with calcium chloride only.','Leave all three tubes for 3 days.','Observe: only Tube A shows rust.','Conclusion: both water AND oxygen cause rusting.'],
+     outcome:'Rusting requires both water and oxygen simultaneously at the metal surface.',anim:'rust'},
+    {id:'c3',title:'Separating Mixtures',topic:'Separation of Substances',grade:6,diff:'Easy',dur:'15 min',
+     apparatus:[{ic:'📐',nm:'Funnel'},{ic:'📋',nm:'Filter Paper'},{ic:'🫙',nm:'Beaker'},{ic:'🥢',nm:'Stirring Rod'},{ic:'🧲',nm:'Magnet'}],
+     steps:['Prepare a mixture of sand and water in beaker.','Fold filter paper into a cone and place in funnel.','Place funnel over an empty clean beaker.','Slowly pour the mixture through the funnel.','Clear water (filtrate) collects below.','Sand stays on filter paper as residue.','Record filtrate vs residue observations.'],
+     outcome:'Filtration separates insoluble solids from liquids using a porous filter medium.',anim:'filter'},
+  ],
+  physics:[
+    {id:'p1',title:'Light Reflection',topic:'Light',grade:7,diff:'Easy',dur:'25 min',
+     apparatus:[{ic:'🪞',nm:'Plane Mirror'},{ic:'🔦',nm:'Torch'},{ic:'📐',nm:'Protractor'},{ic:'📃',nm:'White Paper'},{ic:'📏',nm:'Ruler'}],
+     steps:['Place plane mirror vertically on white paper.','Draw a normal (perpendicular) line to mirror surface.','Shine torch at 30 degrees to the normal.','Mark where the reflected ray falls on paper.','Measure the angle of reflection.','Repeat for 45 and 60 degree angles.','Record: angle of incidence equals angle of reflection.'],
+     outcome:'Law of Reflection: the angle of incidence always equals the angle of reflection.',anim:'reflect'},
+    {id:'p2',title:'Friction on Surfaces',topic:'Friction',grade:8,diff:'Medium',dur:'30 min',
+     apparatus:[{ic:'🟫',nm:'Wooden Block'},{ic:'⚖️',nm:'Spring Balance'},{ic:'🟧',nm:'Sandpaper'},{ic:'🟨',nm:'Smooth Board'},{ic:'🏋️',nm:'Weights'}],
+     steps:['Attach wooden block to spring balance.','Place block on the smooth wooden board.','Pull gently until block just starts moving.','Record the force - static friction on smooth surface.','Place sandpaper under the block and repeat.','Compare: sandpaper requires more force.','Rougher surfaces produce greater friction.'],
+     outcome:'Friction force depends on surface roughness and the normal force (weight) applied.',anim:'friction'},
+    {id:'p3',title:'Magnets & Field Lines',topic:'Magnetism',grade:6,diff:'Easy',dur:'20 min',
+     apparatus:[{ic:'🧲',nm:'Bar Magnet'},{ic:'✨',nm:'Iron Filings'},{ic:'🧭',nm:'Compass'},{ic:'📃',nm:'White Paper'},{ic:'📏',nm:'Ruler'}],
+     steps:['Place the bar magnet flat on white paper.','Sprinkle iron filings gently around the magnet.','Tap paper lightly to help filings align.','Observe the magnetic field line pattern.','Use compass to determine field direction.','Field lines emerge from N and enter S pole.','Sketch the complete magnetic field pattern.'],
+     outcome:'Magnetic field lines run from North to South pole outside the magnet.',anim:'magnet'},
+  ],
+  biology:[
+    {id:'b1',title:'Parts of a Flower',topic:'Getting to Know Plants',grade:6,diff:'Easy',dur:'30 min',
+     apparatus:[{ic:'🌺',nm:'Hibiscus'},{ic:'🥄',nm:'Forceps'},{ic:'🔍',nm:'Hand Lens'},{ic:'🟦',nm:'Glass Slide'},{ic:'🪡',nm:'Needle'}],
+     steps:['Take a fresh hibiscus flower specimen.','Remove the green sepals (calyx) carefully.','Peel off the colourful petals (corolla).','Identify stamens - the male reproductive parts.','Locate the pistil (carpel) at the centre.','Use hand lens to examine pollen on stamens.','Draw and label all four floral whorls.'],
+     outcome:'Flowers have four main parts: sepals, petals, stamens (male) and pistil (female).',anim:'flower'},
+    {id:'b2',title:'Onion Cell Observation',topic:'Cell Structure',grade:7,diff:'Medium',dur:'35 min',
+     apparatus:[{ic:'🧅',nm:'Onion'},{ic:'🟦',nm:'Glass Slide'},{ic:'⬜',nm:'Coverslip'},{ic:'🟤',nm:'Iodine'},{ic:'🔬',nm:'Microscope'}],
+     steps:['Peel a thin transparent layer from onion.','Place the peel flat on a clean glass slide.','Add one drop of iodine solution to stain cells.','Lower coverslip at an angle to avoid bubbles.','Place slide on the microscope stage.','Focus with low-power objective lens first.','Switch to high power - observe cell wall and nucleus.'],
+     outcome:'Plant cells have a distinct cell wall and nucleus clearly visible when stained with iodine.',anim:'microscope'},
+    {id:'b3',title:'Photosynthesis Test',topic:'Nutrition in Plants',grade:8,diff:'Medium',dur:'40 min',
+     apparatus:[{ic:'🍃',nm:'Leaf'},{ic:'🫙',nm:'Beaker'},{ic:'🧴',nm:'Ethanol'},{ic:'🟤',nm:'Iodine'},{ic:'🫧',nm:'Water Bath'}],
+     steps:['Take a variegated leaf with green and white patches.','Boil the leaf in water for 5 minutes.','Transfer to beaker with alcohol in a water bath.','Heat until leaf is decolourised completely.','Wash the decolourised leaf with water.','Add iodine solution drops over the entire leaf.','Green areas turn blue-black; white areas stay brown.'],
+     outcome:'Only chlorophyll-containing (green) areas perform photosynthesis and produce starch.',anim:'leaf'},
+  ]
+};
+
+const ZONE_CFG = {
+  chemistry:{label:'Chemistry Lab',col:0xff6600,hex:'#ff6600',hi:0xff9944,tx:-8.5,tz:-1,cx:-12.5,cz:-6},
+  physics:  {label:'Physics Lab',  col:0x3344cc,hex:'#5566ff',hi:0x6677ff,tx:0,   tz:-1,cx:-0.5, cz:-6},
+  biology:  {label:'Biology Lab',  col:0x226633,hex:'#44aa55',hi:0x55cc66,tx:8.5,  tz:-1,cx:11.5, cz:-6},
+};
+
+// ════════════════════════════════════════════
+// RENDERER + SCENE
+// ════════════════════════════════════════════
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf2ede4);
+scene.fog = new THREE.FogExp2(0xf2ede4, 0.028);
+
+const camera = new THREE.PerspectiveCamera(62, window.innerWidth/window.innerHeight, 0.05, 60);
+camera.position.set(0,3,8);
+
+const clock = new THREE.Clock();
+
+// ════════════════════════════════════════════
+// LIGHTING
+// ════════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0xfff5e8, 0.65));
+const sun = new THREE.DirectionalLight(0xfff8f0, 0.45);
+sun.position.set(5,10,3); sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024); scene.add(sun);
+
+const ceilLights = [];
+[[-7,4.85,0],[-7,4.85,-8],[0,4.85,0],[0,4.85,-8],[7,4.85,0],[7,4.85,-8]].forEach(([x,y,z])=>{
+  const pl = new THREE.PointLight(0xfff5e0, 0.7, 16);
+  pl.position.set(x,y,z); pl.castShadow=true; pl.shadow.mapSize.set(256,256); scene.add(pl); ceilLights.push(pl);
+  const fix = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.06,0.7),new THREE.MeshStandardMaterial({color:0xffffdd,emissive:0xffffbb,emissiveIntensity:0.55}));
+  fix.position.set(x,4.9,z); scene.add(fix);
+});
+
+// ════════════════════════════════════════════
+// MATERIALS (shared)
+// ════════════════════════════════════════════
+const M = {
+  wall:   new THREE.MeshStandardMaterial({color:0xf6f2ec,roughness:0.95}),
+  floor:  new THREE.MeshStandardMaterial({color:0xe0d8c8,roughness:0.85}),
+  ceil:   new THREE.MeshStandardMaterial({color:0xfafaf8,roughness:1.0}),
+  wood:   new THREE.MeshStandardMaterial({color:0x9a6840,roughness:0.65}),
+  metal:  new THREE.MeshStandardMaterial({color:0x888899,roughness:0.35,metalness:0.65}),
+  glass:  new THREE.MeshStandardMaterial({color:0x99ccff,transparent:true,opacity:0.22,roughness:0.04,metalness:0.15}),
+  black:  new THREE.MeshStandardMaterial({color:0x1a361a,roughness:0.92}),
+  skin:   new THREE.MeshStandardMaterial({color:0xf2b88a,roughness:0.75}),
+  coat:   new THREE.MeshStandardMaterial({color:0xeeeee8,roughness:0.82}),
+  shirt:  new THREE.MeshStandardMaterial({color:0x3366ee,roughness:0.8}),
+  pants:  new THREE.MeshStandardMaterial({color:0x223355,roughness:0.85}),
+  shoe:   new THREE.MeshStandardMaterial({color:0x111122,roughness:0.92}),
+  hair:   new THREE.MeshStandardMaterial({color:0x2a1200,roughness:0.95}),
+  board:  new THREE.MeshStandardMaterial({color:0x1a381a,roughness:0.9}),
+};
+
+// ════════════════════════════════════════════
+// ROOM
+// ════════════════════════════════════════════
+// Floor
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(34,28), M.floor);
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const grid = new THREE.GridHelper(34,34,0xbbaaa0,0xbbaaa0);
+grid.material.opacity=0.12; grid.material.transparent=true; grid.position.y=0.001; scene.add(grid);
+
+// Ceiling
+const ceil = new THREE.Mesh(new THREE.PlaneGeometry(34,28), M.ceil);
+ceil.rotation.x=Math.PI/2; ceil.position.y=5; scene.add(ceil);
+
+// Walls
+[{s:[34,5],p:[0,2.5,-14],ry:0},{s:[34,5],p:[0,2.5,14],ry:Math.PI},
+ {s:[28,5],p:[-17,2.5,0],ry:Math.PI/2},{s:[28,5],p:[17,2.5,0],ry:-Math.PI/2}
+].forEach(w=>{
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(...w.s),M.wall.clone());
+  m.position.set(...w.p); m.rotation.y=w.ry; m.receiveShadow=true; scene.add(m);
+});
+
+// Zone dividers on floor
+[-5.5,5.5].forEach(x=>{
+  const d=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.012,28),new THREE.MeshStandardMaterial({color:0xc0b090}));
+  d.position.set(x,0.006,0); scene.add(d);
+});
+
+// Blackboard
+(()=>{
+  const frm=new THREE.Mesh(new THREE.BoxGeometry(11,3.2,0.14),M.wood);
+  frm.position.set(0,3.1,-13.85); scene.add(frm);
+  const brd=new THREE.Mesh(new THREE.BoxGeometry(10.6,2.85,0.06),M.board);
+  brd.position.set(0,3.1,-13.78); scene.add(brd);
+  // Chalk tray
+  const tray=new THREE.Mesh(new THREE.BoxGeometry(10.6,0.1,0.22),M.wood);
+  tray.position.set(0,1.67,-13.8); scene.add(tray);
+  // Zone labels as colored bars
+  [{x:-8.5,c:0xff6600},{x:0,c:0x4455dd},{x:8.5,c:0x44aa55}].forEach(b=>{
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(4.5,0.08,0.04),new THREE.MeshStandardMaterial({color:b.c,emissive:b.c,emissiveIntensity:0.3}));
+    bar.position.set(b.x,2.1,-13.74); scene.add(bar);
+  });
+})();
+
+// Windows
+[-6,0,6].forEach(z=>{
+  const frm=new THREE.Mesh(new THREE.BoxGeometry(0.12,2.4,3.2),new THREE.MeshStandardMaterial({color:0xddd0b8}));
+  frm.position.set(16.94,3,z); scene.add(frm);
+  const g=new THREE.Mesh(new THREE.PlaneGeometry(2.9,2.1),M.glass);
+  g.rotation.y=-Math.PI/2; g.position.set(16.92,3,z); scene.add(g);
+  const sky=new THREE.PointLight(0xc8e0ff,0.3,9);
+  sky.position.set(15,3,z); scene.add(sky);
+});
+
+// ════════════════════════════════════════════
+// LAB ZONE BUILDER (tables + cabinets)
+// ════════════════════════════════════════════
+const interactables = [];
+// For each zone: map of 3D objects on table that animate
+const tableObjects = {}; // zone -> {objects by name}
+const cabinetObjects = {};
+
+function buildZone(zk){
+  const c = ZONE_CFG[zk];
+  const tmat = new THREE.MeshStandardMaterial({color:c.col,roughness:0.45,metalness:0.06});
+
+  // TABLE
+  const tabletop = new THREE.Mesh(new THREE.BoxGeometry(5.5,0.11,3.2),tmat);
+  tabletop.position.set(c.tx,1.02,c.tz); tabletop.castShadow=true; tabletop.receiveShadow=true; scene.add(tabletop);
+  // Apron
+  const apronF = new THREE.Mesh(new THREE.BoxGeometry(5.3,0.14,0.06),new THREE.MeshStandardMaterial({color:c.col,roughness:0.5}));
+  apronF.position.set(c.tx,0.95,c.tz+1.6); scene.add(apronF);
+  // Legs
+  [2.1,-2.1].forEach(dx=>[1.3,-1.3].forEach(dz=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.02,0.1),M.wood);
+    leg.position.set(c.tx+dx,0.51,c.tz+dz); leg.castShadow=true; scene.add(leg);
+  }));
+  // Under shelf
+  const shelf=new THREE.Mesh(new THREE.BoxGeometry(5.1,0.05,2.8),M.wood);
+  shelf.position.set(c.tx,0.32,c.tz); scene.add(shelf);
+  // Label plate
+  const lmat=new THREE.MeshStandardMaterial({color:c.col,emissive:c.col,emissiveIntensity:0.18,roughness:0.6});
+  const lp=new THREE.Mesh(new THREE.BoxGeometry(2,0.04,0.55),lmat);
+  lp.position.set(c.tx,1.08,c.tz-1.28); scene.add(lp);
+  // Stool
+  const stoolT=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.055,18),new THREE.MeshStandardMaterial({color:0x7a5230,roughness:0.7}));
+  stoolT.position.set(c.tx,0.65,c.tz+2.4); scene.add(stoolT);
+  const stoolL=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,0.6,8),M.metal);
+  stoolL.position.set(c.tx,0.32,c.tz+2.4); scene.add(stoolL);
+
+  // Build decorative items + animated preview objects
+  tableObjects[zk] = buildTableItems(zk, c.tx, c.tz);
+
+  // Invisible hit box for table
+  const thit=new THREE.Mesh(new THREE.BoxGeometry(5.6,2.5,4),new THREE.MeshBasicMaterial({visible:false}));
+  thit.position.set(c.tx,1,c.tz+0.5); thit.userData={type:'table',zone:zk}; scene.add(thit); interactables.push(thit);
+
+  // CABINET
+  buildCabinet(zk, c.cx, c.cz, c.col, c.hi);
+}
+
+function buildTableItems(zk, tx, tz){
+  const objs = {};
+  if(zk==='chemistry'){
+    // Test tube rack - solid wood
+    const rack=new THREE.Mesh(new THREE.BoxGeometry(0.85,0.09,0.2),M.wood);
+    rack.position.set(tx-1.4,1.075,tz-0.5); scene.add(rack);
+    const tubes=[];
+    // Rack posts
+    [0,0.24,0.48].forEach(dx=>{
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.22,8),M.wood);
+      post.position.set(tx-1.55+dx,1.19,tz-0.5); scene.add(post);
+    });
+    // Solid opaque test tubes (no transparency - fixes invisibility)
+    [0,0.24,0.48].forEach((dx,i)=>{
+      // Outer tube body - solid coloured glass look
+      const tubeMat=new THREE.MeshStandardMaterial({color:[0xee2222,0xddcc00,0x22cc88][i],roughness:0.2,metalness:0.1,depthWrite:true});
+      const tubeBody=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.036,0.26,12),tubeMat);
+      tubeBody.position.set(tx-1.55+dx,1.22,tz-0.5); scene.add(tubeBody); tubes.push(tubeBody);
+      // Liquid fill inside (solid, smaller)
+      const liqFillMat=new THREE.MeshStandardMaterial({color:[0xff5555,0xffee33,0x44ffaa][i],roughness:0.15,metalness:0.0,depthWrite:true});
+      const liqFill=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.025,0.1,10),liqFillMat);
+      liqFill.position.set(tx-1.55+dx,1.14,tz-0.5); scene.add(liqFill);
+    });
+    objs.tubes=tubes;
+
+    // Beaker - use a solid ring + base instead of transparent cylinder
+    // Beaker base
+    const bkBase=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.04,18),new THREE.MeshStandardMaterial({color:0x88bbdd,roughness:0.1,metalness:0.25,depthWrite:true}));
+    bkBase.position.set(tx+0.6,1.065,tz); scene.add(bkBase);
+    // Beaker wall (open top cylinder - solid)
+    const bkWallMat=new THREE.MeshStandardMaterial({color:0x99ccee,roughness:0.1,metalness:0.2,side:THREE.DoubleSide,depthWrite:true});
+    const bkWall=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.16,0.28,18,1,true),bkWallMat);
+    bkWall.position.set(tx+0.6,1.19,tz); scene.add(bkWall);
+    const beaker=bkWall; // ref for animations
+    // Liquid inside beaker - solid yellow
+    const liqM=new THREE.MeshStandardMaterial({color:0xeedd77,roughness:0.3,depthWrite:true});
+    const liq=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.13,0.1,16),liqM);
+    liq.position.set(tx+0.6,1.1,tz); scene.add(liq);
+    objs.beaker=beaker; objs.liquid=liq; objs.liqMat=liqM;
+
+    // Litmus strip - solid blue strip, visible as prop
+    const litM=new THREE.MeshStandardMaterial({color:0x3355ee,roughness:0.8,depthWrite:true});
+    const litmus=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.24,0.012),litM);
+    litmus.position.set(tx-1.55,1.22,tz-0.5); litmus.visible=false; scene.add(litmus);
+    objs.litmus=litmus; objs.litmusMat=litM;
+
+    // Bunsen burner - solid metal
+    const bb=new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.14,0.24,12),M.metal);
+    bb.position.set(tx+1.5,1.13,tz-0.4); scene.add(bb);
+    const bbpipe=new THREE.Mesh(new THREE.CylinderGeometry(0.032,0.032,0.34,8),M.metal);
+    bbpipe.position.set(tx+1.5,1.35,tz-0.4); scene.add(bbpipe);
+    // Collar ring
+    const bbring=new THREE.Mesh(new THREE.TorusGeometry(0.05,0.014,8,14),new THREE.MeshStandardMaterial({color:0x555566,roughness:0.4,metalness:0.7}));
+    bbring.position.set(tx+1.5,1.26,tz-0.4); bbring.rotation.x=Math.PI/2; scene.add(bbring);
+    // Flame - solid emissive cone (hidden until active)
+    const flameMat=new THREE.MeshStandardMaterial({color:0xff7700,emissive:0xff5500,emissiveIntensity:1.2,roughness:0.8,depthWrite:true});
+    const flame=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.2,10),flameMat);
+    flame.position.set(tx+1.5,1.58,tz-0.4); flame.visible=false; scene.add(flame);
+    objs.flame=flame;
+
+    // Dropper bottle
+    const bottleMat=new THREE.MeshStandardMaterial({color:0x884400,roughness:0.4,depthWrite:true});
+    const bottle=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.07,0.22,10),bottleMat);
+    bottle.position.set(tx+1.2,1.14,tz+0.5); scene.add(bottle);
+    const bottleTop=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.04,0.1,8),bottleMat);
+    bottleTop.position.set(tx+1.2,1.3,tz+0.5); scene.add(bottleTop);
+  }
+
+  if(zk==='physics'){
+    // Mirror stand - solid metal post
+    const mstand=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.55,0.1),M.metal);
+    mstand.position.set(tx-1.2,1.34,tz); scene.add(mstand);
+    // Mirror face - solid reflective silver (no transparency)
+    const mfaceMat=new THREE.MeshStandardMaterial({color:0xddeeff,roughness:0.02,metalness:0.95,depthWrite:true});
+    const mface=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.48,0.3),mfaceMat);
+    mface.position.set(tx-1.16,1.34,tz); scene.add(mface);
+    // Mirror backing (dark)
+    const mback=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.5,0.32),new THREE.MeshStandardMaterial({color:0x222233,roughness:0.8,depthWrite:true}));
+    mback.position.set(tx-1.2,1.34,tz); scene.add(mback);
+    // Mirror base foot
+    const mfoot=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.04,0.28),M.metal);
+    mfoot.position.set(tx-1.18,1.065,tz); scene.add(mfoot);
+
+    // Prism - solid tinted (no transparency)
+    const prismMat=new THREE.MeshStandardMaterial({color:0x55aacc,roughness:0.05,metalness:0.3,depthWrite:true});
+    const prism=new THREE.Mesh(new THREE.CylinderGeometry(0,0.2,0.44,3),prismMat);
+    prism.position.set(tx+0.7,1.29,tz); scene.add(prism);
+    objs.prism=prism;
+
+    // Light ray beams - solid emissive boxes (hidden, revealed by FX)
+    const rayMat=new THREE.MeshStandardMaterial({color:0xffee00,emissive:0xffdd00,emissiveIntensity:2.0,roughness:0.0,depthWrite:true});
+    const rayG=new THREE.BoxGeometry(0.018,0.018,1.4);
+    const ray=new THREE.Mesh(rayG,rayMat);
+    ray.position.set(tx-0.5,1.3,tz); ray.visible=false; scene.add(ray);
+    objs.ray=ray; objs.rayMat=rayMat;
+    const ray2Mat=new THREE.MeshStandardMaterial({color:0xffbb00,emissive:0xff9900,emissiveIntensity:2.0,roughness:0.0,depthWrite:true});
+    const ray2=new THREE.Mesh(rayG.clone(),ray2Mat);
+    ray2.position.set(tx-0.5,1.3,tz); ray2.visible=false; scene.add(ray2);
+    objs.ray2=ray2; objs.ray2Mat=ray2Mat;
+
+    // Wooden block for friction
+    const block=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.14,0.2),M.wood);
+    block.position.set(tx+0.5,1.09,tz+0.5); scene.add(block);
+    objs.block=block;
+
+    // Spring balance - solid
+    const sb=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.38,0.09),M.metal);
+    sb.position.set(tx+1.6,1.27,tz-0.4); scene.add(sb);
+    const sbDial=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.02,12),new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9,depthWrite:true}));
+    sbDial.position.set(tx+1.6,1.35,tz-0.36); sbDial.rotation.x=Math.PI/2; scene.add(sbDial);
+    const sbhook=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.012,8,12,Math.PI),M.metal);
+    sbhook.position.set(tx+1.6,1.47,tz-0.4); sbhook.rotation.z=Math.PI; scene.add(sbhook);
+
+    // Horseshoe magnet - solid red+grey
+    const magRedMat=new THREE.MeshStandardMaterial({color:0xcc2222,roughness:0.4,metalness:0.25,depthWrite:true});
+    const magGreyMat=new THREE.MeshStandardMaterial({color:0x888899,roughness:0.4,metalness:0.3,depthWrite:true});
+    const mag=new THREE.Mesh(new THREE.TorusGeometry(0.17,0.052,8,18,Math.PI),magRedMat);
+    mag.position.set(tx-1.7,1.21,tz+0.4); scene.add(mag);
+    // Pole tips
+    [-1,1].forEach(s=>{
+      const tip=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.06),s<0?magRedMat:magGreyMat);
+      tip.position.set(tx-1.7+s*0.17,1.13,tz+0.4); scene.add(tip);
+    });
+    objs.mag=mag;
+
+    // Protractor (flat semicircle look)
+    const protMat=new THREE.MeshStandardMaterial({color:0xddcc88,roughness:0.7,depthWrite:true});
+    const prot=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,0.015,24,1,false,0,Math.PI),protMat);
+    prot.position.set(tx-0.3,1.08,tz-0.7); prot.rotation.x=-Math.PI/2; scene.add(prot);
+    // Ruler
+    const ruler=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.015,0.06),new THREE.MeshStandardMaterial({color:0xddcc77,roughness:0.6,depthWrite:true}));
+    ruler.position.set(tx+0.1,1.08,tz-0.55); scene.add(ruler);
+  }
+  if(zk==='biology'){
+    // Microscope
+    const mscBase=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.07,0.32),M.metal);
+    mscBase.position.set(tx-0.9,1.085,tz); scene.add(mscBase);
+    const mscArm=new THREE.Mesh(new THREE.BoxGeometry(0.065,0.58,0.065),M.metal);
+    mscArm.position.set(tx-0.9,1.4,tz-0.06); scene.add(mscArm);
+    const mscLens=new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.08,0.2,12),M.metal);
+    mscLens.position.set(tx-0.9,1.73,tz-0.06); scene.add(mscLens);
+    const mscEye=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.038,0.12,10),M.metal);
+    mscEye.position.set(tx-0.9,1.85,tz-0.06); scene.add(mscEye);
+    // Slide on microscope
+    const slG=new THREE.BoxGeometry(0.28,0.008,0.1);
+    const slM=new THREE.MeshStandardMaterial({color:0xddeecc,transparent:true,opacity:0.85,roughness:0.1});
+    const slide=new THREE.Mesh(slG,slM);
+    slide.position.set(tx-0.9,1.085,tz+0.02); scene.add(slide);
+    objs.slide=slide;
+    // Petri dishes
+    [0.22,-0.22].forEach(dz=>{
+      const pd=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.19,0.035,20),new THREE.MeshStandardMaterial({color:0xccffdd,transparent:true,opacity:0.6}));
+      pd.position.set(tx+1.1,1.052,tz+dz); scene.add(pd);
+    });
+    // Leaf specimen
+    const leafMat=new THREE.MeshStandardMaterial({color:0x228822,roughness:0.85});
+    const leaf=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,8),leafMat);
+    leaf.scale.set(2.2,0.3,1.2);
+    leaf.position.set(tx+1.8,1.07,tz); scene.add(leaf);
+    objs.leaf=leaf; objs.leafMat=leafMat;
+    // Plant
+    const pot=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.08,0.18,12),new THREE.MeshStandardMaterial({color:0x9a5a28,roughness:0.9}));
+    pot.position.set(tx+2,1.17,tz); scene.add(pot);
+    const pl=new THREE.Mesh(new THREE.SphereGeometry(0.2,10,10),new THREE.MeshStandardMaterial({color:0x228822,roughness:0.88}));
+    pl.position.set(tx+2,1.44,tz); scene.add(pl);
+  }
+  return objs;
+}
+
+function buildCabinet(zk, cx, cz, col, hi){
+  const cmat=new THREE.MeshStandardMaterial({color:0xd6ccb2,roughness:0.7});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(2.4,3.1,0.72),cmat);
+  body.position.set(cx,1.55,cz); body.castShadow=true; scene.add(body);
+  const topcol=new THREE.Mesh(new THREE.BoxGeometry(2.4,0.1,0.74),new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:0.22,roughness:0.6}));
+  topcol.position.set(cx,3.15,cz); scene.add(topcol);
+  // Doors
+  [-0.58,0.58].forEach(dx=>{
+    const door=new THREE.Mesh(new THREE.BoxGeometry(1.08,2.9,0.055),new THREE.MeshStandardMaterial({color:0xe8dcc4,roughness:0.65}));
+    door.position.set(cx+dx,1.55,cz+0.4); scene.add(door);
+    const win=new THREE.Mesh(new THREE.BoxGeometry(0.76,1.5,0.02),M.glass);
+    win.position.set(cx+dx,1.62,cz+0.43); scene.add(win);
+    const handle=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.26,0.07),M.metal);
+    handle.position.set(cx+dx+(dx<0?0.24:-0.24),1.55,cz+0.45); scene.add(handle);
+  });
+  // Feet
+  [-0.9,0.9].forEach(dx=>{
+    const ft=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.09,0.55),M.metal);
+    ft.position.set(cx+dx,0.045,cz); scene.add(ft);
+  });
+  // Invisible hit
+  const chit=new THREE.Mesh(new THREE.BoxGeometry(2.6,3.4,1.2),new THREE.MeshBasicMaterial({visible:false}));
+  chit.position.set(cx,1.6,cz+0.1); chit.userData={type:'cabinet',zone:zk}; scene.add(chit); interactables.push(chit);
+  cabinetObjects[zk]=chit;
+}
+
+['chemistry','physics','biology'].forEach(z=>buildZone(z));
+
+// Teacher desk
+(()=>{
+  const dmat=new THREE.MeshStandardMaterial({color:0x7a5230,roughness:0.6});
+  const top=new THREE.Mesh(new THREE.BoxGeometry(3.2,0.09,1.6),dmat);
+  top.position.set(0,0.82,-10.5); scene.add(top);
+  [1.1,-1.1].forEach(dx=>[0.6,-0.6].forEach(dz=>{
+    const l=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.82,0.09),M.wood);
+    l.position.set(dx,0.41,-10.5+dz); scene.add(l);
+  }));
+  const globe=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,16),new THREE.MeshStandardMaterial({color:0x4488cc,roughness:0.5}));
+  globe.position.set(0.9,0.99,-10.5); scene.add(globe);
+  const gst=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.09,0.15,10),M.metal);
+  gst.position.set(0.9,0.82,-10.5); scene.add(gst);
+})();
+
+// ════════════════════════════════════════════
+// CHARACTER WITH ARTICULATED ARMS
+// ════════════════════════════════════════════
+let char = {};
+
+function buildCharacter(){
+  const root = new THREE.Group();
+
+  // Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.52,0.22),M.coat);
+  torso.position.y=0.85; torso.castShadow=true; root.add(torso);
+  const shirt = new THREE.Mesh(new THREE.BoxGeometry(0.38,0.28,0.24),M.shirt);
+  shirt.position.set(0,0.78,0); root.add(shirt);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.32,0.32,0.28),M.skin);
+  head.position.y=1.28; head.castShadow=true; root.add(head);
+  const hair = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.16,0.3),M.hair);
+  hair.position.set(0,1.43,0); root.add(hair);
+  const hairB = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.18,0.06),M.hair);
+  hairB.position.set(0,1.35,-0.14); root.add(hairB);
+
+  // Eyes
+  [-0.07,0.07].forEach(ex=>{
+    const eye=new THREE.Mesh(new THREE.SphereGeometry(0.038,8,8),new THREE.MeshStandardMaterial({color:0x111122}));
+    eye.position.set(ex,1.29,0.138); root.add(eye);
+    const shine=new THREE.Mesh(new THREE.SphereGeometry(0.012,6,6),new THREE.MeshStandardMaterial({color:0xffffff}));
+    shine.position.set(ex+0.014,1.3,0.148); root.add(shine);
+  });
+
+  // Goggles
+  const gmat=new THREE.MeshStandardMaterial({color:0x888880,roughness:0.4,metalness:0.4});
+  const glmat=new THREE.MeshStandardMaterial({color:0x88ccff,transparent:true,opacity:0.5,roughness:0.05});
+  [-0.09,0.09].forEach(gx=>{
+    const gr=new THREE.Mesh(new THREE.TorusGeometry(0.062,0.016,8,16),gmat);
+    gr.position.set(gx,1.29,0.14); gr.rotation.y=Math.PI/2; root.add(gr);
+    const gl=new THREE.Mesh(new THREE.CircleGeometry(0.052,16),glmat);
+    gl.position.set(gx,1.29,0.145); root.add(gl);
+  });
+  const gb=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.012,0.04),gmat);
+  gb.position.set(0,1.29,0.142); root.add(gb);
+
+  // Neck
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.065,0.09,10),M.skin);
+  neck.position.y=1.09; root.add(neck);
+
+  // Legs
+  [-0.1,0.1].forEach((lx,li)=>{
+    const lg=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.52,0.17),M.pants);
+    lg.position.set(lx,0.32,0); root.add(lg);
+    char['leg'+li]=lg;
+    const sh=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.09,0.23),M.shoe);
+    sh.position.set(lx,0.045,0.04); root.add(sh);
+  });
+
+  // === ARTICULATED ARMS (pivot at shoulder) ===
+  // Left arm group (pivot at shoulder)
+  const lShoulder = new THREE.Group();
+  lShoulder.position.set(-0.26, 1.06, 0);
+  root.add(lShoulder);
+  char.lShoulder = lShoulder;
+
+  const lUpper = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.28,0.13),M.coat);
+  lUpper.position.set(0,-0.14,0);
+  lShoulder.add(lUpper);
+
+  const lElbow = new THREE.Group();
+  lElbow.position.set(0,-0.28,0);
+  lShoulder.add(lElbow);
+  char.lElbow = lElbow;
+
+  const lFore = new THREE.Mesh(new THREE.BoxGeometry(0.11,0.26,0.11),M.coat);
+  lFore.position.set(0,-0.13,0);
+  lElbow.add(lFore);
+
+  const lWrist = new THREE.Group();
+  lWrist.position.set(0,-0.26,0);
+  lElbow.add(lWrist);
+  char.lWrist = lWrist;
+
+  const lHand = new THREE.Mesh(new THREE.SphereGeometry(0.065,8,8),M.skin);
+  lHand.position.set(0,-0.065,0);
+  lWrist.add(lHand);
+
+  // Right arm group
+  const rShoulder = new THREE.Group();
+  rShoulder.position.set(0.26, 1.06, 0);
+  root.add(rShoulder);
+  char.rShoulder = rShoulder;
+
+  const rUpper = new THREE.Mesh(new THREE.BoxGeometry(0.13,0.28,0.13),M.coat);
+  rUpper.position.set(0,-0.14,0);
+  rShoulder.add(rUpper);
+
+  const rElbow = new THREE.Group();
+  rElbow.position.set(0,-0.28,0);
+  rShoulder.add(rElbow);
+  char.rElbow = rElbow;
+
+  const rFore = new THREE.Mesh(new THREE.BoxGeometry(0.11,0.26,0.11),M.coat);
+  rFore.position.set(0,-0.13,0);
+  rElbow.add(rFore);
+
+  const rWrist = new THREE.Group();
+  rWrist.position.set(0,-0.26,0);
+  rElbow.add(rWrist);
+  char.rWrist = rWrist;
+
+  const rHand = new THREE.Mesh(new THREE.SphereGeometry(0.065,8,8),M.skin);
+  rHand.position.set(0,-0.065,0);
+  rWrist.add(rHand);
+
+  // Prop: test tube in right hand
+  const propTube=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.036,0.26,10),new THREE.MeshStandardMaterial({color:0xaaddff,transparent:true,opacity:0.65,roughness:0.04}));
+  propTube.position.set(0,-0.14,0); propTube.visible=false;
+  rWrist.add(propTube); char.propTube=propTube;
+  char.propTubeMat=propTube.material;
+
+  // Prop: litmus strip in left hand
+  const propLitmus=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.2,0.01),new THREE.MeshStandardMaterial({color:0x4466ff,roughness:0.9}));
+  propLitmus.position.set(0,-0.12,0); propLitmus.visible=false;
+  lWrist.add(propLitmus); char.propLitmus=propLitmus;
+  char.propLitmusMat=propLitmus.material;
+
+  // Prop: torch in right hand
+  const propTorch=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.048,0.2,10),new THREE.MeshStandardMaterial({color:0x444433,roughness:0.7}));
+  propTorch.position.set(0,-0.14,0); propTorch.visible=false;
+  rWrist.add(propTorch); char.propTorch=propTorch;
+
+  // Prop: leaf in left hand
+  const propLeaf=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6),new THREE.MeshStandardMaterial({color:0x228822,roughness:0.85}));
+  propLeaf.scale.set(1.8,0.25,1.1);
+  propLeaf.position.set(0,-0.1,0); propLeaf.visible=false;
+  lWrist.add(propLeaf); char.propLeaf=propLeaf;
+  char.propLeafMat=propLeaf.material;
+
+  root.position.set(0,0,6);
+  root.castShadow=true;
+  scene.add(root);
+  char.root=root;
+
+  return root;
+}
+buildCharacter();
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+const state = {
+  mode:'free',      // free | walking | performing
+  zone:null,
+  exp:null,
+  step:0,
+  collected:[],
+  walkTarget:null,
+  walkCallback:null,
+  performing:false,
+  expPhase:0,       // animation sub-phase within current step
+  phaseT:0,         // time in current phase
+};
+
+// ════════════════════════════════════════════
+// INPUT
+// ════════════════════════════════════════════
+const keys={};
+const mb={w:false,a:false,s:false,d:false};
+document.addEventListener('keydown',e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.key.toLowerCase()==='e') tryInteract();
+});
+document.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+
+['w','a','s','d'].forEach(k=>{
+  const b=document.getElementById('d'+k);
+  b.addEventListener('pointerdown',()=>{mb[k]=true;b.classList.add('on');});
+  ['pointerup','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>{mb[k]=false;b.classList.remove('on');}));
+});
+
+function isKey(k){return keys[k]||mb[k]||false;}
+
+// ════════════════════════════════════════════
+// MOVEMENT & WALK TO TARGET
+// ════════════════════════════════════════════
+let walkCycle=0, charAngle=0, isMoving=false;
+const SPEED=0.07, BOUNDS={x:[-15,15],z:[-12,12]};
+
+function updateFreeMove(){
+  if(state.mode!=='free') return;
+  let dx=0,dz=0;
+  if(isKey('w')||isKey('arrowup'))    dz=-1;
+  if(isKey('s')||isKey('arrowdown'))  dz=1;
+  if(isKey('a')||isKey('arrowleft'))  dx=-1;
+  if(isKey('d')||isKey('arrowright')) dx=1;
+  isMoving=dx!==0||dz!==0;
+  if(isMoving){
+    const len=Math.sqrt(dx*dx+dz*dz);dx/=len;dz/=len;
+    char.root.position.x=Math.max(BOUNDS.x[0],Math.min(BOUNDS.x[1],char.root.position.x+dx*SPEED));
+    char.root.position.z=Math.max(BOUNDS.z[0],Math.min(BOUNDS.z[1],char.root.position.z+dz*SPEED));
+    charAngle=Math.atan2(dx,dz);char.root.rotation.y=charAngle;
+    walkCycle+=0.22;
+    char.root.position.y=Math.sin(walkCycle)*0.035;
+    animateWalk(walkCycle);
+  } else {
+    char.root.position.y*=0.82;
+    idleArms();
+  }
+}
+
+function walkToTarget(target, cb){
+  state.mode='walking';
+  state.walkTarget=target;
+  state.walkCallback=cb;
+  isMoving=true;
+}
+
+function updateWalk(dt){
+  if(state.mode!=='walking'||!state.walkTarget) return;
+  const pos=char.root.position;
+  const tx=state.walkTarget.x, tz=state.walkTarget.z;
+  const dx=tx-pos.x, dz=tz-pos.z;
+  const dist=Math.sqrt(dx*dx+dz*dz);
+  if(dist<0.18){
+    char.root.position.x=tx; char.root.position.z=tz;
+    state.mode='performing';
+    isMoving=false;
+    char.root.position.y=0;
+    idleArms();
+    if(state.walkCallback){state.walkCallback(); state.walkCallback=null;}
+    return;
+  }
+  const spd=Math.min(SPEED*1.4, dist*0.12+SPEED*0.6);
+  const len=dist; const nx=dx/len, nz=dz/len;
+  char.root.position.x+=nx*spd; char.root.position.z+=nz*spd;
+  charAngle=Math.atan2(nx,nz); char.root.rotation.y=charAngle;
+  walkCycle+=0.22; char.root.position.y=Math.sin(walkCycle)*0.035;
+  animateWalk(walkCycle);
+}
+
+function animateWalk(t){
+  // Arm swing while walking
+  char.lShoulder.rotation.x=Math.sin(t+Math.PI)*0.38;
+  char.rShoulder.rotation.x=Math.sin(t)*0.38;
+  char.lElbow.rotation.x=Math.max(0,Math.sin(t+Math.PI)*0.2);
+  char.rElbow.rotation.x=Math.max(0,Math.sin(t)*0.2);
+  char.leg0.rotation.x=Math.sin(t+Math.PI)*0.45;
+  char.leg1.rotation.x=Math.sin(t)*0.45;
+}
+
+function idleArms(){
+  const damp=0.12;
+  char.lShoulder.rotation.x*=(1-damp);
+  char.rShoulder.rotation.x*=(1-damp);
+  char.lElbow.rotation.x*=(1-damp);
+  char.rElbow.rotation.x*=(1-damp);
+  char.leg0.rotation.x*=(1-damp);
+  char.leg1.rotation.x*=(1-damp);
+}
+
+// ════════════════════════════════════════════
+// ARM POSES for experiments
+// ════════════════════════════════════════════
+function poseArms(pose, t){
+  // pose: 'idle'|'pourL'|'dip'|'stir'|'push'|'hold'|'write'|'examine'|'shake'
+  switch(pose){
+    case 'idle':
+      idleArms(); break;
+    case 'pourL': // right arm pours, left arm steady
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.9,0.1);
+      char.rShoulder.rotation.z=lerp(char.rShoulder.rotation.z,-0.35,0.1);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,1.1,0.1);
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.5,0.1);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.6,0.1);
+      break;
+    case 'dip': // dip left hand down into beaker
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.7,0.1);
+      char.lShoulder.rotation.z=lerp(char.lShoulder.rotation.z,0.3,0.1);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.9+Math.sin(t*2)*0.15,0.1);
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.35,0.08);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.5,0.08);
+      break;
+    case 'stir':
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.6,0.1);
+      char.rShoulder.rotation.z=lerp(char.rShoulder.rotation.z,-0.15+Math.sin(t*3)*0.25,0.12);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.75,0.1);
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.4,0.08);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.55,0.08);
+      break;
+    case 'push': // both arms push forward
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.55+Math.sin(t*1.5)*0.1,0.08);
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.55+Math.sin(t*1.5+1)*0.1,0.08);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.65,0.08);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.65,0.08);
+      break;
+    case 'hold': // hold something up
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-1.1,0.1);
+      char.rShoulder.rotation.z=lerp(char.rShoulder.rotation.z,-0.2,0.08);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.7,0.1);
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.45,0.08);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.5,0.08);
+      break;
+    case 'write': // right arm writes, left steady
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.5+Math.sin(t*3)*0.12,0.1);
+      char.rShoulder.rotation.z=lerp(char.rShoulder.rotation.z,-0.2+Math.cos(t*2)*0.1,0.1);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.8,0.1);
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.35,0.08);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.45,0.08);
+      break;
+    case 'examine': // bend over and look, both arms forward
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.85,0.1);
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.85,0.1);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.9+Math.sin(t*1.8)*0.08,0.1);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.9,0.1);
+      char.root.rotation.x=lerp(char.root.rotation.x,-0.15,0.06);
+      break;
+    case 'shake':
+      char.rShoulder.rotation.x=lerp(char.rShoulder.rotation.x,-0.7,0.1);
+      char.rShoulder.rotation.z=lerp(char.rShoulder.rotation.z,-0.2+Math.sin(t*5)*0.3,0.15);
+      char.rElbow.rotation.x=lerp(char.rElbow.rotation.x,0.8,0.1);
+      char.lShoulder.rotation.x=lerp(char.lShoulder.rotation.x,-0.4,0.08);
+      char.lElbow.rotation.x=lerp(char.lElbow.rotation.x,0.5,0.08);
+      break;
+  }
+}
+
+function lerp(a,b,t){return a+(b-a)*t;}
+
+// ════════════════════════════════════════════
+// EXPERIMENT PERFORMANCE SYSTEM
+// ════════════════════════════════════════════
+// Pose sequences per experiment step
+const EXP_POSES = {
+  litmus:['idle','pourL','dip','dip','dip','dip','stir','write'],
+  rust:  ['idle','push','hold','hold','push','write','examine','write'],
+  filter:['idle','stir','push','push','hold','examine','write'],
+  reflect:['idle','hold','hold','hold','examine','hold','write'],
+  friction:['idle','push','push','hold','push','push','write'],
+  magnet:['idle','hold','shake','examine','examine','examine','write'],
+  flower:['idle','dip','dip','dip','examine','examine','write'],
+  microscope:['idle','push','dip','hold','push','examine','examine','write'],
+  leaf:['idle','hold','dip','stir','hold','dip','examine','write'],
+};
+
+// Per step: which props visible, table fx
+const EXP_FX = {
+  litmus:[
+    {showProps:[], tableFx:null},
+    {showProps:['propTube'], tableFx:'beakerFill'},
+    {showProps:['propTube','propLitmus'], tableFx:null},
+    {showProps:['propLitmus'], tableFx:'litmusRed'},
+    {showProps:['propLitmus'], tableFx:null},
+    {showProps:['propLitmus'], tableFx:'litmusBlue'},
+    {showProps:['propTube'], tableFx:'beakerColorChange'},
+    {showProps:[], tableFx:null},
+  ],
+  rust:[
+    {showProps:[], tableFx:null},
+    {showProps:[], tableFx:'tubeA'},
+    {showProps:[], tableFx:'tubeB'},
+    {showProps:[], tableFx:'tubeC'},
+    {showProps:[], tableFx:null},
+    {showProps:[], tableFx:'showRust'},
+    {showProps:[], tableFx:null},
+    {showProps:[], tableFx:null},
+  ],
+  reflect:[
+    {showProps:[], tableFx:null},
+    {showProps:['propTorch'], tableFx:null},
+    {showProps:['propTorch'], tableFx:'rayOn'},
+    {showProps:['propTorch'], tableFx:'rayBounce'},
+    {showProps:['propTorch'], tableFx:'rayBounce'},
+    {showProps:['propTorch'], tableFx:'rayBounce'},
+    {showProps:[], tableFx:null},
+  ],
+  magnet:[
+    {showProps:[], tableFx:null},
+    {showProps:[], tableFx:'magPlace'},
+    {showProps:[], tableFx:'filingsSpread'},
+    {showProps:[], tableFx:'filingsAligned'},
+    {showProps:[], tableFx:'compassShow'},
+    {showProps:[], tableFx:'fieldLines'},
+    {showProps:[], tableFx:null},
+  ],
+  leaf:[
+    {showProps:['propLeaf'], tableFx:null},
+    {showProps:['propLeaf'], tableFx:'leafBoil'},
+    {showProps:['propLeaf'], tableFx:'leafDecolor'},
+    {showProps:['propLeaf'], tableFx:'leafDecolor'},
+    {showProps:['propLeaf'], tableFx:'leafWhite'},
+    {showProps:['propLeaf'], tableFx:'iodineAdd'},
+    {showProps:[], tableFx:'leafBlueBlack'},
+    {showProps:[], tableFx:null},
+  ],
+};
+
+// ════════════════════════════════════════════
+// TABLE 3D EFFECTS
+// ════════════════════════════════════════════
+// Iron filings particles for magnetism
+let filingParticles=null;
+function createFilings(tx,tz){
+  if(filingParticles){scene.remove(filingParticles);filingParticles=null;}
+  const geo=new THREE.BufferGeometry();
+  const count=120;
+  const pos=new Float32Array(count*3);
+  for(let i=0;i<count;i++){
+    pos[i*3]=tx+(-1.5+Math.random()*3);
+    pos[i*3+1]=1.085+Math.random()*0.005;
+    pos[i*3+2]=tz+(-1.2+Math.random()*2.4);
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0x888888,size:0.04,sizeAttenuation:true});
+  filingParticles=new THREE.Points(geo,mat);
+  scene.add(filingParticles);
+}
+function alignFilings(tx,tz,t){
+  if(!filingParticles) return;
+  const pos=filingParticles.geometry.attributes.position.array;
+  const count=pos.length/3;
+  for(let i=0;i<count;i++){
+    const ox=pos[i*3]-tx, oz=pos[i*3+2]-tz;
+    const angle=Math.atan2(oz,ox);
+    const r=Math.sqrt(ox*ox+oz*oz);
+    const targetAngle=angle+0.03;
+    pos[i*3]=tx+r*Math.cos(targetAngle);
+    pos[i*3+2]=tz+r*Math.sin(targetAngle);
+  }
+  filingParticles.geometry.attributes.position.needsUpdate=true;
+}
+
+// Particle burst (steam / colour change)
+const particles=[];
+function spawnParticle(pos, color){
+  const p=new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6),new THREE.MeshStandardMaterial({color,transparent:true,opacity:0.9,emissive:color,emissiveIntensity:0.4}));
+  p.position.copy(pos);
+  p.userData.vel=new THREE.Vector3((Math.random()-0.5)*0.018,(Math.random()*0.025+0.012),(Math.random()-0.5)*0.018);
+  p.userData.life=1.0;
+  scene.add(p); particles.push(p);
+}
+function updateParticles(dt){
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.position.add(p.userData.vel);
+    p.userData.vel.y-=0.0004;
+    p.userData.life-=dt*1.5;
+    p.material.opacity=p.userData.life;
+    p.scale.setScalar(p.userData.life*0.9+0.1);
+    if(p.userData.life<=0){scene.remove(p);particles.splice(i,1);}
+  }
+}
+
+// Apply step FX to table objects
+function applyTableFX(zone, fxName, t){
+  const objs=tableObjects[zone]||{};
+  const cfg=ZONE_CFG[zone];
+  if(!fxName) return;
+
+  if(zone==='chemistry'){
+    if(fxName==='beakerFill' && objs.liqMat){
+      objs.liqMat.color.setHex(0xeedd55);
+    }
+    if(fxName==='litmusRed' && objs.litmusMat){
+      objs.litmusMat.color.setHex(0xee2222);
+    }
+    if(fxName==='litmusBlue' && objs.litmusMat){
+      objs.litmusMat.color.setHex(0x2233ee);
+    }
+    if(fxName==='beakerColorChange' && objs.liqMat){
+      objs.liqMat.color.setHex(0x3333cc);
+      if(objs.beaker) spawnParticle(objs.beaker.position.clone().add(new THREE.Vector3(0,0.25,0)),0x4466ff);
+    }
+    if(fxName==='showRust' && objs.tubes){
+      objs.tubes[0].material.color.setHex(0xaa4400);
+      spawnParticle(objs.tubes[0].position.clone().add(new THREE.Vector3(0,0.2,0)),0xaa4400);
+    }
+  }
+
+  if(zone==='physics'){
+    if(fxName==='rayOn' && objs.ray){
+      objs.ray.visible=true;
+      objs.ray.rotation.y=0.52;
+    }
+    if(fxName==='rayBounce' && objs.ray2){
+      objs.ray.visible=true;
+      objs.ray2.visible=true;
+      objs.ray2.rotation.y=-0.52;
+      spawnParticle(objs.ray.position.clone().add(new THREE.Vector3(0,0.05,0)),0xffff00);
+    }
+    if(fxName==='magPlace' && objs.mag){
+      objs.mag.position.set(ZONE_CFG.physics.tx,1.14,ZONE_CFG.physics.tz-0.1);
+    }
+    if(fxName==='filingsSpread'){
+      createFilings(ZONE_CFG.physics.tx,ZONE_CFG.physics.tz);
+    }
+    if(fxName==='filingsAligned' && filingParticles){
+      alignFilings(ZONE_CFG.physics.tx,ZONE_CFG.physics.tz,t);
+      filingParticles.material.color.setHex(0x555500);
+    }
+    if(fxName==='fieldLines' && filingParticles){
+      filingParticles.material.color.setHex(0xaaaa00);
+    }
+  }
+
+  if(zone==='biology'){
+    if(fxName==='leafBoil' && objs.leafMat){
+      objs.leafMat.color.setHex(0x88aa22);
+      spawnParticle(objs.leaf.position.clone().add(new THREE.Vector3(0,0.2,0)),0xaaaaff);
+    }
+    if(fxName==='leafDecolor' && objs.leafMat){
+      objs.leafMat.color.setHex(0xdddd88);
+    }
+    if(fxName==='leafWhite' && objs.leafMat){
+      objs.leafMat.color.setHex(0xf0f0cc);
+    }
+    if(fxName==='iodineAdd'){
+      spawnParticle(objs.leaf.position.clone().add(new THREE.Vector3(0,0.25,0)),0x884400);
+    }
+    if(fxName==='leafBlueBlack' && objs.leafMat){
+      objs.leafMat.color.setHex(0x221166);
+      spawnParticle(objs.leaf.position.clone().add(new THREE.Vector3(0,0.2,0)),0x2200aa);
+    }
+  }
+}
+
+function applyPropFX(fxName, zone){
+  // Clear all props first
+  ['propTube','propLitmus','propTorch','propLeaf'].forEach(p=>{ if(char[p]) char[p].visible=false; });
+  const fx=EXP_FX[state.exp?.anim||'']?.[fxName]||{showProps:[]};
+  fx.showProps.forEach(p=>{ if(char[p]) char[p].visible=true; });
+}
+
+// ════════════════════════════════════════════
+// CAMERA
+// ════════════════════════════════════════════
+const camOff=new THREE.Vector3(0,3.1,5.2);
+const camLookOff=new THREE.Vector3(0,1.1,0);
+const camTgt=new THREE.Vector3();
+let camMode='follow'; // follow | experiment
+
+function updateCamera(){
+  let desiredPos, desiredLook;
+  if(camMode==='experiment' && state.zone){
+    // Angle to see character at table from the side
+    const cfg=ZONE_CFG[state.zone];
+    desiredPos=new THREE.Vector3(cfg.tx+3.5, 3.2, cfg.tz+3.8);
+    desiredLook=new THREE.Vector3(cfg.tx-0.5, 1.1, cfg.tz-0.2);
+  } else {
+    desiredPos=char.root.position.clone().add(camOff);
+    desiredLook=char.root.position.clone().add(camLookOff);
+  }
+  camera.position.lerp(desiredPos, 0.055);
+  camTgt.lerp(desiredLook, 0.07);
+  camera.lookAt(camTgt);
+}
+
+// ════════════════════════════════════════════
+// INTERACTION
+// ════════════════════════════════════════════
+const INTERACT_DIST=3.8;
+let nearObj=null;
+const hintEl=document.getElementById('interact-hint');
+const zoneEl=document.getElementById('zone-pill');
+const statusEl=document.getElementById('exp-status');
+
+function checkInteract(){
+  if(state.mode!=='free'){ hintEl.style.display='none'; return; }
+  let best=null, bDist=Infinity;
+  interactables.forEach(o=>{
+    const d=char.root.position.distanceTo(o.position);
+    if(d<INTERACT_DIST&&d<bDist){best=o;bDist=d;}
+  });
+  nearObj=best;
+  if(best){
+    const z=best.userData.zone, tp=best.userData.type;
+    hintEl.style.display='block';
+    hintEl.textContent='E - '+(tp==='table'?'Use '+ZONE_CFG[z].label+' Table':'Open Cabinet');
+  } else { hintEl.style.display='none'; }
+
+  const px=char.root.position.x;
+  if(px<-5.5) zoneEl.textContent='Chemistry Zone';
+  else if(px>5.5) zoneEl.textContent='Biology Zone';
+  else zoneEl.textContent='Physics Zone';
+}
+
+function tryInteract(){
+  if(state.mode!=='free'||!nearObj) return;
+  const zone=nearObj.userData.zone, type=nearObj.userData.type;
+  openPanel(zone, type);
+}
+
+// ════════════════════════════════════════════
+// PANEL UI
+// ════════════════════════════════════════════
+const panel=document.getElementById('panel');
+const ptitle=document.getElementById('ptitle');
+const psub=document.getElementById('psub');
+
+document.getElementById('pcls-btn').onclick=()=>{
+  panel.classList.remove('show');
+  if(state.mode==='performing'){
+    state.mode='free';
+    camMode='follow';
+    // Clear props
+    ['propTube','propLitmus','propTorch','propLeaf'].forEach(p=>{if(char[p])char[p].visible=false;});
+    if(filingParticles){scene.remove(filingParticles);filingParticles=null;}
+    resetTableFX();
+  }
+};
+
+function resetTableFX(){
+  // Reset chemistry liquid and litmus
+  const co=tableObjects.chemistry;
+  if(co&&co.liqMat) co.liqMat.color.setHex(0xeedd77);
+  if(co&&co.litmusMat) co.litmusMat.color.setHex(0x3355ee);
+  if(co&&co.tubes&&co.tubes[0]) co.tubes[0].material.color.setHex(0xee2222);
+  // Reset physics rays
+  const po=tableObjects.physics;
+  if(po&&po.ray) po.ray.visible=false;
+  if(po&&po.ray2) po.ray2.visible=false;
+  // Reset biology leaf
+  const bo=tableObjects.biology;
+  if(bo&&bo.leafMat) bo.leafMat.color.setHex(0x228822);
+}
+resetTableFX();
+
+function openPanel(zone, type){
+  state.zone=zone;
+  const info=ZONE_CFG[zone];
+  ptitle.textContent=info.label;
+  panel.classList.add('show');
+  showExpList(zone);
+}
+
+function showExpList(zone){
+  psub.textContent='SELECT EXPERIMENT';
+  hide('p-apparatus'); hide('p-steps'); hide('outcome');
+  const list=document.getElementById('p-explist');
+  list.innerHTML='';
+  EXPS[zone].forEach(exp=>{
+    const d=document.createElement('div');
+    d.className='ecard';
+    d.innerHTML='<div class="ecard-t">'+exp.title+'</div>'
+      +'<div class="ecard-m">'
+      +'<span class="bdg bg">Gr.'+exp.grade+'</span>'
+      +'<span class="bdg '+(exp.diff==='Easy'?'be':'bm')+'">'+exp.diff+'</span>'
+      +'<span style="font-size:9px;color:rgba(255,255,255,0.3);">'+exp.dur+'</span>'
+      +'</div>'
+      +'<div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:3px;">'+exp.topic+'</div>';
+    d.onclick=()=>selectExp(exp);
+    list.appendChild(d);
+  });
+}
+
+function selectExp(exp){
+  state.exp=exp; state.step=0; state.collected=[];
+  hide('p-explist'); show('p-apparatus'); hide('p-steps'); hide('outcome');
+  psub.textContent='COLLECT APPARATUS';
+  renderApparatus();
+  notify('Collect apparatus from the cabinet!');
+  statusEl.textContent=exp.title+' - collecting apparatus...';
+}
+
+function renderApparatus(){
+  const exp=state.exp;
+  const grid=document.getElementById('app-grid');
+  grid.innerHTML='';
+  exp.apparatus.forEach((a,i)=>{
+    const d=document.createElement('div');
+    d.className='aitem'+(state.collected.includes(i)?' got':'');
+    d.innerHTML='<div class="aitem-ic">'+a.ic+'</div><div class="aitem-nm">'+a.nm+'</div>';
+    d.onclick=()=>collectItem(i,d);
+    grid.appendChild(d);
+  });
+  updateAppProg();
+}
+
+function collectItem(i,el){
+  if(state.collected.includes(i)) return;
+  state.collected.push(i);
+  el.classList.add('got');
+  updateAppProg();
+  notify('Got: '+state.exp.apparatus[i].nm+'!');
+  if(state.collected.length===state.exp.apparatus.length){
+    setTimeout(startExperiment, 500);
+  }
+}
+
+function updateAppProg(){
+  const e=state.exp;
+  const pct=(state.collected.length/e.apparatus.length)*100;
+  document.getElementById('app-fill').style.width=pct+'%';
+  document.getElementById('app-count').textContent=state.collected.length+'/'+e.apparatus.length;
+}
+
+function startExperiment(){
+  const exp=state.exp;
+  state.step=0;
+  hide('p-apparatus'); show('p-steps'); hide('outcome');
+  psub.textContent='PERFORMING EXPERIMENT';
+  notify('Walking to '+ZONE_CFG[state.zone].label+'...');
+  statusEl.textContent=exp.title+' - Step 1 of '+exp.steps.length;
+
+  // Walk character to table
+  const cfg=ZONE_CFG[state.zone];
+  const target={x:cfg.tx, z:cfg.tz+1.8};
+  walkToTarget(target, ()=>{
+    // Face the table
+    char.root.rotation.y=Math.PI;
+    camMode='experiment';
+    state.performing=true;
+    state.expPhase=0; state.phaseT=0;
+    renderSteps();
+    applyStepFX(state.step);
+    notify('Starting: '+exp.title);
+  });
+
+  document.getElementById('btn-next').onclick=nextStep;
+  document.getElementById('btn-prev').onclick=prevStep;
+  document.getElementById('btn-reset').onclick=()=>selectExp(state.exp);
+}
+
+function applyStepFX(step){
+  const exp=state.exp;
+  const animKey=exp.anim;
+  const fxArr=EXP_FX[animKey];
+  if(fxArr&&fxArr[step]){
+    const fx=fxArr[step];
+    // show/hide props
+    ['propTube','propLitmus','propTorch','propLeaf'].forEach(p=>{if(char[p])char[p].visible=false;});
+    fx.showProps.forEach(p=>{if(char[p])char[p].visible=true;});
+    // table fx
+    if(fx.tableFx) applyTableFX(state.zone, fx.tableFx, state.phaseT);
+  }
+}
+
+function renderSteps(){
+  const exp=state.exp;
+  const list=document.getElementById('steps-list');
+  list.innerHTML='';
+  exp.steps.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='step-row';
+    const nc=i<state.step?'done':i===state.step?'act':'pend';
+    const nt=i<state.step?'✓':i+1;
+    d.innerHTML='<div class="snum '+nc+'">'+nt+'</div>'
+      +'<div class="stxt" style="opacity:'+(i<=state.step?1:0.38)+'">'+s+'</div>';
+    list.appendChild(d);
+  });
+  const pct=(state.step/exp.steps.length)*100;
+  document.getElementById('step-fill').style.width=pct+'%';
+  document.getElementById('btn-prev').disabled=state.step===0;
+  const done=state.step>=exp.steps.length;
+  const nb=document.getElementById('btn-next');
+  nb.textContent=done?'Done!':'Next Step';
+  nb.disabled=done;
+  if(done){
+    show('outcome');
+    document.getElementById('outcome-txt').textContent=exp.outcome;
+    statusEl.textContent=exp.title+' - COMPLETE!';
+    notify('Experiment Complete! Great work!');
+    ['propTube','propLitmus','propTorch','propLeaf'].forEach(p=>{if(char[p])char[p].visible=false;});
+  } else {
+    statusEl.textContent=exp.title+' - Step '+(state.step+1)+'/'+exp.steps.length;
+  }
+  // Scroll active step into view
+  const rows=list.querySelectorAll('.step-row');
+  if(rows[state.step]) rows[state.step].scrollIntoView({block:'nearest',behavior:'smooth'});
+}
+
+function nextStep(){
+  if(state.step<state.exp.steps.length){
+    state.step++;
+    state.phaseT=0;
+    applyStepFX(state.step);
+    renderSteps();
+  }
+}
+function prevStep(){
+  if(state.step>0){state.step--;state.phaseT=0;applyStepFX(state.step);renderSteps();}
+}
+
+function show(id){document.getElementById(id).style.display='';}
+function hide(id){document.getElementById(id).style.display='none';}
+
+// ════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════
+let notifTimer=null;
+const notifEl=document.getElementById('notif');
+function notify(msg){
+  notifEl.textContent=msg; notifEl.style.display='block';
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>{notifEl.style.display='none';},2200);
+}
+
+// ════════════════════════════════════════════
+// MINIMAP
+// ════════════════════════════════════════════
+const mmc=document.getElementById('mmc').getContext('2d');
+function drawMinimap(){
+  const W=108,H=108;
+  mmc.clearRect(0,0,W,H);
+  mmc.fillStyle='rgba(10,14,30,0.96)'; mmc.fillRect(0,0,W,H);
+  // Zones
+  [{x:0,w:36,c:'rgba(255,102,0,0.28)'},{x:36,w:36,c:'rgba(51,68,204,0.28)'},{x:72,w:36,c:'rgba(34,102,51,0.28)'}].forEach(z=>{
+    mmc.fillStyle=z.c; mmc.fillRect(z.x,0,z.w,H);
+  });
+  mmc.strokeStyle='rgba(255,255,255,0.14)'; mmc.strokeRect(1,1,W-2,H-2);
+  // Tables
+  [[6,42,30,12,'#ff6600'],[38,42,30,12,'#4455dd'],[70,42,30,12,'#44aa55']].forEach(([x,y,w,h,c])=>{
+    mmc.fillStyle=c+'44'; mmc.fillRect(x,y,w,h);
+    mmc.strokeStyle=c+'88'; mmc.strokeRect(x,y,w,h);
+  });
+  // Cabinets
+  [[5,18,14,8],[37,18,14,8],[69,18,14,8]].forEach(([x,y,w,h])=>{
+    mmc.fillStyle='rgba(255,255,255,0.13)'; mmc.fillRect(x,y,w,h);
+  });
+  // Player
+  const px=((char.root.position.x+17)/34)*(W-4)+2;
+  const pz=((char.root.position.z+14)/28)*(H-4)+2;
+  mmc.beginPath(); mmc.arc(px,pz,5,0,Math.PI*2);
+  mmc.fillStyle='#fbbf24'; mmc.fill();
+  mmc.beginPath(); mmc.moveTo(px,pz);
+  mmc.lineTo(px+Math.sin(charAngle)*9,pz+Math.cos(charAngle)*9);
+  mmc.strokeStyle='#fbbf24'; mmc.lineWidth=2; mmc.stroke();
+  // Labels
+  [['C',16,103,'#ff6600'],['P',50,103,'#5566ff'],['B',84,103,'#44aa55']].forEach(([t,x,y,c])=>{
+    mmc.fillStyle=c; mmc.font='8px monospace'; mmc.textAlign='center'; mmc.fillText(t,x,y);
+  });
+}
+
+// ════════════════════════════════════════════
+// EXPERIMENT ARM ANIMATION (continuous)
+// ════════════════════════════════════════════
+function updatePerformingAnimation(t, dt){
+  if(!state.performing||!state.exp) return;
+  state.phaseT+=dt;
+  const animKey=state.exp.anim;
+  const poses=EXP_POSES[animKey]||[];
+  const pose=poses[Math.min(state.step, poses.length-1)]||'idle';
+  poseArms(pose, t);
+  // Keep character facing table
+  char.root.rotation.x=lerp(char.root.rotation.x, -0.08, 0.04);
+
+  // Animate filings continuously
+  if(animKey==='magnet'&&state.step>=2&&filingParticles){
+    alignFilings(ZONE_CFG.physics.tx, ZONE_CFG.physics.tz, t);
+  }
+  // Flame on burner flicker
+  if(animKey==='litmus'){
+    const fl=tableObjects.chemistry.flame;
+    if(fl&&state.step>=1&&state.step<=5){
+      fl.visible=true;
+      fl.scale.setScalar(0.9+Math.sin(t*8)*0.12);
+      fl.rotation.y=t*3;
+      tableObjects.chemistry.flame.material.emissiveIntensity=0.8+Math.sin(t*6)*0.3;
+    } else if(fl){ fl.visible=false; }
+  }
+  // Ray pulse for reflection experiment
+  if(animKey==='reflect'&&tableObjects.physics.ray&&tableObjects.physics.ray.visible){
+    tableObjects.physics.ray.material.emissiveIntensity=1.5+Math.sin(t*4)*0.6;
+    if(tableObjects.physics.ray2&&tableObjects.physics.ray2.visible)
+      tableObjects.physics.ray2.material.emissiveIntensity=1.5+Math.sin(t*4+1)*0.6;
+  }
+  // Beaker liquid shimmer
+  if(animKey==='litmus'&&tableObjects.chemistry.liq){
+    tableObjects.chemistry.liq.position.y=1.11+Math.sin(t*2.5)*0.005;
+  }
+}
+
+// ════════════════════════════════════════════
+// MAIN LOOP
+// ════════════════════════════════════════════
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.getElapsedTime();
+
+  updateFreeMove();
+  updateWalk(dt);
+  checkInteract();
+  updateCamera();
+  updateParticles(dt);
+  updatePerformingAnimation(t, dt);
+  drawMinimap();
+
+  // Idle head bob
+  if(!isMoving&&state.mode==='free'){
+    char.root.position.y=Math.sin(t*1.4)*0.018;
+  }
+  // Ceiling lamp soft flicker
+  ceilLights.forEach((l,i)=>{l.intensity=0.68+Math.sin(t*3.2+i)*0.04;});
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// Initial message
+setTimeout(()=>notify('Welcome! Walk to a lab table and press E'),800);
+
+
+// ════════════════════════════════════════════
+// PROJECTOR SCREEN (3D in-world + HUD overlay)
+// ════════════════════════════════════════════
+
+// Build physical 3D projector screen on front wall
+(function buildProjectorScreen(){
+  // Screen frame (mounted on front wall between blackboard area, elevated)
+  const frameGeo = new THREE.BoxGeometry(9,5.2,0.14);
+  const frameMat = new THREE.MeshStandardMaterial({color:0x222233,roughness:0.6,metalness:0.3});
+  const frame = new THREE.Mesh(frameGeo,frameMat);
+  frame.position.set(0,2.8,-13.82); scene.add(frame);
+
+  // Bezel trim
+  const bezelMat = new THREE.MeshStandardMaterial({color:0x111122,roughness:0.4,metalness:0.5});
+  [[9.2,0.14,0.12,0,2.8,-13.76],[9.2,0.14,0.12,0,5.26,-13.76],
+   [0.14,5.2,0.12,-4.57,2.8,-13.76],[0.14,5.2,0.12,4.57,2.8,-13.76]].forEach(([w,h,d,x,y,z])=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),bezelMat);
+    b.position.set(x,y,z); scene.add(b);
+  });
+
+  // Stand legs
+  [-2.5,2.5].forEach(x=>{
+    const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.6,0.08),new THREE.MeshStandardMaterial({color:0x333344,roughness:0.5,metalness:0.7}));
+    leg.position.set(x,0.32,-13.55); scene.add(leg);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,0.18),new THREE.MeshStandardMaterial({color:0x222233,roughness:0.5,metalness:0.8}));
+    foot.position.set(x,0.03,-13.55); scene.add(foot);
+  });
+
+  // Screen canvas texture
+  const screenCanvas = document.createElement('canvas');
+  screenCanvas.width = 1024; screenCanvas.height = 600;
+  const screenCtx = screenCanvas.getContext('2d');
+  const screenTex = new THREE.CanvasTexture(screenCanvas);
+
+  const screenMat = new THREE.MeshBasicMaterial({map:screenTex});
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.6,4.9), screenMat);
+  screenMesh.position.set(0,2.82,-13.75); scene.add(screenMesh);
+
+  // Projector box on ceiling
+  const proj=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.22,0.8),new THREE.MeshStandardMaterial({color:0x222222,roughness:0.5,metalness:0.4}));
+  proj.position.set(0,4.8,-8); scene.add(proj);
+  const projLens=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.14,12),new THREE.MeshStandardMaterial({color:0x88aacc,roughness:0.1,metalness:0.3}));
+  projLens.rotation.x=Math.PI/2; projLens.position.set(0,4.78,-8.5); scene.add(projLens);
+  // Projector beam (transparent cone)
+  const beamGeo=new THREE.CylinderGeometry(3.8,0.1,6,20,1,true);
+  const beamMat=new THREE.MeshBasicMaterial({color:0xaaccff,transparent:true,opacity:0.04,side:THREE.DoubleSide});
+  const beam=new THREE.Mesh(beamGeo,beamMat);
+  beam.rotation.x=Math.PI/2; beam.position.set(0,2.8,-11.5); scene.add(beam);
+
+  // Glow light from screen
+  const screenLight=new THREE.PointLight(0x8899ff,0.5,8);
+  screenLight.position.set(0,2.8,-13.0); scene.add(screenLight);
+
+  // Store refs
+  window._screen = { canvas:screenCanvas, ctx:screenCtx, tex:screenTex, light:screenLight };
+})();
+
+// ─────────────────────────────────────────────
+// SCREEN DEMO DATA - full animated explanations
+// ─────────────────────────────────────────────
+const SCREEN_DEMOS = {
+  c1:{ // Acid-Base Indicators
+    title:'Acid-Base Indicators',
+    zone:'chemistry', color:'#ff8833',
+    steps:[
+      {label:'Setup', desc:'We have two test tubes. Left has lemon juice (acid). Right has baking soda solution (base).', draw:'litmus_setup'},
+      {label:'Red Litmus in Acid', desc:'Dip red litmus paper into the lemon juice. Red litmus STAYS RED in an acid.', draw:'litmus_red_acid'},
+      {label:'Blue Litmus in Acid', desc:'Dip blue litmus paper into lemon juice. Blue litmus TURNS RED - confirms acidic!', draw:'litmus_blue_acid'},
+      {label:'Red Litmus in Base', desc:'Now dip red litmus in baking soda. Red litmus TURNS BLUE in a base!', draw:'litmus_red_base'},
+      {label:'Blue Litmus in Base', desc:'Blue litmus in baking soda STAYS BLUE - confirms basic/alkaline nature.', draw:'litmus_blue_base'},
+      {label:'Conclusion', desc:'ACIDS: pH < 7 (turn blue litmus RED). BASES: pH > 7 (turn red litmus BLUE). Neutral pH = 7.', draw:'litmus_conclusion'},
+    ]
+  },
+  c2:{ // Rusting
+    title:'Rusting of Iron',
+    zone:'chemistry', color:'#ff6600',
+    steps:[
+      {label:'3 Test Tubes', desc:'Tube A: iron nail + water + air. Tube B: iron nail + boiled water + oil seal. Tube C: iron nail + dry air only.', draw:'rust_setup'},
+      {label:'After 3 Days - A', desc:'Tube A shows RUST! Brown iron oxide forms on nail surface. Water AND air both present.', draw:'rust_a'},
+      {label:'After 3 Days - B', desc:'Tube B: NO RUST! Oil layer blocked oxygen. Shows air is needed for rusting.', draw:'rust_b'},
+      {label:'After 3 Days - C', desc:'Tube C: NO RUST! No water present. Shows water is also needed for rusting.', draw:'rust_c'},
+      {label:'Equation', desc:'Iron + Water + Oxygen = Iron Oxide (Rust). Fe + H2O + O2 = Fe2O3.nH2O (rust)', draw:'rust_equation'},
+      {label:'Prevention', desc:'Prevent rust by: painting, galvanising (zinc coat), oiling, using stainless steel.', draw:'rust_prevent'},
+    ]
+  },
+  c3:{
+    title:'Separating Mixtures',
+    zone:'chemistry', color:'#ffaa00',
+    steps:[
+      {label:'The Mixture', desc:'We have a mixture of sand and water in a beaker. The sand is insoluble and settles.', draw:'filter_mixture'},
+      {label:'Fold Filter Paper', desc:'Fold the filter paper into a cone shape. This creates tiny pores that only liquid can pass through.', draw:'filter_fold'},
+      {label:'Setup Funnel', desc:'Place the paper cone inside the funnel. Position the funnel over an empty clean beaker.', draw:'filter_setup'},
+      {label:'Pour Mixture', desc:'Slowly pour the sand-water mixture through the funnel. Water drips through as filtrate.', draw:'filter_pour'},
+      {label:'Result', desc:'Clear water (filtrate) collected below. Sand remains on filter paper as the residue.', draw:'filter_result'},
+      {label:'Conclusion', desc:'Filtration separates insoluble solids from liquids. Used in water treatment plants!', draw:'filter_conclusion'},
+    ]
+  },
+  p1:{
+    title:'Light Reflection',
+    zone:'physics', color:'#5566ff',
+    steps:[
+      {label:'Setup', desc:'Place a plane mirror vertically. Draw a normal line (perpendicular) to the mirror surface.', draw:'reflect_setup'},
+      {label:'Incident Ray 30 deg', desc:'Shine torch at 30 degrees to the normal. This is the incident ray hitting the mirror.', draw:'reflect_30'},
+      {label:'Reflected Ray 30 deg', desc:'The reflected ray bounces off at exactly 30 degrees on the other side of the normal!', draw:'reflect_30r'},
+      {label:'Try 45 degrees', desc:'Shine at 45 degrees. The reflected ray appears at exactly 45 degrees. Same angle!', draw:'reflect_45'},
+      {label:'Try 60 degrees', desc:'Shine at 60 degrees. Reflected ray = 60 degrees. The law always holds true.', draw:'reflect_60'},
+      {label:'Law of Reflection', desc:'ANGLE OF INCIDENCE = ANGLE OF REFLECTION. Both angles measured from the normal line.', draw:'reflect_law'},
+    ]
+  },
+  p2:{
+    title:'Friction on Surfaces',
+    zone:'physics', color:'#7766ff',
+    steps:[
+      {label:'Setup', desc:'Connect wooden block to spring balance. Place on smooth wooden board. Note the reading at rest.', draw:'friction_setup'},
+      {label:'Pull - Smooth Surface', desc:'Pull slowly. The force needed to START moving is STATIC FRICTION on smooth surface (~4N).', draw:'friction_smooth'},
+      {label:'Moving Friction', desc:'Once moving, the force reading drops slightly. This is KINETIC (sliding) friction.', draw:'friction_kinetic'},
+      {label:'Sandpaper Surface', desc:'Now place sandpaper under the block. Pull again - notice more force is needed (~8N)!', draw:'friction_rough'},
+      {label:'Comparison', desc:'Rough surface: more friction. Smooth surface: less friction. Surface texture matters greatly!', draw:'friction_compare'},
+      {label:'Conclusion', desc:'Friction = force resisting motion. F = mu x N. Rougher surfaces = higher coefficient (mu).', draw:'friction_conclusion'},
+    ]
+  },
+  p3:{
+    title:'Magnets and Field Lines',
+    zone:'physics', color:'#4488ff',
+    steps:[
+      {label:'Bar Magnet', desc:'Place bar magnet on white paper. Label the North (red) and South (blue/grey) poles clearly.', draw:'magnet_bar'},
+      {label:'Sprinkle Filings', desc:'Sprinkle iron filings around the magnet. Filings act as tiny compass needles!', draw:'magnet_filings'},
+      {label:'Filings Align', desc:'Tap the paper gently. Filings arrange into curved lines showing the magnetic field pattern.', draw:'magnet_aligned'},
+      {label:'Field Direction', desc:'Use a compass: field lines exit the NORTH pole and curve around to enter the SOUTH pole.', draw:'magnet_field'},
+      {label:'Field Strength', desc:'Lines are densest near the poles where field is STRONGEST. Wider apart = weaker field.', draw:'magnet_strength'},
+      {label:'Conclusion', desc:'Magnetic field lines: always N to S outside. Never cross. Form closed loops inside magnet.', draw:'magnet_conclusion'},
+    ]
+  },
+  b1:{
+    title:'Parts of a Flower',
+    zone:'biology', color:'#44cc66',
+    steps:[
+      {label:'Whole Flower', desc:'Take a hibiscus flower. Observe the four whorls: outermost to innermost structures.', draw:'flower_whole'},
+      {label:'Sepals', desc:'Outermost whorl = SEPALS (calyx). Usually green, leaf-like. Protect the flower bud.', draw:'flower_sepal'},
+      {label:'Petals', desc:'Next whorl = PETALS (corolla). Colourful! Attract pollinators like bees and butterflies.', draw:'flower_petal'},
+      {label:'Stamens', desc:'STAMENS = male parts. Anther (top) produces pollen. Filament is the stalk supporting anther.', draw:'flower_stamen'},
+      {label:'Pistil', desc:'PISTIL (carpel) = female part. Stigma (sticky top) + Style (tube) + Ovary (bottom, contains ovules).', draw:'flower_pistil'},
+      {label:'Conclusion', desc:'Sepal (protect) > Petal (attract) > Stamen (male, makes pollen) > Pistil (female, makes seeds).', draw:'flower_diagram'},
+    ]
+  },
+  b2:{
+    title:'Onion Cell Observation',
+    zone:'biology', color:'#55bb44',
+    steps:[
+      {label:'Prepare Slide', desc:'Peel a thin transparent layer from onion scale. Place flat on clean glass slide.', draw:'cell_prep'},
+      {label:'Add Iodine', desc:'Add one drop of iodine solution. Iodine stains the nucleus brown/dark making it visible.', draw:'cell_iodine'},
+      {label:'Add Coverslip', desc:'Lower coverslip at 45-degree angle to avoid air bubbles. Air bubbles ruin the view!', draw:'cell_coverslip'},
+      {label:'Low Power View', desc:'Focus with low-power lens (10x). You can see many rectangular cells arranged in a grid.', draw:'cell_low'},
+      {label:'High Power View', desc:'Switch to high power (40x). Now see individual cell wall, nucleus (dark dot), cytoplasm.', draw:'cell_high'},
+      {label:'Cell Parts', desc:'CELL WALL (thick border) + CELL MEMBRANE + CYTOPLASM (fluid) + NUCLEUS (control centre).', draw:'cell_diagram'},
+    ]
+  },
+  b3:{
+    title:'Photosynthesis Test',
+    zone:'biology', color:'#33aa44',
+    steps:[
+      {label:'Variegated Leaf', desc:'Take a leaf with green AND white (no chlorophyll) patches. This lets us compare both areas.', draw:'photo_leaf'},
+      {label:'Boil in Water', desc:'Boil leaf 5 mins to break down cell walls and soften the tissue for decolourisation.', draw:'photo_boil'},
+      {label:'Decolourise', desc:'Place in alcohol and heat in water bath. Alcohol removes the green chlorophyll pigment.', draw:'photo_decolor'},
+      {label:'Wash Leaf', desc:'Wash the now-pale leaf with water. The leaf is decolourised and ready for iodine test.', draw:'photo_wash'},
+      {label:'Add Iodine', desc:'Add iodine solution drops over the leaf. Iodine turns BLUE-BLACK in the presence of starch!', draw:'photo_iodine'},
+      {label:'Result', desc:'GREEN areas = blue-black (starch made by photosynthesis!). WHITE areas = brown (no starch = no chlorophyll).', draw:'photo_result'},
+    ]
+  }
+};
+
+// ─────────────────────────────────────────────
+// CANVAS DRAWING FUNCTIONS (called each frame)
+// ─────────────────────────────────────────────
+const drawFns = {};
+
+function reg(name, fn){ drawFns[name]=fn; }
+
+function drawBase(ctx, W, H, title, step, total, zoneColor){
+  // Dark background
+  ctx.fillStyle='#050a1e'; ctx.fillRect(0,0,W,H);
+  // Header band
+  const hg=ctx.createLinearGradient(0,0,W,0);
+  hg.addColorStop(0,zoneColor+'44'); hg.addColorStop(1,'#05081844');
+  ctx.fillStyle=hg; ctx.fillRect(0,0,W,48);
+  // Title
+  ctx.fillStyle='#e2e8f0'; ctx.font='bold 22px monospace';
+  ctx.fillText(title,18,31);
+  // Step dots
+  for(let i=0;i<total;i++){
+    ctx.beginPath(); ctx.arc(W-20-(total-1-i)*18,24,5,0,Math.PI*2);
+    ctx.fillStyle=i<step?'#4ade80':i===step?'#fbbf24':'rgba(255,255,255,0.2)'; ctx.fill();
+  }
+  // Divider
+  ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,48); ctx.lineTo(W,48); ctx.stroke();
+}
+
+function txt(ctx,text,x,y,size,color,align){
+  ctx.font=(size||14)+'px '+(size>16?'bold ':'')+' monospace';
+  ctx.fillStyle=color||'#e2e8f0'; ctx.textAlign=align||'left'; ctx.fillText(text,x,y);
+  ctx.textAlign='left';
+}
+
+function arrow(ctx,x1,y1,x2,y2,color,width){
+  ctx.strokeStyle=color||'#fbbf24'; ctx.lineWidth=width||2;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const angle=Math.atan2(y2-y1,x2-x1);
+  ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-12*Math.cos(angle-0.4),y2-12*Math.sin(angle-0.4));
+  ctx.lineTo(x2-12*Math.cos(angle+0.4),y2-12*Math.sin(angle+0.4));
+  ctx.closePath(); ctx.fillStyle=color||'#fbbf24'; ctx.fill();
+}
+
+// ──────── CHEMISTRY: LITMUS ────────
+reg('litmus_setup',(ctx,W,H,t)=>{
+  const y=H/2+20;
+  // Two test tubes
+  [[250,y,'#ffee88','Lemon Juice'],[700,y,'#ccddff','Baking Soda']].forEach(([x,yy,col,lbl])=>{
+    ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.roundRect(x-28,yy-90,56,100,4); ctx.stroke();
+    ctx.fillStyle=col; ctx.fillRect(x-24,yy-30,48,36); ctx.fill();
+    txt(ctx,lbl,x,yy+20,11,'#aabbcc','center');
+  });
+  txt(ctx,'Acid',250,y-108,13,'#ff8844','center');
+  txt(ctx,'Base',700,y-108,13,'#8888ff','center');
+  txt(ctx,'Two test tubes with different solutions',W/2,H-18,13,'rgba(255,255,255,0.5)','center');
+});
+reg('litmus_red_acid',(ctx,W,H,t)=>{
+  const y=H/2+10;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.roundRect(350,y-90,56,100,4); ctx.stroke();
+  ctx.fillStyle='#ffee88'; ctx.fillRect(354,y-30,48,36);
+  // Red litmus strip dipping
+  const dipY=y-80+Math.sin(t*1.5)*12;
+  ctx.fillStyle='#ff3333'; ctx.fillRect(372,dipY,12,55);
+  txt(ctx,'Red',390,dipY+20,11,'#ff3333');
+  txt(ctx,'RED stays RED in acid',W/2,H/2+80,14,'#ff6666','center');
+  txt(ctx,'No colour change = ACID CONFIRMED',W/2,H/2+100,12,'rgba(255,100,100,0.7)','center');
+});
+reg('litmus_blue_acid',(ctx,W,H,t)=>{
+  const y=H/2+10;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.roundRect(350,y-90,56,100,4); ctx.stroke();
+  ctx.fillStyle='#ffee88'; ctx.fillRect(354,y-30,48,36);
+  const dipY=y-80+Math.sin(t*1.5)*10;
+  const phase=Math.min(1,(t%4)/2);
+  const r=Math.floor(68+phase*180), gb=Math.floor(102-phase*82);
+  ctx.fillStyle='rgb('+r+','+gb+',255)'; ctx.fillRect(372,dipY,12,55);
+  txt(ctx,'Blue->',385,dipY+20,11,'#aaaaff');
+  txt(ctx,'RED!',440,dipY+20,12,'#ff4444');
+  txt(ctx,'BLUE litmus turns RED in acid!',W/2,H/2+80,14,'#ff6666','center');
+});
+reg('litmus_red_base',(ctx,W,H,t)=>{
+  const y=H/2+10;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.roundRect(350,y-90,56,100,4); ctx.stroke();
+  ctx.fillStyle='#ccddff'; ctx.fillRect(354,y-30,48,36);
+  const dipY=y-80+Math.sin(t*1.5)*10;
+  const phase=Math.min(1,(t%4)/2);
+  const r=Math.floor(220-phase*180), b=Math.floor(50+phase*200);
+  ctx.fillStyle='rgb('+r+',50,'+b+')'; ctx.fillRect(372,dipY,12,55);
+  txt(ctx,'RED litmus turns BLUE in BASE!',W/2,H/2+80,14,'#8888ff','center');
+});
+reg('litmus_blue_base',(ctx,W,H,t)=>{
+  const y=H/2+10;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.roundRect(350,y-90,56,100,4); ctx.stroke();
+  ctx.fillStyle='#ccddff'; ctx.fillRect(354,y-30,48,36);
+  const dipY=y-80;
+  ctx.fillStyle='#4444ff'; ctx.fillRect(372,dipY,12,55);
+  txt(ctx,'Blue stays BLUE in base',W/2,H/2+80,14,'#8888ff','center');
+  txt(ctx,'No change = BASE CONFIRMED',W/2,H/2+100,12,'rgba(100,100,255,0.7)','center');
+});
+reg('litmus_conclusion',(ctx,W,H,t)=>{
+  [[260,H/2,'#ff4444','ACID','Blue->Red','pH < 7'],[700,H/2,'#4444ff','BASE','Red->Blue','pH > 7']].forEach(([x,y,c,lbl,change,ph])=>{
+    ctx.fillStyle=c+'33'; ctx.beginPath(); ctx.roundRect(x-90,y-80,180,140,10); ctx.fill();
+    ctx.strokeStyle=c+'88'; ctx.lineWidth=2; ctx.stroke();
+    txt(ctx,lbl,x,y-52,20,c,'center');
+    txt(ctx,change,x,y-16,14,c,'center');
+    txt(ctx,ph,x,y+24,16,c+'cc','center');
+  });
+  txt(ctx,'NEUTRAL = pH 7 (pure water)',W/2,H-30,14,'rgba(255,255,255,0.6)','center');
+  // Pulse glow on active side based on t
+  const side=Math.floor(t/3)%2;
+  ctx.strokeStyle=side===0?'#ff444488':'#4444ff88'; ctx.lineWidth=3+Math.sin(t*4);
+  ctx.beginPath(); ctx.roundRect(side===0?170:610,H/2-80,180,140,10); ctx.stroke();
+});
+
+// ──────── CHEMISTRY: RUSTING ────────
+reg('rust_setup',(ctx,W,H,t)=>{
+  [['A',220,'Water+Air','#aaddff','#bbccdd'],['B',512,'Boiled+Oil','#eef8ee','#aaccaa'],['C',800,'Dry Air','#f5f0e0','#ccbbaa']].forEach(([lbl,x,desc,lc,rc])=>{
+    ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.roundRect(x-34,H/2-100,68,120,5); ctx.stroke();
+    ctx.fillStyle=lc; ctx.fillRect(x-30,H/2-20,60,36);
+    if(lbl==='B'){ctx.fillStyle='rgba(230,200,120,0.6)'; ctx.fillRect(x-30,H/2-40,60,22);}
+    txt(ctx,'Tube '+lbl,x,H/2-112,13,'#fbbf24','center');
+    txt(ctx,desc,x,H/2+40,10,'#aabbcc','center');
+    // Iron nail
+    ctx.fillStyle='#aaaaaa'; ctx.fillRect(x-4,H/2-85,8,60);
+  });
+});
+reg('rust_a',(ctx,W,H,t)=>{
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(W/2-34,H/2-100,68,120,5); ctx.stroke();
+  ctx.fillStyle='#aaddff44'; ctx.fillRect(W/2-30,H/2-20,60,36);
+  const rust=Math.min(1,(t%5)/3);
+  const rustColor='rgba('+(150+Math.floor(rust*80))+','+(60+Math.floor(rust*20))+',0,'+rust+')';
+  ctx.fillStyle=rustColor; ctx.fillRect(W/2-4,H/2-80,8,55);
+  txt(ctx,'RUST forming!',W/2,H/2+50,15,'#ff8833','center');
+  txt(ctx,'Fe2O3 (iron oxide) = brown/orange',W/2,H/2+75,12,'#ffaa66','center');
+  // Molecules
+  for(let i=0;i<6;i++){
+    const px=W/2+Math.sin(t+i*1.1)*40, py=H/2-30+Math.cos(t*0.7+i)*25;
+    ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2);
+    ctx.fillStyle=i%2===0?'#ff6600':'#6699ff'; ctx.fill();
+  }
+  txt(ctx,'O2',W/2+50,H/2-55,10,'#6699ff'); txt(ctx,'H2O',W/2-60,H/2-55,10,'#6699ff');
+});
+reg('rust_b',(ctx,W,H,t)=>{
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(W/2-34,H/2-100,68,120,5); ctx.stroke();
+  ctx.fillStyle='rgba(200,230,200,0.3)'; ctx.fillRect(W/2-30,H/2-20,60,36);
+  ctx.fillStyle='rgba(230,210,120,0.5)'; ctx.fillRect(W/2-30,H/2-42,60,24);
+  ctx.fillStyle='#aaaaaa'; ctx.fillRect(W/2-4,H/2-80,8,55);
+  txt(ctx,'Oil layer',W/2+38,H/2-32,10,'#ffcc44');
+  txt(ctx,'BLOCKS oxygen!',W/2,H/2+55,15,'#44ff88','center');
+  txt(ctx,'No oxygen = No rust!',W/2,H/2+80,12,'#88ffaa','center');
+  // X over oxygen molecules
+  for(let i=0;i<4;i++){
+    const px=W/2+Math.sin(i*1.57)*55, py=H/2-20+Math.cos(i*1.57)*20;
+    ctx.strokeStyle='#ff4444'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(px-8,py-8); ctx.lineTo(px+8,py+8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+8,py-8); ctx.lineTo(px-8,py+8); ctx.stroke();
+  }
+});
+reg('rust_c',(ctx,W,H,t)=>{
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(W/2-34,H/2-100,68,120,5); ctx.stroke();
+  ctx.fillStyle='#aaaaaa'; ctx.fillRect(W/2-4,H/2-80,8,55);
+  txt(ctx,'No water inside',W/2,H/2+55,12,'#44ff88','center');
+  txt(ctx,'CaCl2 absorbs all moisture',W/2,H/2+75,12,'#88ffaa','center');
+  ctx.fillStyle='rgba(200,180,150,0.4)'; ctx.fillRect(W/2-20,H/2+2,40,20);
+  txt(ctx,'CaCl2',W/2,H/2+14,9,'#ccbbaa','center');
+  txt(ctx,'No rust!',W/2,H/2-110,15,'#44ff88','center');
+});
+reg('rust_equation',(ctx,W,H,t)=>{
+  ctx.fillStyle='rgba(255,100,30,0.12)'; ctx.beginPath(); ctx.roundRect(80,H/2-80,W-160,130,12); ctx.fill();
+  txt(ctx,'Fe  +  H2O  +  O2',W/2,H/2-30,20,'#e2e8f0','center');
+  arrow(ctx,W/2-30,H/2+10,W/2+30,H/2+10,'#fbbf24',3);
+  txt(ctx,'Fe2O3.nH2O',W/2,H/2+50,22,'#ff6600','center');
+  txt(ctx,'(RUST - hydrated iron oxide)',W/2,H/2+78,12,'rgba(255,255,255,0.5)','center');
+  txt(ctx,'Iron + Water + Oxygen = Rust',W/2,H-30,13,'rgba(255,255,255,0.4)','center');
+});
+reg('rust_prevent',(ctx,W,H,t)=>{
+  const methods=[['Paint',200,'#ff6644'],['Zinc coat',390,'#66bbff'],['Oil/Grease',580,'#ffcc44'],['Stainless',770,'#88ffaa']];
+  methods.forEach(([nm,x,c])=>{
+    ctx.fillStyle=c+'22'; ctx.beginPath(); ctx.roundRect(x-60,H/2-60,120,100,10); ctx.fill();
+    ctx.strokeStyle=c+'66'; ctx.lineWidth=2; ctx.stroke();
+    txt(ctx,nm,x,H/2+10,14,c,'center');
+  });
+  txt(ctx,'Prevention Methods',W/2,H/2-80,16,'#fbbf24','center');
+});
+
+// ──────── CHEMISTRY: FILTER ────────
+reg('filter_mixture',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  // Beaker
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-80,cy-80); ctx.lineTo(cx-80,cy+60); ctx.lineTo(cx+80,cy+60); ctx.lineTo(cx+80,cy-80); ctx.stroke();
+  // Water
+  ctx.fillStyle='rgba(100,180,255,0.35)'; ctx.fillRect(cx-76,cy-10,152,66);
+  // Sand particles
+  for(let i=0;i<18;i++){
+    const px=cx-60+Math.sin(i*0.7+t*0.2)*(40+i*2), py=cy+30+Math.cos(i*1.1)*15;
+    ctx.beginPath(); ctx.arc(px,py,3+i%3,0,Math.PI*2);
+    ctx.fillStyle='rgba(180,160,100,'+(0.4+i%3*0.2)+')'; ctx.fill();
+  }
+  txt(ctx,'Sand + Water mixture',cx,cy+90,14,'#aabbcc','center');
+  txt(ctx,'Sand is insoluble - sinks to bottom',cx,cy+110,11,'rgba(255,255,255,0.4)','center');
+});
+reg('filter_fold',(ctx,W,H,t)=>{
+  const cx=W/2;
+  // Steps of folding
+  ctx.strokeStyle='#ddcc88'; ctx.lineWidth=2;
+  [[200,H/2,'circle'],[512,H/2,'half'],[800,H/2,'cone']].forEach(([x,y,sh])=>{
+    if(sh==='circle'){ ctx.beginPath(); ctx.arc(x,y,60,0,Math.PI*2); ctx.stroke(); }
+    if(sh==='half'){ ctx.beginPath(); ctx.arc(x,y,60,0,Math.PI); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x-60,y); ctx.lineTo(x+60,y); ctx.stroke(); }
+    if(sh==='cone'){ ctx.beginPath(); ctx.moveTo(x,y-60); ctx.lineTo(x+50,y+50); ctx.lineTo(x-10,y+50); ctx.closePath(); ctx.stroke(); }
+    arrow(ctx,x+70,y,x+100,y,'#fbbf24');
+  });
+  txt(ctx,'Fold in half','200',H/2+80,11,'#ddcc88','center');
+  txt(ctx,'Filter paper folding steps',cx,H-30,13,'rgba(255,255,255,0.4)','center');
+});
+reg('filter_setup',(ctx,W,H,t)=>{
+  const cx=W/2;
+  // Funnel
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-80,H/2-100); ctx.lineTo(cx-10,H/2+20); ctx.lineTo(cx+10,H/2+20); ctx.lineTo(cx+80,H/2-100); ctx.stroke();
+  // Paper cone inside
+  ctx.strokeStyle='#ddcc88'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-60,H/2-100); ctx.lineTo(cx,H/2+10); ctx.lineTo(cx+60,H/2-100); ctx.stroke();
+  // Stem
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(cx,H/2+20); ctx.lineTo(cx,H/2+80); ctx.stroke();
+  // Beaker below
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-60,H/2+80); ctx.lineTo(cx-60,H/2+150); ctx.lineTo(cx+60,H/2+150); ctx.lineTo(cx+60,H/2+80); ctx.stroke();
+  txt(ctx,'Funnel + filter paper',cx,H/2-120,13,'#aabbcc','center');
+  txt(ctx,'Empty beaker below',cx,H/2+170,13,'#aabbcc','center');
+});
+reg('filter_pour',(ctx,W,H,t)=>{
+  const cx=W/2;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-80,H/2-100); ctx.lineTo(cx-10,H/2+20); ctx.lineTo(cx+10,H/2+20); ctx.lineTo(cx+80,H/2-100); ctx.stroke();
+  ctx.strokeStyle='#ddcc88'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-60,H/2-100); ctx.lineTo(cx,H/2+10); ctx.lineTo(cx+60,H/2-100); ctx.stroke();
+  // Sandy mixture pouring
+  ctx.fillStyle='rgba(100,180,255,0.4)';
+  const pourX=cx+Math.sin(t*0.8)*5-50, pourY=H/2-140;
+  ctx.beginPath(); ctx.ellipse(pourX,pourY,15,10,0.3,0,Math.PI*2); ctx.fill();
+  arrow(ctx,cx-50+Math.sin(t)*5,H/2-130,cx-20,H/2-100,'rgba(100,200,255,0.7)',2);
+  // Drip
+  const dropY=H/2+20+(t%2)*50;
+  ctx.beginPath(); ctx.arc(cx,dropY,4,0,Math.PI*2);
+  ctx.fillStyle='rgba(100,200,255,0.8)'; ctx.fill();
+  txt(ctx,'Water drips through as filtrate',cx,H-30,13,'rgba(100,200,255,0.7)','center');
+});
+reg('filter_result',(ctx,W,H,t)=>{
+  const cx=W/2;
+  // Left: funnel with sand residue
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-200,H/2-60); ctx.lineTo(cx-150,H/2+30); ctx.lineTo(cx-130,H/2+30); ctx.lineTo(cx-80,H/2-60); ctx.stroke();
+  ctx.fillStyle='rgba(180,160,100,0.6)'; ctx.fillRect(cx-180,H/2+5,95,22);
+  txt(ctx,'RESIDUE',cx-140,H/2+70,12,'#ffcc66','center'); txt(ctx,'(sand)',cx-140,H/2+88,10,'#ffcc6688','center');
+  // Right: beaker with clear filtrate
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx+80,H/2-60); ctx.lineTo(cx+80,H/2+80); ctx.lineTo(cx+200,H/2+80); ctx.lineTo(cx+200,H/2-60); ctx.stroke();
+  ctx.fillStyle='rgba(100,200,255,0.35)'; ctx.fillRect(cx+84,H/2+10,112,66);
+  txt(ctx,'FILTRATE',cx+140,H/2+110,12,'#66aaff','center'); txt(ctx,'(clear water)',cx+140,H/2+128,10,'#66aaff88','center');
+});
+reg('filter_conclusion',(ctx,W,H,t)=>{
+  txt(ctx,'Filtration is used in:',W/2,H/2-70,16,'#fbbf24','center');
+  [['Water Treatment',H/2-20],['Coffee Making',H/2+10],['Swimming Pools',H/2+40],['Air Purifiers',H/2+70]].forEach(([s,y])=>{
+    ctx.fillStyle='rgba(100,200,100,0.15)'; ctx.beginPath(); ctx.roundRect(W/2-150,y-18,300,26,5); ctx.fill();
+    txt(ctx,s,W/2,y,13,'#88ffaa','center');
+  });
+});
+
+// ──────── PHYSICS: REFLECTION ────────
+function drawMirror(ctx,x,y){
+  ctx.fillStyle='#aaccee'; ctx.fillRect(x-4,y-80,8,160);
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=2; ctx.stroke();
+}
+reg('reflect_setup',(ctx,W,H,t)=>{
+  const mx=W/2;
+  drawMirror(ctx,mx,H/2);
+  // Normal line
+  ctx.setLineDash([8,6]); ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx,H/2-120); ctx.lineTo(mx,H/2+120); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,'MIRROR',mx+20,H/2-90,11,'#88aacc'); txt(ctx,'NORMAL',mx+12,H/2-125,10,'rgba(255,255,255,0.4)');
+  txt(ctx,'Normal line is perpendicular to mirror',W/2,H-30,12,'rgba(255,255,255,0.4)','center');
+});
+reg('reflect_30',(ctx,W,H,t)=>{
+  const mx=W/2, my=H/2;
+  drawMirror(ctx,mx,my);
+  ctx.setLineDash([8,6]); ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx,my-120); ctx.lineTo(mx,my+120); ctx.stroke(); ctx.setLineDash([]);
+  // Incident ray 30 deg
+  const a=30*Math.PI/180;
+  ctx.strokeStyle='#ffdd00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx-Math.sin(a)*130,my-Math.cos(a)*130); ctx.lineTo(mx,my); ctx.stroke();
+  // Angle arc
+  ctx.strokeStyle='#ffdd0066'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(mx,my,40,-Math.PI/2,-Math.PI/2+a); ctx.stroke();
+  txt(ctx,'30',mx-55,my-75,14,'#ffdd00');
+  txt(ctx,'i = 30 degrees (incident ray)',W/2,H-30,12,'rgba(255,255,200,0.5)','center');
+});
+reg('reflect_30r',(ctx,W,H,t)=>{
+  const mx=W/2, my=H/2, a=30*Math.PI/180;
+  drawMirror(ctx,mx,my);
+  ctx.setLineDash([8,6]); ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx,my-120); ctx.lineTo(mx,my+120); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#ffdd00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx-Math.sin(a)*130,my-Math.cos(a)*130); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.strokeStyle='#ffaa00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+Math.sin(a)*130,my-Math.cos(a)*130); ctx.stroke();
+  txt(ctx,'30',mx-55,my-75,14,'#ffdd00'); txt(ctx,'30',mx+30,my-75,14,'#ffaa00');
+  txt(ctx,'i = r = 30 degrees!',W/2,H-30,14,'#fbbf24','center');
+});
+reg('reflect_45',(ctx,W,H,t)=>{
+  const mx=W/2, my=H/2, a=45*Math.PI/180;
+  drawMirror(ctx,mx,my);
+  ctx.setLineDash([8,6]); ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx,my-120); ctx.lineTo(mx,my+120); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#ffdd00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx-Math.sin(a)*110,my-Math.cos(a)*110); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.strokeStyle='#ffaa00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+Math.sin(a)*110,my-Math.cos(a)*110); ctx.stroke();
+  txt(ctx,'45',mx-75,my-55,14,'#ffdd00'); txt(ctx,'45',mx+42,my-55,14,'#ffaa00');
+  txt(ctx,'45 = 45 degrees! Law holds',W/2,H-30,14,'#fbbf24','center');
+});
+reg('reflect_60',(ctx,W,H,t)=>{
+  const mx=W/2, my=H/2, a=60*Math.PI/180;
+  drawMirror(ctx,mx,my);
+  ctx.setLineDash([8,6]); ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx,my-120); ctx.lineTo(mx,my+120); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#ffdd00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx-Math.sin(a)*110,my-Math.cos(a)*110); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.strokeStyle='#ffaa00'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+Math.sin(a)*110,my-Math.cos(a)*110); ctx.stroke();
+  txt(ctx,'60',mx-90,my-28,14,'#ffdd00'); txt(ctx,'60',mx+50,my-28,14,'#ffaa00');
+  txt(ctx,'60 = 60 degrees! Always equal!',W/2,H-30,14,'#fbbf24','center');
+});
+reg('reflect_law',(ctx,W,H,t)=>{
+  ctx.fillStyle='rgba(99,102,241,0.15)'; ctx.beginPath(); ctx.roundRect(100,H/2-80,W-200,130,12); ctx.fill();
+  ctx.strokeStyle='rgba(99,102,241,0.5)'; ctx.lineWidth=2; ctx.stroke();
+  txt(ctx,'Angle of Incidence = Angle of Reflection',W/2,H/2-28,17,'#a5b4fc','center');
+  txt(ctx,'i = r',W/2,H/2+20,26,'#fbbf24','center');
+  txt(ctx,'Both angles measured from the NORMAL line',W/2,H/2+60,12,'rgba(255,255,255,0.4)','center');
+  // Animated ray
+  const pulse=0.7+Math.sin(t*3)*0.3;
+  const a=(30+Math.sin(t*0.4)*20)*Math.PI/180;
+  ctx.strokeStyle='rgba(255,221,0,'+pulse+')'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(120,H-50); ctx.lineTo(300,H/2+10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(300,H/2+10); ctx.lineTo(480,H-50); ctx.stroke();
+});
+
+// ──────── PHYSICS: FRICTION ────────
+reg('friction_setup',(ctx,W,H,t)=>{
+  const cy=H/2;
+  ctx.fillStyle='#d4d4d4'; ctx.fillRect(80,cy+10,W-160,14);
+  ctx.fillStyle='#8b5e3c'; ctx.fillRect(W/2-60,cy-30,120,40);
+  ctx.strokeStyle='#555'; ctx.lineWidth=2; ctx.strokeRect(W/2-60,cy-30,120,40);
+  ctx.strokeStyle='#aaa'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(W/2+60,cy-10); ctx.lineTo(W/2+150,cy-10); ctx.stroke();
+  ctx.fillStyle='#888'; ctx.fillRect(W/2+150,cy-30,35,40);
+  txt(ctx,'Spring Balance',W/2+170,cy+15,10,'#aaa');
+  txt(ctx,'Wooden Block on Smooth Board',W/2,cy+50,13,'#aabbcc','center');
+});
+reg('friction_smooth',(ctx,W,H,t)=>{
+  const cy=H/2, moved=Math.sin(t*0.8)*15+15;
+  ctx.fillStyle='#d4d4d4'; ctx.fillRect(80,cy+10,W-160,14);
+  ctx.fillStyle='#8b5e3c'; ctx.fillRect(W/2-60+moved,cy-30,120,40);
+  ctx.strokeStyle='#888'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(W/2+60+moved,cy-10); ctx.lineTo(W/2+150,cy-10); ctx.stroke();
+  ctx.fillStyle='#888'; ctx.fillRect(W/2+150,cy-30,35,40);
+  txt(ctx,'~4 N',W/2+168,cy-5,14,'#44ff88');
+  txt(ctx,'STATIC FRICTION (smooth) ~ 4N',W/2,cy+55,13,'#44cc88','center');
+});
+reg('friction_kinetic',(ctx,W,H,t)=>{
+  const cy=H/2, moved=(t*30)%180;
+  ctx.fillStyle='#d4d4d4'; ctx.fillRect(80,cy+10,W-160,14);
+  ctx.fillStyle='#8b5e3c'; ctx.fillRect(80+moved,cy-30,120,40);
+  txt(ctx,'MOVING ->',100+moved,cy-45,12,'#ffcc44');
+  txt(ctx,'Kinetic friction ~ 3.5N (less than static)',W/2,cy+55,13,'#ffcc44','center');
+});
+reg('friction_rough',(ctx,W,H,t)=>{
+  const cy=H/2, moved=Math.sin(t*0.5)*8+8;
+  // Sandpaper texture
+  for(let i=0;i<30;i++){
+    ctx.fillStyle='rgba(180,130,60,0.6)';
+    ctx.fillRect(80+i*28,cy+10,14,14);
+  }
+  ctx.fillStyle='#8b5e3c'; ctx.fillRect(W/2-60+moved,cy-30,120,40);
+  ctx.strokeStyle='#888'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(W/2+60+moved,cy-10); ctx.lineTo(W/2+160,cy-10); ctx.stroke();
+  ctx.fillStyle='#888'; ctx.fillRect(W/2+160,cy-30,35,40);
+  txt(ctx,'~8 N',W/2+178,cy-5,15,'#ff6644');
+  txt(ctx,'ROUGH SURFACE = MORE FRICTION ~8N!',W/2,cy+55,13,'#ff8866','center');
+});
+reg('friction_compare',(ctx,W,H,t)=>{
+  [[250,H/2,'Smooth Board','4N','#44cc88'],[650,H/2,'Sandpaper','8N','#ff6644']].forEach(([x,y,lbl,force,col])=>{
+    const h=lbl==='Smooth Board'?60:120;
+    ctx.fillStyle=col+'22'; ctx.beginPath(); ctx.roundRect(x-80,y-h/2-20,160,h+40,8); ctx.fill();
+    ctx.fillStyle=col; ctx.fillRect(x-30,y+20,60,5);
+    txt(ctx,force,x,y-h/2,22,col,'center');
+    txt(ctx,lbl,x,y+40,11,col+'bb','center');
+  });
+  txt(ctx,'Friction comparison: same block, different surfaces',W/2,H-25,12,'rgba(255,255,255,0.4)','center');
+});
+reg('friction_conclusion',(ctx,W,H,t)=>{
+  txt(ctx,'F = mu x N',W/2,H/2-20,24,'#fbbf24','center');
+  txt(ctx,'F = Friction force   |   mu = coefficient (surface)   |   N = Normal force',W/2,H/2+20,11,'rgba(255,255,255,0.45)','center');
+  txt(ctx,'mu (smooth wood) ~ 0.2',W/2-150,H/2+70,12,'#44cc88','center');
+  txt(ctx,'mu (sandpaper) ~ 0.6',W/2+150,H/2+70,12,'#ff6644','center');
+});
+
+// ──────── PHYSICS: MAGNETS ────────
+reg('magnet_bar',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(cx-120,cy-20,120,40);
+  ctx.fillStyle='#2c3e50'; ctx.fillRect(cx,cy-20,120,40);
+  txt(ctx,'N',cx-60,cy+8,22,'#fff','center');
+  txt(ctx,'S',cx+60,cy+8,22,'#fff','center');
+  txt(ctx,'Bar Magnet',cx,cy+55,14,'#aabbcc','center');
+  txt(ctx,'Red = North Pole   |   Dark = South Pole',cx,H-30,12,'rgba(255,255,255,0.4)','center');
+});
+reg('magnet_filings',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(cx-120,cy-20,120,40);
+  ctx.fillStyle='#2c3e50'; ctx.fillRect(cx,cy-20,120,40);
+  txt(ctx,'N',cx-60,cy+8,16,'#fff','center'); txt(ctx,'S',cx+60,cy+8,16,'#fff','center');
+  // Random filings
+  for(let i=0;i<80;i++){
+    const px=cx-180+Math.random()*360, py=cy-120+Math.random()*240;
+    ctx.fillStyle='rgba(150,150,120,'+(0.3+Math.random()*0.5)+')';
+    ctx.fillRect(px,py,5+Math.random()*3,1.5);
+  }
+  txt(ctx,'Iron filings sprinkled randomly',cx,H-30,12,'rgba(255,255,255,0.35)','center');
+});
+reg('magnet_aligned',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(cx-120,cy-20,120,40);
+  ctx.fillStyle='#2c3e50'; ctx.fillRect(cx,cy-20,120,40);
+  txt(ctx,'N',cx-60,cy+8,16,'#fff','center'); txt(ctx,'S',cx+60,cy+8,16,'#fff','center');
+  // Aligned field lines
+  for(let i=-3;i<=3;i++){
+    const dy=i*22;
+    ctx.strokeStyle='rgba(220,200,80,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.ellipse(cx,cy+dy,160,Math.abs(i)*18+8,0,Math.PI,0); ctx.stroke();
+  }
+  txt(ctx,'Filings align along field lines!',cx,H-30,13,'#ffcc44','center');
+});
+reg('magnet_field',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(cx-120,cy-20,120,40);
+  ctx.fillStyle='#2c3e50'; ctx.fillRect(cx,cy-20,120,40);
+  txt(ctx,'N',cx-60,cy+8,16,'#fff','center'); txt(ctx,'S',cx+60,cy+8,16,'#fff','center');
+  for(let i=-3;i<=3;i++){
+    const dy=i*22, r=Math.abs(i)*18+12;
+    const col=i===0?'rgba(255,220,0,0.8)':'rgba(255,180,50,0.4)';
+    ctx.strokeStyle=col; ctx.lineWidth=i===0?2.5:1.5;
+    ctx.beginPath(); ctx.ellipse(cx,cy+dy,180,r,0,Math.PI,0); ctx.stroke();
+    // Arrow
+    const ax=cx+180, ay=cy+dy;
+    arrow(ctx,ax,ay,ax-20,ay+5,col,1.5);
+  }
+  txt(ctx,'N -> S outside magnet (field direction)',cx,H-30,12,'rgba(255,220,50,0.6)','center');
+});
+reg('magnet_strength',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(cx-120,cy-20,120,40);
+  ctx.fillStyle='#2c3e50'; ctx.fillRect(cx,cy-20,120,40);
+  txt(ctx,'N',cx-60,cy+8,16,'#fff','center'); txt(ctx,'S',cx+60,cy+8,16,'#fff','center');
+  // Dense lines at poles, sparse in middle
+  [1,2,4,8,4,2,1].forEach((dens,ii)=>{
+    const x=cx-180+ii*60;
+    for(let d=0;d<dens;d++){
+      ctx.strokeStyle='rgba(255,200,50,'+(dens/8)+')'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(x,cy-60+d*15); ctx.lineTo(x,cy+60-d*15); ctx.stroke();
+    }
+  });
+  txt(ctx,'Dense lines = STRONG field (near poles)',cx,H-30,12,'rgba(255,200,50,0.5)','center');
+});
+reg('magnet_conclusion',(ctx,W,H,t)=>{
+  ctx.fillStyle='rgba(99,102,241,0.12)'; ctx.beginPath(); ctx.roundRect(60,H/2-100,W-120,160,12); ctx.fill();
+  txt(ctx,'Magnetic Field Lines:',W/2,H/2-62,16,'#a5b4fc','center');
+  ['Exit North pole, enter South pole','Never cross each other','Form closed loops (inside magnet too!)','Denser = stronger field'].forEach((s,i)=>{
+    txt(ctx,'- '+s,W/2,H/2-22+i*28,12,'rgba(255,255,255,0.7)','center');
+  });
+});
+
+// ──────── BIOLOGY: FLOWER ────────
+reg('flower_whole',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2+20;
+  // Stem
+  ctx.strokeStyle='#228822'; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(cx,cy+100); ctx.lineTo(cx,cy+30); ctx.stroke();
+  // Petals
+  for(let i=0;i<8;i++){
+    const a=i/8*Math.PI*2, r=70;
+    ctx.fillStyle='rgba(255,100,100,0.7)';
+    ctx.beginPath(); ctx.ellipse(cx+Math.cos(a)*r,cy+Math.sin(a)*r,22,12,a,0,Math.PI*2); ctx.fill();
+  }
+  // Sepals
+  for(let i=0;i<5;i++){
+    const a=i/5*Math.PI*2+0.3;
+    ctx.fillStyle='rgba(30,140,30,0.7)';
+    ctx.beginPath(); ctx.ellipse(cx+Math.cos(a)*40,cy+Math.sin(a)*40,14,8,a,0,Math.PI*2); ctx.fill();
+  }
+  // Centre
+  ctx.beginPath(); ctx.arc(cx,cy,18,0,Math.PI*2);
+  ctx.fillStyle='#ffcc44'; ctx.fill();
+  txt(ctx,'Hibiscus Flower',cx,cy-115,14,'#ffaaaa','center');
+});
+reg('flower_sepal',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  for(let i=0;i<5;i++){
+    const a=i/5*Math.PI*2+0.3;
+    const glow=i===2?1:0.55;
+    ctx.fillStyle='rgba(30,140,30,'+glow+')';
+    ctx.beginPath(); ctx.ellipse(cx+Math.cos(a)*55,cy+Math.sin(a)*55,18,10,a,0,Math.PI*2); ctx.fill();
+    if(i===2){ ctx.strokeStyle='#88ff88'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  txt(ctx,'SEPAL (Calyx)',cx,cy-90,16,'#88ff88','center');
+  txt(ctx,'Green leaf-like structures - protect the bud',cx,H-25,12,'rgba(100,255,100,0.5)','center');
+  ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2); ctx.fillStyle='#ffcc44'; ctx.fill();
+});
+reg('flower_petal',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  for(let i=0;i<8;i++){
+    const a=i/8*Math.PI*2;
+    const pulse=1+Math.sin(t*2+i*0.8)*0.06;
+    ctx.fillStyle='rgba(255,80,80,0.8)';
+    ctx.beginPath(); ctx.ellipse(cx+Math.cos(a)*70*pulse,cy+Math.sin(a)*70*pulse,24,13,a,0,Math.PI*2); ctx.fill();
+    if(i===0){ ctx.strokeStyle='#ffaaaa'; ctx.lineWidth=2; ctx.stroke(); }
+  }
+  txt(ctx,'PETAL (Corolla)',cx,cy-110,16,'#ff9999','center');
+  txt(ctx,'Colourful! Attracts pollinators like bees',cx,H-25,12,'rgba(255,150,150,0.5)','center');
+  ctx.beginPath(); ctx.arc(cx,cy,12,0,Math.PI*2); ctx.fillStyle='#ffcc44'; ctx.fill();
+});
+reg('flower_stamen',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  for(let i=0;i<6;i++){
+    const a=i/6*Math.PI*2;
+    ctx.strokeStyle='#ffcc44'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(cx+Math.cos(a)*14,cy+Math.sin(a)*14); ctx.lineTo(cx+Math.cos(a)*50,cy+Math.sin(a)*50); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*54,cy+Math.sin(a)*54,6,0,Math.PI*2);
+    ctx.fillStyle='#ffaa00'; ctx.fill();
+    // Pollen dots
+    if(Math.random()<0.3){
+      ctx.beginPath(); ctx.arc(cx+Math.cos(a)*54+Math.random()*14-7,cy+Math.sin(a)*54+Math.random()*14-7,2,0,Math.PI*2);
+      ctx.fillStyle='#ffee44'; ctx.fill();
+    }
+  }
+  txt(ctx,'STAMEN',cx,cy-85,16,'#ffcc44','center');
+  txt(ctx,'Anther (yellow ball) produces POLLEN',cx,H-25,12,'rgba(255,200,50,0.5)','center');
+  ctx.beginPath(); ctx.arc(cx,cy,10,0,Math.PI*2); ctx.fillStyle='#ff6688'; ctx.fill();
+});
+reg('flower_pistil',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  // Pistil
+  ctx.strokeStyle='#ff6688'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(cx,cy+30); ctx.lineTo(cx,cy-50); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy-55,10,0,Math.PI*2); ctx.fillStyle='#ff6688'; ctx.fill();
+  ctx.fillStyle='rgba(255,180,200,0.4)'; ctx.beginPath(); ctx.ellipse(cx,cy+38,22,18,0,0,Math.PI*2); ctx.fill();
+  txt(ctx,'Stigma',cx+18,cy-58,11,'#ff9999');
+  txt(ctx,'Style',cx+18,cy-5,11,'#ff9999');
+  txt(ctx,'Ovary',cx+18,cy+40,11,'#ff9999');
+  txt(ctx,'PISTIL (Carpel) - Female Reproductive Part',cx,cy-100,13,'#ff9999','center');
+});
+reg('flower_diagram',(ctx,W,H,t)=>{
+  const parts=[['Sepal','protect','#44cc44'],['Petal','attract','#ff7777'],['Stamen','male/pollen','#ffcc44'],['Pistil','female/seeds','#ff9999']];
+  parts.forEach(([nm,role,col],i)=>{
+    const x=120+i*210, y=H/2;
+    ctx.fillStyle=col+'22'; ctx.beginPath(); ctx.roundRect(x-80,y-60,160,100,8); ctx.fill();
+    ctx.strokeStyle=col+'66'; ctx.lineWidth=2; ctx.stroke();
+    txt(ctx,nm,x,y-28,15,col,'center'); txt(ctx,role,x,y+12,11,col+'aa','center');
+    if(i<3) arrow(ctx,x+85,y,x+130,y,'rgba(255,255,255,0.25)',1.5);
+  });
+  txt(ctx,'Four whorls: outermost to innermost',W/2,H-25,12,'rgba(255,255,255,0.35)','center');
+});
+
+// ──────── BIOLOGY: CELLS ────────
+reg('cell_prep',(ctx,W,H,t)=>{
+  const cx=W/2;
+  ctx.fillStyle='rgba(220,230,200,0.35)'; ctx.fillRect(cx-120,H/2-8,240,16);
+  ctx.strokeStyle='#aabb88'; ctx.lineWidth=2; ctx.strokeRect(cx-120,H/2-8,240,16);
+  txt(ctx,'Glass Slide',cx,H/2+35,13,'#aabb88','center');
+  // Onion layer outline
+  for(let i=0;i<20;i++){
+    ctx.strokeStyle='rgba(200,180,120,'+(0.2+i%3*0.15)+')'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.ellipse(cx+(-8+i*12),H/2,5,8,0,0,Math.PI*2); ctx.stroke();
+  }
+  txt(ctx,'Thin onion peel layer on slide',cx,H-30,12,'rgba(255,255,255,0.35)','center');
+});
+reg('cell_iodine',(ctx,W,H,t)=>{
+  const cx=W/2;
+  ctx.fillStyle='rgba(220,230,200,0.35)'; ctx.fillRect(cx-120,H/2-8,240,16);
+  ctx.strokeStyle='#aabb88'; ctx.lineWidth=2; ctx.strokeRect(cx-120,H/2-8,240,16);
+  // Iodine drop
+  const dropY=H/2-80+(t%3)*30;
+  ctx.beginPath(); ctx.arc(cx,dropY,7,0,Math.PI*2);
+  ctx.fillStyle='rgba(100,50,10,0.85)'; ctx.fill();
+  ctx.strokeStyle='#884400'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx,dropY); ctx.lineTo(cx,H/2-12); ctx.stroke();
+  txt(ctx,'Iodine stains nucleus dark brown',cx,H-30,13,'#aa7733','center');
+});
+reg('cell_coverslip',(ctx,W,H,t)=>{
+  const cx=W/2, a=t%3;
+  ctx.fillStyle='rgba(220,230,200,0.35)'; ctx.fillRect(cx-120,H/2,240,14);
+  // Coverslip at angle
+  const ang=Math.max(0,0.7-a*0.25);
+  ctx.save(); ctx.translate(cx-120,H/2);
+  ctx.rotate(-ang); ctx.fillStyle='rgba(180,220,255,0.5)'; ctx.fillRect(0,-3,240,8); ctx.restore();
+  txt(ctx,'Lower coverslip at 45 degrees - no bubbles!',cx,H-30,13,'rgba(100,200,255,0.5)','center');
+});
+reg('cell_low',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.beginPath(); ctx.arc(cx,cy,100,0,Math.PI*2);
+  ctx.fillStyle='rgba(200,220,160,0.15)'; ctx.fill();
+  ctx.strokeStyle='#888'; ctx.lineWidth=4; ctx.stroke();
+  // Many cells
+  for(let i=-3;i<=3;i++) for(let j=-3;j<=3;j++){
+    if(Math.sqrt(i*i+j*j)<3.5){
+      ctx.strokeStyle='rgba(100,140,60,0.7)'; ctx.lineWidth=1.5;
+      ctx.strokeRect(cx+i*28-14,cy+j*22-10,28,20);
+    }
+  }
+  txt(ctx,'10x - See grid of cells',cx,cy+115,12,'rgba(200,220,160,0.6)','center');
+});
+reg('cell_high',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.beginPath(); ctx.arc(cx,cy,100,0,Math.PI*2);
+  ctx.fillStyle='rgba(200,220,160,0.15)'; ctx.fill();
+  ctx.strokeStyle='#888'; ctx.lineWidth=4; ctx.stroke();
+  // One enlarged cell
+  ctx.strokeStyle='rgba(100,140,60,0.9)'; ctx.lineWidth=3;
+  ctx.strokeRect(cx-65,cy-45,130,90);
+  // Nucleus
+  ctx.beginPath(); ctx.arc(cx+10,cy+5,20,0,Math.PI*2);
+  ctx.fillStyle='rgba(80,50,20,0.6)'; ctx.fill();
+  ctx.strokeStyle='#aa7733'; ctx.lineWidth=2; ctx.stroke();
+  txt(ctx,'Nucleus',cx+40,cy+8,10,'#bb8833');
+  txt(ctx,'Cell Wall',cx-90,cy-20,10,'#88aa44');
+  txt(ctx,'40x - Cell wall + Nucleus visible!',cx,cy+115,12,'rgba(200,220,160,0.6)','center');
+});
+reg('cell_diagram',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.strokeStyle='rgba(100,140,60,0.9)'; ctx.lineWidth=3;
+  ctx.strokeRect(cx-120,cy-80,240,160);
+  ctx.strokeStyle='rgba(100,140,60,0.5)'; ctx.lineWidth=1.5;
+  ctx.strokeRect(cx-112,cy-72,224,144);
+  ctx.beginPath(); ctx.arc(cx+20,cy+10,28,0,Math.PI*2);
+  ctx.fillStyle='rgba(80,50,20,0.6)'; ctx.fill();
+  ctx.strokeStyle='#aa7733'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='rgba(200,220,160,0.08)'; ctx.fillRect(cx-112,cy-72,224,144);
+  txt(ctx,'Cell Wall',cx-160,cy-30,11,'#88aa44');
+  txt(ctx,'Cell Membrane',cx-160,cy,11,'#66cc66');
+  txt(ctx,'Cytoplasm',cx-160,cy+30,11,'rgba(200,220,160,0.7)');
+  txt(ctx,'Nucleus',cx+60,cy+14,11,'#bb8833');
+  arrow(ctx,cx-90,cy-30,cx-120,cy-30,'#88aa44',1); arrow(ctx,cx-90,cy,cx-120,cy,'#66cc66',1);
+  arrow(ctx,cx+60,cy+10,cx+50,cy+10,'#bb8833',1);
+});
+
+// ──────── BIOLOGY: PHOTOSYNTHESIS ────────
+reg('photo_leaf',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  // Variegated leaf
+  ctx.fillStyle='#228822';
+  ctx.beginPath(); ctx.ellipse(cx,cy,160,90,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#f0f0cc';
+  ctx.beginPath(); ctx.ellipse(cx-60,cy-20,55,35,0.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx+70,cy+20,45,28,-0.2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#1a5522'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-160,cy); ctx.bezierCurveTo(cx-80,cy-30,cx+80,cy+30,cx+160,cy); ctx.stroke();
+  txt(ctx,'Green areas = chlorophyll',cx-70,cy-60,11,'#66ff66');
+  txt(ctx,'White areas = no chlorophyll',cx+20,cy+35,11,'#aabb88');
+  txt(ctx,'Variegated Leaf',cx,cy+110,14,'#88cc88','center');
+});
+reg('photo_boil',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-60,cy-60); ctx.lineTo(cx-60,cy+70); ctx.lineTo(cx+60,cy+70); ctx.lineTo(cx+60,cy-60); ctx.stroke();
+  ctx.fillStyle='rgba(100,180,255,0.4)'; ctx.fillRect(cx-56,cy-10,112,76);
+  ctx.fillStyle='#228822'; ctx.beginPath(); ctx.ellipse(cx,cy-25,45,22,0,0,Math.PI*2); ctx.fill();
+  // Bubbles
+  for(let i=0;i<5;i++){
+    const bx=cx-40+i*20, by=cy-15+(t*40+i*30)%80;
+    ctx.beginPath(); ctx.arc(bx,by,3+i%3,0,Math.PI*2);
+    ctx.strokeStyle='rgba(180,220,255,0.7)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  // Flame
+  ctx.fillStyle='#ff6600'; ctx.beginPath(); ctx.moveTo(cx-20,cy+80); ctx.lineTo(cx,cy+60+Math.sin(t*5)*5); ctx.lineTo(cx+20,cy+80); ctx.closePath(); ctx.fill();
+  txt(ctx,'Boiling in water - 5 minutes',cx,H-30,13,'rgba(100,200,255,0.5)','center');
+});
+reg('photo_decolor',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  const fade=Math.min(1,(t%5)/3);
+  ctx.strokeStyle='#88aacc'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx-60,cy-60); ctx.lineTo(cx-60,cy+70); ctx.lineTo(cx+60,cy+70); ctx.lineTo(cx+60,cy-60); ctx.stroke();
+  const r=Math.floor(130+fade*110), g=Math.floor(200-fade*60);
+  ctx.fillStyle='rgb('+r+','+g+',80)'; ctx.fillRect(cx-56,cy-5,112,71);
+  const gc=Math.floor(34+fade*180);
+  ctx.fillStyle='rgb('+gc+','+(gc+30)+','+gc+')';
+  ctx.beginPath(); ctx.ellipse(cx,cy-25,45,22,0,0,Math.PI*2); ctx.fill();
+  // Outer beaker in water bath
+  ctx.strokeStyle='#668888'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-90,cy-80); ctx.lineTo(cx-90,cy+100); ctx.lineTo(cx+90,cy+100); ctx.lineTo(cx+90,cy-80); ctx.stroke();
+  ctx.fillStyle='rgba(180,220,200,0.2)'; ctx.fillRect(cx-86,cy+50,172,46);
+  txt(ctx,'Alcohol in water bath - removes chlorophyll',cx,H-30,12,'rgba(200,200,100,0.5)','center');
+});
+reg('photo_wash',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#f0eedd';
+  ctx.beginPath(); ctx.ellipse(cx,cy,100,55,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#ccbb88'; ctx.lineWidth=2; ctx.stroke();
+  // Water drops
+  for(let i=0;i<5;i++){
+    const dropT=(t+i*0.4)%2;
+    ctx.beginPath(); ctx.arc(cx-60+i*30,cy-80+dropT*60,4,0,Math.PI*2);
+    ctx.fillStyle='rgba(100,180,255,'+(1-dropT/2)+')'; ctx.fill();
+  }
+  txt(ctx,'Decolourised - pale/white',cx,cy+80,13,'#ccbb88','center');
+  txt(ctx,'Wash with water - now ready for iodine',cx,H-30,12,'rgba(200,200,180,0.5)','center');
+});
+reg('photo_iodine',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  ctx.fillStyle='#f0eedd';
+  ctx.beginPath(); ctx.ellipse(cx,cy,100,55,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#ccbb88'; ctx.lineWidth=2; ctx.stroke();
+  // Iodine drops
+  const dropPhase=(t%3);
+  ctx.beginPath(); ctx.arc(cx,cy-90+dropPhase*30,6,0,Math.PI*2);
+  ctx.fillStyle='rgba(100,40,10,'+Math.max(0,1-dropPhase)+')'; ctx.fill();
+  // Iodine stain spreading
+  if(dropPhase>1.5){
+    ctx.fillStyle='rgba(30,10,80,0.35)';
+    ctx.beginPath(); ctx.arc(cx,cy,35+dropPhase*5,0,Math.PI*2); ctx.fill();
+  }
+  txt(ctx,'Iodine drops added over leaf',cx,H-30,12,'rgba(150,100,50,0.6)','center');
+});
+reg('photo_result',(ctx,W,H,t)=>{
+  const cx=W/2, cy=H/2;
+  // Whole leaf - green parts blue-black
+  ctx.fillStyle='#221166';
+  ctx.beginPath(); ctx.ellipse(cx,cy,130,75,0,0,Math.PI*2); ctx.fill();
+  // White areas stay brownish
+  ctx.fillStyle='#8a6a2a';
+  ctx.beginPath(); ctx.ellipse(cx-55,cy-18,45,28,0.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx+65,cy+18,38,24,-0.2,0,Math.PI*2); ctx.fill();
+  // Labels
+  txt(ctx,'BLUE-BLACK = starch = photosynthesis!',cx-30,cy-55,11,'#8899ff','center');
+  txt(ctx,'BROWN = no starch = no chlorophyll',cx+10,cy+55,11,'#aa8844','center');
+  txt(ctx,'RESULT: Only green (chlorophyll) areas made starch!',cx,H-30,12,'#66ffaa','center');
+  // Glow on blue-black area
+  ctx.strokeStyle='rgba(100,80,220,'+(0.4+Math.sin(t*2)*0.2)+')'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.ellipse(cx,cy,132,77,0,0,Math.PI*2); ctx.stroke();
+});
+
+// ════════════════════════════════════════════
+// SCREEN CONTROLLER
+// Screen is OFF (black, standby) when idle.
+// Screen turns ON only when an experiment is
+// actively being performed, and tracks the
+// exact current step in real-time.
+// HUD overlay also only shows while performing.
+// ════════════════════════════════════════════
+const screenState = {
+  expId: null,
+  step: -1,
+  isOn: false,
+};
+
+// HUD elements
+const screenHud  = document.getElementById('screen-hud');
+const shudTitle  = document.getElementById('shud-title');
+const shudTopic  = document.getElementById('shud-topic');
+const shudZoneDot= document.getElementById('shud-zone-dot');
+const shudStepLabel = document.getElementById('shud-step-label');
+const shudStepText  = document.getElementById('shud-step-text');
+const shudProgress  = document.getElementById('shud-progress');
+const shudCycleBar  = document.getElementById('shud-cycle-bar');
+const shudHint   = document.getElementById('shud-hint');
+const shudCanvas = document.getElementById('shud-canvas');
+const shudCtx    = shudCanvas.getContext('2d');
+
+// ── helpers ──
+function buildProgressDots(count){
+  shudProgress.innerHTML='';
+  for(let i=0;i<count;i++){
+    const d=document.createElement('div');
+    d.className='shud-dot'; d.id='sdot'+i;
+    shudProgress.appendChild(d);
+  }
+}
+function updateProgressDots(step,total){
+  for(let i=0;i<total;i++){
+    const d=document.getElementById('sdot'+i);
+    if(d) d.className='shud-dot'+(i<step?' done':i===step?' active':'');
+  }
+}
+
+// ── draw standby (off) screen ──
+function drawScreenOff(ctx,W,H){
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+  // subtle scanlines
+  for(let y=0;y<H;y+=4){
+    ctx.fillStyle='rgba(255,255,255,0.012)'; ctx.fillRect(0,y,W,2);
+  }
+  // standby dot
+  ctx.beginPath(); ctx.arc(W/2,H/2,12,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,0.06)'; ctx.fill();
+  ctx.font='11px monospace'; ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,0.1)';
+  ctx.fillText('STANDBY',W/2,H/2+28); ctx.textAlign='left';
+}
+
+// ── draw active experiment frame ──
+function drawScreenFrame(ctx,W,H,demo,step,t,zoneColor){
+  const stepData=demo.steps[step];
+  if(!stepData){ drawScreenOff(ctx,W,H); return; }
+  ctx.fillStyle='#050a1e'; ctx.fillRect(0,0,W,H);
+  drawBase(ctx,W,H,demo.title,step,demo.steps.length,zoneColor);
+  const fn=drawFns[stepData.draw];
+  if(fn){
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0,48,W,H-48); ctx.clip();
+    fn(ctx,W,H,t);
+    ctx.restore();
+  } else {
+    txt(ctx,'Diagram: '+stepData.draw,W/2,H/2,13,'rgba(255,255,255,0.25)','center');
+  }
+  // Footer gradient + description
+  const fH=54;
+  const fg=ctx.createLinearGradient(0,H-fH,0,H);
+  fg.addColorStop(0,'rgba(5,10,30,0)'); fg.addColorStop(0.3,'rgba(5,10,30,0.94)'); fg.addColorStop(1,'rgba(5,10,30,1)');
+  ctx.fillStyle=fg; ctx.fillRect(0,H-fH,W,fH);
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  ctx.font='13px monospace'; ctx.textAlign='center';
+  const words=stepData.desc.split(' ');
+  let line='',lines=[];
+  words.forEach(w=>{ const test=line+(line?' ':'')+w; if(ctx.measureText(test).width>W-44){lines.push(line);line=w;}else line=test; });
+  lines.push(line);
+  lines.slice(0,2).forEach((l,i)=>ctx.fillText(l,W/2,H-fH+18+i*17));
+  ctx.textAlign='left';
+}
+
+// ── main screen update (called every frame) ──
+function updateScreen(dt,t){
+  const performing = state.exp && state.mode==='performing';
+  const walking    = state.exp && state.mode==='walking';
+  const active     = performing || walking;
+
+  // ── TURN SCREEN ON/OFF ──
+  if(active !== screenState.isOn){
+    screenState.isOn = active;
+    if(!active){
+      // Wipe to black immediately
+      drawScreenOff(window._screen.ctx,1024,600);
+      window._screen.tex.needsUpdate=true;
+      // Kill HUD
+      screenHud.classList.remove('show');
+      // Kill glow
+      if(window._screen.light) window._screen.light.intensity=0;
+    } else {
+      // Wake up
+      screenHud.classList.add('show');
+      if(window._screen.light) window._screen.light.intensity=0.55;
+    }
+  }
+
+  if(!active) return; // nothing more to do when off
+
+  // ── SYNC experiment + step ──
+  const expId   = state.exp.id;
+  const curStep = state.mode==='performing'
+    ? Math.min(state.step, SCREEN_DEMOS[expId]?.steps.length-1 ?? 0)
+    : 0; // while walking, show step 0
+
+  const demo = SCREEN_DEMOS[expId];
+  if(!demo) return;
+
+  // Switch experiment?
+  if(expId !== screenState.expId){
+    screenState.expId = expId;
+    screenState.step  = -1; // force redraw
+    shudTitle.textContent  = demo.title;
+    shudTopic.textContent  = demo.zone.toUpperCase();
+    shudZoneDot.style.background = demo.color;
+    screenHud.style.borderColor  = demo.color+'55';
+    buildProgressDots(demo.steps.length);
+  }
+
+  // Step changed? Update everything
+  if(curStep !== screenState.step){
+    screenState.step = curStep;
+    const stepData = demo.steps[curStep];
+    if(stepData){
+      shudStepLabel.textContent = 'STEP '+(curStep+1)+' / '+demo.steps.length+' — '+stepData.label;
+      shudStepText.textContent  = stepData.desc;
+    }
+    updateProgressDots(curStep, demo.steps.length);
+    // Reset cycle bar
+    screenState._barT = 0;
+  }
+
+  // Animate cycle bar (just visual pulse, no timing logic)
+  screenState._barT = (screenState._barT||0) + dt;
+  const pulse = (Math.sin(screenState._barT*1.5)+1)/2;
+  shudCycleBar.style.width = (20 + pulse*80)+'%';
+
+  // ── DRAW 3D SCREEN TEXTURE every frame (animated) ──
+  drawScreenFrame(window._screen.ctx,1024,600,demo,curStep,t,demo.color);
+  window._screen.tex.needsUpdate=true;
+
+  // ── DRAW HUD canvas ──
+  drawScreenFrame(shudCtx,520,320,demo,curStep,t,demo.color);
+
+  // Glow color matches zone
+  const zoneGlow={chemistry:0xff7722,physics:0x4466ff,biology:0x44aa55};
+  if(window._screen.light) window._screen.light.color.setHex(zoneGlow[demo.zone]||0x8899ff);
+}
+
+// ── screenLoop: own RAF so it's independent of main animate ──
+const _screenClock = new THREE.Clock();
+
+// Draw standby immediately on load
+(function initScreen(){
+  if(window._screen){
+    drawScreenOff(window._screen.ctx,1024,600);
+    window._screen.tex.needsUpdate=true;
+    if(window._screen.light) window._screen.light.intensity=0;
+  }
+})();
+
+function screenLoop(){
+  requestAnimationFrame(screenLoop);
+  const dt2=_screenClock.getDelta(), t2=_screenClock.getElapsedTime();
+  updateScreen(dt2,t2);
+}
+screenLoop();
+
+</script>

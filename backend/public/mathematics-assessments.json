@@ -1,0 +1,137 @@
+[
+  {
+    "id": "math-1",
+    "title": "Square and Cube Numbers Assessment",
+    "subject": "Mathematics",
+    "description": "Test your understanding of square and cube numbers, their properties, and applications",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the square of 7?",
+        "options": ["49", "14", "21", "35"],
+        "correctAnswer": 0,
+        "explanation": "7² = 7 × 7 = 49"
+      },
+      {
+        "id": 2,
+        "question": "Which of the following is a perfect cube?",
+        "options": ["16", "27", "36", "49"],
+        "correctAnswer": 1,
+        "explanation": "27 = 3³, so it's a perfect cube"
+      },
+      {
+        "id": 3,
+        "question": "What is the cube root of 64?",
+        "options": ["4", "8", "16", "32"],
+        "correctAnswer": 0,
+        "explanation": "4³ = 4 × 4 × 4 = 64"
+      },
+      {
+        "id": 4,
+        "question": "Which number cannot be a perfect square?",
+        "options": ["25", "36", "47", "64"],
+        "correctAnswer": 2,
+        "explanation": "47 ends with 7, and no perfect square ends with 2, 3, 7, or 8"
+      },
+      {
+        "id": 5,
+        "question": "What is the sum of the first 5 odd numbers?",
+        "options": ["15", "25", "35", "45"],
+        "correctAnswer": 1,
+        "explanation": "1 + 3 + 5 + 7 + 9 = 25 = 5²"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "math-2",
+    "title": "Arithmetic Expressions Quiz",
+    "subject": "Mathematics",
+    "description": "Practice evaluating arithmetic expressions using order of operations",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the value of 8 + 4 × 3?",
+        "options": ["36", "20", "24", "28"],
+        "correctAnswer": 1,
+        "explanation": "Follow BODMAS: 8 + (4 × 3) = 8 + 12 = 20"
+      },
+      {
+        "id": 2,
+        "question": "Evaluate: 15 - (6 + 2)",
+        "options": ["7", "11", "13", "9"],
+        "correctAnswer": 0,
+        "explanation": "15 - (6 + 2) = 15 - 8 = 7"
+      },
+      {
+        "id": 3,
+        "question": "What is 5 × (10 + 3)?",
+        "options": ["65", "50", "53", "75"],
+        "correctAnswer": 0,
+        "explanation": "5 × (10 + 3) = 5 × 13 = 65"
+      },
+      {
+        "id": 4,
+        "question": "Simplify: 12 ÷ 3 + 2 × 4",
+        "options": ["12", "16", "20", "24"],
+        "correctAnswer": 1,
+        "explanation": "12 ÷ 3 + 2 × 4 = 4 + 8 = 12"
+      },
+      {
+        "id": 5,
+        "question": "What is the distributive property of 3 × (7 + 2)?",
+        "options": ["3 × 7 + 3 × 2", "3 × 9", "21 + 6", "All of the above"],
+        "correctAnswer": 3,
+        "explanation": "3 × (7 + 2) = 3 × 7 + 3 × 2 = 21 + 6 = 27"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "math-3",
+    "title": "Geometry Fundamentals Test",
+    "subject": "Mathematics",
+    "description": "Test your knowledge of basic geometric concepts and shapes",
+    "questions": [
+      {
+        "id": 1,
+        "question": "How many sides does a quadrilateral have?",
+        "options": ["3", "4", "5", "6"],
+        "correctAnswer": 1,
+        "explanation": "A quadrilateral has exactly 4 sides"
+      },
+      {
+        "id": 2,
+        "question": "What is the sum of angles in a triangle?",
+        "options": ["90°", "180°", "270°", "360°"],
+        "correctAnswer": 1,
+        "explanation": "The sum of angles in any triangle is 180°"
+      },
+      {
+        "id": 3,
+        "question": "Which shape has all sides equal and all angles 90°?",
+        "options": ["Rectangle", "Square", "Rhombus", "Parallelogram"],
+        "correctAnswer": 1,
+        "explanation": "A square has all sides equal and all angles 90°"
+      },
+      {
+        "id": 4,
+        "question": "What is the perimeter of a square with side length 5?",
+        "options": ["10", "15", "20", "25"],
+        "correctAnswer": 2,
+        "explanation": "Perimeter = 4 × side = 4 × 5 = 20"
+      },
+      {
+        "id": 5,
+        "question": "What is the area of a rectangle with length 6 and width 4?",
+        "options": ["10", "20", "24", "28"],
+        "correctAnswer": 2,
+        "explanation": "Area = length × width = 6 × 4 = 24"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Beginner"
+  }
+] 

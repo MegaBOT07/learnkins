@@ -1,0 +1,72 @@
+[
+  {
+    "id": "english-1",
+    "title": "Parts of Speech",
+    "content": "Understanding parts of speech is fundamental to grammar. Each word in a sentence has a specific function that helps convey meaning clearly.",
+    "fullContent": "Understanding parts of speech is fundamental to grammar. Each word in a sentence has a specific function that helps convey meaning clearly.\n\nEight Parts of Speech:\n• Nouns (people, places, things)\n• Pronouns (replace nouns)\n• Verbs (action or state of being)\n• Adjectives (describe nouns)\n• Adverbs (describe verbs, adjectives, other adverbs)\n• Prepositions (show relationships)\n• Conjunctions (connect words/phrases)\n• Interjections (express emotion)\n\nExamples:\n• Noun: The cat sleeps peacefully.\n• Verb: The cat sleeps peacefully.\n• Adjective: The black cat sleeps.\n• Adverb: The cat sleeps peacefully.",
+    "subject": "English",
+    "tags": ["grammar", "parts of speech", "nouns", "verbs"],
+    "createdAt": "2024-01-09T15:15:00Z",
+    "updatedAt": "2024-01-09T15:15:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-orange-100 border-orange-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "english-2",
+    "title": "Reading Comprehension Strategies",
+    "content": "Effective reading comprehension involves active engagement with text. Good readers use strategies to understand and remember what they read.",
+    "fullContent": "Effective reading comprehension involves active engagement with text. Good readers use strategies to understand and remember what they read.\n\nComprehension Strategies:\n• Previewing (look at title, headings, pictures)\n• Predicting (what might happen next)\n• Questioning (ask questions while reading)\n• Summarizing (main ideas in your own words)\n• Visualizing (create mental pictures)\n• Making connections (to your own life, other texts)\n\nTypes of Questions:\n• Literal (direct facts from text)\n• Inferential (reading between the lines)\n• Evaluative (forming opinions and judgments)",
+    "subject": "English",
+    "tags": ["reading", "comprehension", "strategies", "analysis"],
+    "createdAt": "2024-01-08T10:45:00Z",
+    "updatedAt": "2024-01-08T10:45:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-orange-100 border-orange-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "english-3",
+    "title": "Creative Writing Techniques",
+    "content": "Creative writing allows expression of imagination and ideas. Various techniques help writers create engaging and meaningful stories.",
+    "fullContent": "Creative writing allows expression of imagination and ideas. Various techniques help writers create engaging and meaningful stories.\n\nWriting Techniques:\n• Show, don't tell (use vivid descriptions)\n• Dialogue (character conversations)\n• Sensory details (sight, sound, smell, taste, touch)\n• Figurative language (similes, metaphors)\n• Character development (personality, background)\n• Plot structure (beginning, middle, end)\n\nTypes of Creative Writing:\n• Short stories\n• Poetry\n• Personal narratives\n• Descriptive essays\n• Character sketches",
+    "subject": "English",
+    "tags": ["writing", "creative", "techniques", "stories"],
+    "createdAt": "2024-01-07T14:20:00Z",
+    "updatedAt": "2024-01-07T14:20:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-orange-100 border-orange-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "english-4",
+    "title": "Literature Analysis",
+    "content": "Learn to analyze literature by examining themes, characters, plot, and literary devices used by authors.",
+    "fullContent": "Learn to analyze literature by examining themes, characters, plot, and literary devices used by authors.\n\nLiterary Elements:\n• Plot (story structure)\n• Character (personalities, development)\n• Setting (time and place)\n• Theme (main message)\n• Point of view (narrator perspective)\n\nLiterary Devices:\n• Simile and metaphor\n• Personification\n• Alliteration\n• Foreshadowing\n• Irony\n• Symbolism",
+    "subject": "English",
+    "tags": ["literature", "analysis", "themes", "devices"],
+    "createdAt": "2024-01-06T12:30:00Z",
+    "updatedAt": "2024-01-06T12:30:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-orange-100 border-orange-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "english-5",
+    "title": "Vocabulary Development",
+    "content": "Building vocabulary is essential for effective communication. Learn strategies to expand your word knowledge.",
+    "fullContent": "Building vocabulary is essential for effective communication. Learn strategies to expand your word knowledge.\n\nVocabulary Strategies:\n• Context clues (using surrounding words)\n• Word roots and affixes\n• Synonyms and antonyms\n• Word families\n• Dictionary skills\n• Word games and puzzles\n\nVocabulary Categories:\n• Academic vocabulary\n• Subject-specific terms\n• Figurative language\n• Multiple meaning words\n• Word origins",
+    "subject": "English",
+    "tags": ["vocabulary", "word-study", "communication", "language"],
+    "createdAt": "2024-01-05T09:15:00Z",
+    "updatedAt": "2024-01-05T09:15:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-orange-100 border-orange-300",
+    "sourceFile": "demo"
+  }
+] 

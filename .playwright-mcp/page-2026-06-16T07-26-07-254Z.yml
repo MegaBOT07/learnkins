@@ -1,0 +1,14 @@
+- generic [ref=e2]:
+  - button "SKIP" [ref=e4] [cursor=pointer]
+  - generic:
+    - img
+  - generic:
+    - img
+  - generic:
+    - img
+  - generic:
+    - img
+  - generic:
+    - img
+  - generic:
+    - img

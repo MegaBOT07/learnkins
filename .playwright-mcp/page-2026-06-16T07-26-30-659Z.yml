@@ -1,0 +1,49 @@
+- main [ref=e9]:
+  - generic [ref=e10]:
+    - generic [ref=e12]:
+      - link "LearnKins Logo" [ref=e14] [cursor=pointer]:
+        - /url: /
+        - img "LearnKins Logo" [ref=e15]
+      - heading "Welcome back!" [level=2] [ref=e16]
+      - paragraph [ref=e17]: Sign in to continue your learning journey
+      - paragraph [ref=e18]:
+        - text: Or
+        - link "create a new account" [ref=e19] [cursor=pointer]:
+          - /url: /register
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]: Email address
+          - textbox "Email address" [ref=e25]:
+            - /placeholder: Enter your email
+            - text: student@learnkins.com
+        - generic [ref=e26]:
+          - generic [ref=e27]: Password
+          - generic [ref=e28]:
+            - textbox "Password" [ref=e29]:
+              - /placeholder: Enter your password
+              - text: student123
+            - button [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - checkbox "Remember me" [ref=e36]
+            - generic [ref=e37]: Remember me
+          - link "Forgot your password?" [ref=e39] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Sign in" [ref=e41] [cursor=pointer]
+      - generic [ref=e42]:
+        - generic [ref=e47]: Try Demo Accounts
+        - generic [ref=e48]:
+          - button "Student" [active] [ref=e49] [cursor=pointer]:
+            - img [ref=e51]
+            - text: Student
+          - button "Parent" [ref=e54] [cursor=pointer]:
+            - img [ref=e56]
+            - text: Parent
+          - button "Teacher" [ref=e61] [cursor=pointer]:
+            - img [ref=e63]
+            - text: Teacher
+          - button "Admin" [ref=e66] [cursor=pointer]:
+            - img [ref=e68]
+            - text: Admin

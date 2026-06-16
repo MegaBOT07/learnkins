@@ -1,0 +1,16 @@
+import express from 'express';
+import { protect, authorize } from '../middleware/auth.js';
+import { getBalance, getTransactions, awardTokens, redeemTokens, awardUserTokens, getUserTransactions, claimDailyReward, getDailyStatusEndpoint, getAdminTokenStatsEndpoint, getEconomyConfig, updateEconomyConfig } from '../controllers/tokenController.js';
+const router = express.Router();
+router.get('/balance', protect, getBalance);
+router.get('/transactions', protect, getTransactions);
+router.get('/daily/status', protect, getDailyStatusEndpoint);
+router.post('/daily', protect, claimDailyReward);
+router.post('/redeem', protect, redeemTokens);
+router.post('/award', protect, authorize('admin'), awardTokens);
+router.post('/award-user/:id', protect, authorize('admin'), awardUserTokens);
+router.get('/user/:id', protect, authorize('admin'), getUserTransactions);
+router.get('/admin/stats', protect, authorize('admin'), getAdminTokenStatsEndpoint);
+router.get('/admin/config', protect, authorize('admin'), getEconomyConfig);
+router.put('/admin/config', protect, authorize('admin'), updateEconomyConfig);
+export default router;

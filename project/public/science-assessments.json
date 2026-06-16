@@ -1,0 +1,137 @@
+[
+  {
+    "id": "science-1",
+    "title": "Physics Fundamentals Test",
+    "subject": "Science",
+    "description": "Test your knowledge of basic physics concepts including motion, forces, and energy",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the SI unit of force?",
+        "options": ["Newton", "Joule", "Watt", "Pascal"],
+        "correctAnswer": 0,
+        "explanation": "The Newton (N) is the SI unit of force"
+      },
+      {
+        "id": 2,
+        "question": "Which of the following is a form of energy?",
+        "options": ["Kinetic", "Potential", "Thermal", "All of the above"],
+        "correctAnswer": 3,
+        "explanation": "All are forms of energy"
+      },
+      {
+        "id": 3,
+        "question": "What happens to the speed of sound in water compared to air?",
+        "options": ["Slower", "Faster", "Same", "Depends on temperature"],
+        "correctAnswer": 1,
+        "explanation": "Sound travels faster in water than in air"
+      },
+      {
+        "id": 4,
+        "question": "Which law states that every action has an equal and opposite reaction?",
+        "options": ["Newton's First Law", "Newton's Second Law", "Newton's Third Law", "Law of Gravity"],
+        "correctAnswer": 2,
+        "explanation": "Newton's Third Law states this principle"
+      },
+      {
+        "id": 5,
+        "question": "What type of energy does a stretched rubber band have?",
+        "options": ["Kinetic", "Potential", "Thermal", "Electrical"],
+        "correctAnswer": 1,
+        "explanation": "A stretched rubber band has elastic potential energy"
+      }
+    ],
+    "timeLimit": 12,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "science-2",
+    "title": "Chemical Reactions Assessment",
+    "subject": "Science",
+    "description": "Test your understanding of chemical reactions and their types",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is a chemical reaction?",
+        "options": ["A physical change", "A transformation of substances", "A state change", "A temperature change"],
+        "correctAnswer": 1,
+        "explanation": "A chemical reaction involves the transformation of substances into new products"
+      },
+      {
+        "id": 2,
+        "question": "Which factor does NOT affect reaction rate?",
+        "options": ["Temperature", "Concentration", "Color", "Catalysts"],
+        "correctAnswer": 2,
+        "explanation": "Color does not affect reaction rate"
+      },
+      {
+        "id": 3,
+        "question": "What type of reaction is: 2H₂ + O₂ → 2H₂O?",
+        "options": ["Synthesis", "Decomposition", "Single replacement", "Double replacement"],
+        "correctAnswer": 0,
+        "explanation": "This is a synthesis reaction where two elements combine"
+      },
+      {
+        "id": 4,
+        "question": "What is a catalyst?",
+        "options": ["A reactant", "A product", "A substance that speeds up reactions", "A substance that slows down reactions"],
+        "correctAnswer": 2,
+        "explanation": "A catalyst speeds up chemical reactions without being consumed"
+      },
+      {
+        "id": 5,
+        "question": "Which is an example of a combustion reaction?",
+        "options": ["Burning wood", "Dissolving salt", "Melting ice", "Boiling water"],
+        "correctAnswer": 0,
+        "explanation": "Burning wood is a combustion reaction with oxygen"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "science-3",
+    "title": "Biology Basics Quiz",
+    "subject": "Science",
+    "description": "Test your knowledge of fundamental biology concepts",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the basic unit of life?",
+        "options": ["Atom", "Cell", "Tissue", "Organ"],
+        "correctAnswer": 1,
+        "explanation": "The cell is the basic unit of life"
+      },
+      {
+        "id": 2,
+        "question": "Which process do plants use to make food?",
+        "options": ["Respiration", "Photosynthesis", "Digestion", "Excretion"],
+        "correctAnswer": 1,
+        "explanation": "Photosynthesis is how plants make their own food"
+      },
+      {
+        "id": 3,
+        "question": "What is the powerhouse of the cell?",
+        "options": ["Nucleus", "Mitochondria", "Chloroplast", "Cell membrane"],
+        "correctAnswer": 1,
+        "explanation": "Mitochondria is called the powerhouse of the cell"
+      },
+      {
+        "id": 4,
+        "question": "Which of these is NOT a living thing?",
+        "options": ["Bacteria", "Virus", "Fungus", "Plant"],
+        "correctAnswer": 1,
+        "explanation": "Viruses are not considered living things"
+      },
+      {
+        "id": 5,
+        "question": "What is biodiversity?",
+        "options": ["Variety of life", "Number of animals", "Types of plants", "All of the above"],
+        "correctAnswer": 0,
+        "explanation": "Biodiversity refers to the variety of life on Earth"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  }
+] 

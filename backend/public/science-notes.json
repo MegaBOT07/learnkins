@@ -1,0 +1,72 @@
+[
+  {
+    "id": "science-1",
+    "title": "Introduction to Physics",
+    "content": "Physics is the study of matter, energy, and their interactions. It helps us understand how the universe works, from the smallest particles to the largest galaxies. Key concepts include motion, forces, energy, and waves.",
+    "fullContent": "Physics is the study of matter, energy, and their interactions. It helps us understand how the universe works, from the smallest particles to the largest galaxies.\n\nKey Concepts:\n• Motion and Forces\n• Energy and Work\n• Waves and Sound\n• Light and Optics\n• Electricity and Magnetism\n\nPhysics is fundamental to understanding other sciences and has applications in engineering, medicine, and technology.",
+    "subject": "Science",
+    "tags": ["physics", "motion", "energy", "forces"],
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-purple-100 border-purple-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "science-2",
+    "title": "Chemical Reactions",
+    "content": "Chemical reactions involve the transformation of substances into new products. Understanding reactions helps us create medicines, materials, and understand biological processes.",
+    "fullContent": "Chemical reactions involve the transformation of substances into new products. Understanding reactions helps us create medicines, materials, and understand biological processes.\n\nTypes of Reactions:\n• Synthesis reactions\n• Decomposition reactions\n• Single replacement\n• Double replacement\n• Combustion reactions\n\nFactors affecting reaction rates:\n• Temperature\n• Concentration\n• Catalysts\n• Surface area",
+    "subject": "Science",
+    "tags": ["chemistry", "reactions", "molecules", "atoms"],
+    "createdAt": "2024-01-14T14:20:00Z",
+    "updatedAt": "2024-01-14T14:20:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-purple-100 border-purple-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "science-3",
+    "title": "Ecosystems and Biodiversity",
+    "content": "Ecosystems are communities of living organisms interacting with their environment. Biodiversity is crucial for ecosystem stability and human survival.",
+    "fullContent": "Ecosystems are communities of living organisms interacting with their environment. Biodiversity is crucial for ecosystem stability and human survival.\n\nComponents of Ecosystems:\n• Producers (plants)\n• Consumers (animals)\n• Decomposers (bacteria, fungi)\n• Abiotic factors (water, air, soil)\n\nTypes of Ecosystems:\n• Terrestrial (forests, deserts, grasslands)\n• Aquatic (oceans, lakes, rivers)\n• Artificial (farms, cities)",
+    "subject": "Science",
+    "tags": ["biology", "ecosystems", "biodiversity", "environment"],
+    "createdAt": "2024-01-13T09:15:00Z",
+    "updatedAt": "2024-01-13T09:15:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-purple-100 border-purple-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "science-4",
+    "title": "Cell Biology Fundamentals",
+    "content": "Cells are the basic units of life. Understanding cell structure and function is essential for biology and medicine.",
+    "fullContent": "Cells are the basic units of life. Understanding cell structure and function is essential for biology and medicine.\n\nCell Types:\n• Prokaryotic (bacteria)\n• Eukaryotic (plants, animals, fungi)\n\nCell Organelles:\n• Nucleus (genetic material)\n• Mitochondria (energy)\n• Chloroplasts (photosynthesis)\n• Cell membrane (protection)\n• Cytoplasm (cell fluid)",
+    "subject": "Science",
+    "tags": ["biology", "cells", "microscopy", "life"],
+    "createdAt": "2024-01-12T16:45:00Z",
+    "updatedAt": "2024-01-12T16:45:00Z",
+    "isFavorite": false,
+    "isPrivate": false,
+    "color": "bg-purple-100 border-purple-300",
+    "sourceFile": "demo"
+  },
+  {
+    "id": "science-5",
+    "title": "Earth and Space Science",
+    "content": "Explore Earth's systems and our place in the universe. Learn about geology, meteorology, and astronomy.",
+    "fullContent": "Explore Earth's systems and our place in the universe. Learn about geology, meteorology, and astronomy.\n\nEarth Systems:\n• Geosphere (rocks, minerals)\n• Hydrosphere (water)\n• Atmosphere (air)\n• Biosphere (life)\n\nSpace Science:\n• Solar system\n• Stars and galaxies\n• Universe expansion\n• Space exploration",
+    "subject": "Science",
+    "tags": ["earth-science", "astronomy", "geology", "space"],
+    "createdAt": "2024-01-11T11:20:00Z",
+    "updatedAt": "2024-01-11T11:20:00Z",
+    "isFavorite": true,
+    "isPrivate": false,
+    "color": "bg-purple-100 border-purple-300",
+    "sourceFile": "demo"
+  }
+]

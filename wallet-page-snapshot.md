@@ -1,0 +1,333 @@
+- generic [ref=e18]:
+  - navigation [ref=e19]:
+    - generic [ref=e21]:
+      - link "LearnKins Logo" [ref=e22] [cursor=pointer]:
+        - /url: /
+        - img "LearnKins Logo" [ref=e23]
+      - generic [ref=e24]:
+        - link "Home" [ref=e26] [cursor=pointer]:
+          - /url: /
+          - img [ref=e27]
+          - generic [ref=e30]: Home
+        - link "Subjects" [ref=e32] [cursor=pointer]:
+          - /url: /subjects
+          - img [ref=e33]
+          - generic [ref=e36]: Subjects
+        - link "Flashcards" [ref=e38] [cursor=pointer]:
+          - /url: /flashcards
+          - img [ref=e39]
+          - generic [ref=e42]: Flashcards
+        - button "Games & Quiz" [ref=e44] [cursor=pointer]:
+          - img [ref=e45]
+          - generic [ref=e47]: Games & Quiz
+          - img [ref=e48]
+        - link "Community" [ref=e51] [cursor=pointer]:
+          - /url: /community
+          - img [ref=e52]
+          - generic [ref=e57]: Community
+        - link "Contact" [ref=e59] [cursor=pointer]:
+          - /url: /contact
+          - img [ref=e60]
+          - generic [ref=e62]: Contact
+      - generic [ref=e63]:
+        - link "Sign In" [ref=e64] [cursor=pointer]:
+          - /url: /login
+        - link "Get Started" [ref=e65] [cursor=pointer]:
+          - /url: /register
+  - main [ref=e66]:
+    - generic [ref=e67]:
+      - generic [ref=e68]:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - img
+          - generic:
+            - img
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - img [ref=e73]
+            - generic [ref=e75]: Transform Your Learning Journey
+          - heading "LEARN SMARTER ACHIEVE FASTER" [level=1] [ref=e76]:
+            - text: LEARN SMARTER
+            - text: ACHIEVE FASTER
+          - paragraph [ref=e77]: Experience interactive learning that adapts to your pace. Master every subject with engaging videos, quizzes, and expert guidance.
+          - generic [ref=e78]:
+            - link "Start Learning Free" [ref=e79] [cursor=pointer]:
+              - /url: /subjects
+              - text: Start Learning Free
+              - img [ref=e80]
+            - link "Explore Games" [ref=e82] [cursor=pointer]:
+              - /url: /games-quiz
+              - img [ref=e83]
+              - text: Explore Games
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - img [ref=e87]
+              - generic [ref=e90]: 10,000+ Students
+            - generic [ref=e91]:
+              - img [ref=e92]
+              - generic [ref=e95]: 500+ Lessons
+            - generic [ref=e96]:
+              - img [ref=e97]
+              - generic [ref=e100]: 95% Success Rate
+      - generic [ref=e102]:
+        - generic [ref=e104]:
+          - heading "Why Choose LearnKins?" [level=2] [ref=e105]
+          - paragraph [ref=e106]: Experience a revolutionary approach to learning with cutting-edge tools and expert guidance
+        - generic [ref=e107]:
+          - link "Interactive Video Lessons Engaging video content that makes learning fun and memorable" [ref=e109] [cursor=pointer]:
+            - /url: /science?tab=videos
+            - generic [ref=e110]:
+              - img [ref=e112]
+              - heading "Interactive Video Lessons" [level=3] [ref=e114]
+              - paragraph [ref=e115]: Engaging video content that makes learning fun and memorable
+          - link "Comprehensive Study Materials Complete notes and resources for all subjects" [ref=e117] [cursor=pointer]:
+            - /url: /science?tab=videos
+            - generic [ref=e118]:
+              - img [ref=e120]
+              - heading "Comprehensive Study Materials" [level=3] [ref=e123]
+              - paragraph [ref=e124]: Complete notes and resources for all subjects
+          - link "Expert Teachers Learn from the best educators in the field" [ref=e126] [cursor=pointer]:
+            - /url: /about
+            - generic [ref=e127]:
+              - img [ref=e129]
+              - heading "Expert Teachers" [level=3] [ref=e134]
+              - paragraph [ref=e135]: Learn from the best educators in the field
+          - link "Interactive Quizzes Test your knowledge with fun and challenging quizzes" [ref=e137] [cursor=pointer]:
+            - /url: /quizzes
+            - generic [ref=e138]:
+              - img [ref=e140]
+              - heading "Interactive Quizzes" [level=3] [ref=e146]
+              - paragraph [ref=e147]: Test your knowledge with fun and challenging quizzes
+      - generic [ref=e150]:
+        - generic [ref=e151]:
+          - img [ref=e154]
+          - generic [ref=e159]: 10,000+
+          - generic [ref=e160]: Active Students
+        - generic [ref=e161]:
+          - img [ref=e164]
+          - generic [ref=e166]: 500+
+          - generic [ref=e167]: Video Lessons
+        - generic [ref=e168]:
+          - img [ref=e171]
+          - generic [ref=e174]: 50+
+          - generic [ref=e175]: Expert Teachers
+        - generic [ref=e176]:
+          - img [ref=e179]
+          - generic [ref=e182]: 95%
+          - generic [ref=e183]: Success Rate
+      - generic [ref=e185]:
+        - generic [ref=e187]:
+          - heading "Explore Our Subjects" [level=2] [ref=e188]
+          - paragraph [ref=e189]: Comprehensive learning materials designed for excellence in every subject
+        - generic [ref=e190]:
+          - link "Science Explore the wonders of science" [ref=e192] [cursor=pointer]:
+            - /url: /science
+            - generic [ref=e194]:
+              - img [ref=e196]
+              - heading "Science" [level=3] [ref=e206]
+              - paragraph [ref=e207]: Explore the wonders of science
+          - link "Mathematics Master mathematical concepts" [ref=e209] [cursor=pointer]:
+            - /url: /maths
+            - generic [ref=e211]:
+              - img [ref=e213]
+              - heading "Mathematics" [level=3] [ref=e217]
+              - paragraph [ref=e218]: Master mathematical concepts
+          - link "Social Science Understand society and culture" [ref=e220] [cursor=pointer]:
+            - /url: /social-science
+            - generic [ref=e222]:
+              - img [ref=e224]
+              - heading "Social Science" [level=3] [ref=e229]
+              - paragraph [ref=e230]: Understand society and culture
+          - link "English Enhance language skills" [ref=e232] [cursor=pointer]:
+            - /url: /english
+            - generic [ref=e234]:
+              - img [ref=e236]
+              - heading "English" [level=3] [ref=e239]
+              - paragraph [ref=e240]: Enhance language skills
+      - generic [ref=e243]:
+        - generic [ref=e244]:
+          - heading "EVERYTHING YOU NEED TO EXCEL" [level=2] [ref=e245]
+          - paragraph [ref=e246]: Our platform is designed with your success in mind, offering comprehensive tools and resources.
+          - generic [ref=e247]:
+            - generic [ref=e248]:
+              - img [ref=e250]
+              - generic [ref=e253]: Personalized learning paths
+            - generic [ref=e254]:
+              - img [ref=e256]
+              - generic [ref=e259]: 24/7 access to materials
+            - generic [ref=e260]:
+              - img [ref=e262]
+              - generic [ref=e265]: Progress tracking & analytics
+            - generic [ref=e266]:
+              - img [ref=e268]
+              - generic [ref=e271]: Interactive assessments
+            - generic [ref=e272]:
+              - img [ref=e274]
+              - generic [ref=e277]: Gamified learning experience
+            - generic [ref=e278]:
+              - img [ref=e280]
+              - generic [ref=e283]: Certificate on completion
+        - generic [ref=e286]:
+          - generic [ref=e287]:
+            - img [ref=e289]
+            - generic [ref=e295]:
+              - generic [ref=e296]: Level Up!
+              - generic [ref=e297]: Track your progress
+          - generic [ref=e299]:
+            - generic [ref=e300]:
+              - img [ref=e302]
+              - generic [ref=e304]: 2,450
+              - generic [ref=e305]: Points
+            - generic [ref=e306]:
+              - img [ref=e308]
+              - generic [ref=e311]: "12"
+              - generic [ref=e312]: Badges
+            - generic [ref=e313]:
+              - img [ref=e315]
+              - generic [ref=e320]: "15"
+              - generic [ref=e321]: Streak
+      - generic [ref=e326]:
+        - heading "Ready to Start Your Learning Journey?" [level=2] [ref=e327]:
+          - text: Ready to Start Your
+          - text: Learning Journey?
+        - paragraph [ref=e328]: Join thousands of students who are already excelling with LearnKins
+        - generic [ref=e329]:
+          - link "Get Started Free" [ref=e330] [cursor=pointer]:
+            - /url: /register
+            - text: Get Started Free
+            - img [ref=e331]
+          - link "Contact Us" [ref=e333] [cursor=pointer]:
+            - /url: /contact
+  - contentinfo [ref=e334]:
+    - generic [ref=e336]:
+      - generic [ref=e337]:
+        - link "LearnKins Logo" [ref=e338] [cursor=pointer]:
+          - /url: /
+          - img "LearnKins Logo" [ref=e339]
+        - paragraph [ref=e340]: Empowering middle school students with interactive learning experiences that make education engaging, fun, and effective.
+        - generic [ref=e341]:
+          - link "+91-7878888924" [ref=e342] [cursor=pointer]:
+            - /url: tel:+917878888924
+            - img [ref=e344]
+            - generic [ref=e346]: +91-7878888924
+          - link "support@learnkins.com" [ref=e347] [cursor=pointer]:
+            - /url: mailto:support@learnkins.com
+            - img [ref=e349]
+            - generic [ref=e352]: support@learnkins.com
+          - link "Skit Campus, Jaipur, Rajasthan, India" [ref=e353] [cursor=pointer]:
+            - /url: https://maps.google.com/?q=Skit+Campus+Jaipur+Rajasthan+India
+            - img [ref=e355]
+            - generic [ref=e358]: Skit Campus, Jaipur, Rajasthan, India
+          - link "Founder - Mohit Lalwani" [ref=e359] [cursor=pointer]:
+            - /url: https://linkedin.com/in/mohit-lalwani-3b8437273
+            - img [ref=e361]
+            - generic [ref=e365]: Founder - Mohit Lalwani
+      - generic [ref=e366]:
+        - heading "Subjects" [level=3] [ref=e367]
+        - list [ref=e368]:
+          - listitem [ref=e369]:
+            - link "Science" [ref=e370] [cursor=pointer]:
+              - /url: /science
+          - listitem [ref=e371]:
+            - link "Mathematics" [ref=e372] [cursor=pointer]:
+              - /url: /maths
+          - listitem [ref=e373]:
+            - link "Social Science" [ref=e374] [cursor=pointer]:
+              - /url: /social-science
+          - listitem [ref=e375]:
+            - link "English" [ref=e376] [cursor=pointer]:
+              - /url: /english
+      - generic [ref=e377]:
+        - heading "Resources" [level=3] [ref=e378]
+        - list [ref=e379]:
+          - listitem [ref=e380]:
+            - link "Study Materials" [ref=e381] [cursor=pointer]:
+              - /url: /study-materials
+          - listitem [ref=e382]:
+            - link "Video Lessons" [ref=e383] [cursor=pointer]:
+              - /url: /subjects
+          - listitem [ref=e384]:
+            - link "Practice Quizzes" [ref=e385] [cursor=pointer]:
+              - /url: /games-quiz
+          - listitem [ref=e386]:
+            - link "Team" [ref=e387] [cursor=pointer]:
+              - /url: /team
+      - generic [ref=e388]:
+        - heading "Support" [level=3] [ref=e389]
+        - list [ref=e390]:
+          - listitem [ref=e391]:
+            - link "Help Center" [ref=e392] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e393]:
+            - link "Community" [ref=e394] [cursor=pointer]:
+              - /url: /community
+          - listitem [ref=e395]:
+            - link "Parental Control" [ref=e396] [cursor=pointer]:
+              - /url: /parental-control
+          - listitem [ref=e397]:
+            - link "Contact Us" [ref=e398] [cursor=pointer]:
+              - /url: /contact
+      - generic [ref=e399]:
+        - heading "Company" [level=3] [ref=e400]
+        - list [ref=e401]:
+          - listitem [ref=e402]:
+            - link "About Us" [ref=e403] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e404]:
+            - link "Privacy Policy" [ref=e405] [cursor=pointer]:
+              - /url: /privacy
+          - listitem [ref=e406]:
+            - link "Terms of Service" [ref=e407] [cursor=pointer]:
+              - /url: /terms
+          - listitem [ref=e408]:
+            - link "Careers" [ref=e409] [cursor=pointer]:
+              - /url: /careers
+    - generic [ref=e412]:
+      - generic [ref=e413]:
+        - heading "Stay Updated" [level=3] [ref=e414]
+        - paragraph [ref=e415]: Subscribe to our newsletter for the latest educational content and updates.
+      - generic [ref=e416]:
+        - textbox "Enter your email address" [ref=e417]
+        - button "Subscribe" [ref=e418] [cursor=pointer]:
+          - img [ref=e419]
+          - text: Subscribe
+    - generic [ref=e424]:
+      - generic [ref=e425]:
+        - text: © 2026 LearnKins. All rights reserved. Made with
+        - img [ref=e426]
+        - text: for students.
+      - generic [ref=e428]:
+        - generic [ref=e429]: "Follow us:"
+        - link "Facebook" [ref=e430] [cursor=pointer]:
+          - /url: https://facebook.com/learnkins
+          - img [ref=e431]
+        - link "X (Twitter)" [ref=e433] [cursor=pointer]:
+          - /url: https://x.com/learnkins
+          - img [ref=e434]
+        - link "Instagram" [ref=e436] [cursor=pointer]:
+          - /url: https://instagram.com/learnkins
+          - img [ref=e437]
+        - link "YouTube" [ref=e440] [cursor=pointer]:
+          - /url: https://youtube.com/@learnkins
+          - img [ref=e441]
+  - generic [ref=e444]:
+    - generic [ref=e445]:
+      - generic [ref=e448]:
+        - generic [ref=e449]:
+          - generic [ref=e450]: 👋
+          - generic [ref=e451]: Hey! I'm Maya!
+        - generic [ref=e452]:
+          - button "Mute" [ref=e453] [cursor=pointer]:
+            - img [ref=e454]
+          - button [ref=e458] [cursor=pointer]:
+            - img [ref=e459]
+      - generic [ref=e462]: Welcome to LearnKins! I'm your AI guide bot. I'll fly across the site and show you around. Let's begin the tour!
+      - generic [ref=e472]: 1/8
+      - button "Next" [ref=e474] [cursor=pointer]:
+        - text: Next
+        - img [ref=e475]
+    - generic [ref=e477]:
+      - img [ref=e479]
+      - button "Skip tour ✕" [ref=e511] [cursor=pointer]

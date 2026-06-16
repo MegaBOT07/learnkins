@@ -1,0 +1,7 @@
+[    5369ms] [INFO] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/chunk-E22KYI7D.js?v=6940e449:21608
+[   12129ms] [WARNING] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition. @ http://localhost:5173/node_modules/.vite/deps/react-router-dom.js?v=6940e449:4392
+[   12462ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:5000/api/payments/plans:0
+[   12465ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ http://localhost:5000/api/payments/plans:0
+[   13996ms] [ERROR] Error: <circle> attribute r: Expected length, "undefined". @ http://localhost:5173/node_modules/.vite/deps/framer-motion.js?v=6940e449:6051
+[   13997ms] [ERROR] Error: <ellipse> attribute ry: Expected length, "undefined". @ http://localhost:5173/node_modules/.vite/deps/framer-motion.js?v=6940e449:6051
+[   13998ms] [ERROR] Error: <ellipse> attribute ry: Expected length, "undefined". @ http://localhost:5173/node_modules/.vite/deps/framer-motion.js?v=6940e449:6051

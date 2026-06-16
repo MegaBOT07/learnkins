@@ -1,0 +1,362 @@
+[
+  {
+    "id": "math-1",
+    "title": "Square and Cube Numbers Assessment",
+    "subject": "Mathematics",
+    "description": "Test your understanding of square and cube numbers, their properties, and applications",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the square of 7?",
+        "options": ["49", "14", "21", "35"],
+        "correctAnswer": 0,
+        "explanation": "7² = 7 × 7 = 49"
+      },
+      {
+        "id": 2,
+        "question": "Which of the following is a perfect cube?",
+        "options": ["16", "27", "36", "49"],
+        "correctAnswer": 1,
+        "explanation": "27 = 3³, so it's a perfect cube"
+      },
+      {
+        "id": 3,
+        "question": "What is the cube root of 64?",
+        "options": ["4", "8", "16", "32"],
+        "correctAnswer": 0,
+        "explanation": "4³ = 4 × 4 × 4 = 64"
+      },
+      {
+        "id": 4,
+        "question": "Which number cannot be a perfect square?",
+        "options": ["25", "36", "47", "64"],
+        "correctAnswer": 2,
+        "explanation": "47 ends with 7, and no perfect square ends with 2, 3, 7, or 8"
+      },
+      {
+        "id": 5,
+        "question": "What is the sum of the first 5 odd numbers?",
+        "options": ["15", "25", "35", "45"],
+        "correctAnswer": 1,
+        "explanation": "1 + 3 + 5 + 7 + 9 = 25 = 5²"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "math-2",
+    "title": "Arithmetic Expressions Quiz",
+    "subject": "Mathematics",
+    "description": "Practice evaluating arithmetic expressions using order of operations",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the value of 8 + 4 × 3?",
+        "options": ["36", "20", "24", "28"],
+        "correctAnswer": 1,
+        "explanation": "Follow BODMAS: 8 + (4 × 3) = 8 + 12 = 20"
+      },
+      {
+        "id": 2,
+        "question": "Evaluate: 15 - (6 + 2)",
+        "options": ["7", "11", "13", "9"],
+        "correctAnswer": 0,
+        "explanation": "15 - (6 + 2) = 15 - 8 = 7"
+      },
+      {
+        "id": 3,
+        "question": "What is 5 × (10 + 3)?",
+        "options": ["65", "50", "53", "75"],
+        "correctAnswer": 0,
+        "explanation": "5 × (10 + 3) = 5 × 13 = 65"
+      },
+      {
+        "id": 4,
+        "question": "Simplify: 12 ÷ 3 + 2 × 4",
+        "options": ["12", "16", "20", "24"],
+        "correctAnswer": 1,
+        "explanation": "12 ÷ 3 + 2 × 4 = 4 + 8 = 12"
+      },
+      {
+        "id": 5,
+        "question": "What is the distributive property of 3 × (7 + 2)?",
+        "options": ["3 × 7 + 3 × 2", "3 × 9", "21 + 6", "All of the above"],
+        "correctAnswer": 3,
+        "explanation": "3 × (7 + 2) = 3 × 7 + 3 × 2 = 21 + 6 = 27"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "science-1",
+    "title": "Physics Fundamentals Test",
+    "subject": "Science",
+    "description": "Test your knowledge of basic physics concepts including motion, forces, and energy",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the SI unit of force?",
+        "options": ["Newton", "Joule", "Watt", "Pascal"],
+        "correctAnswer": 0,
+        "explanation": "The Newton (N) is the SI unit of force"
+      },
+      {
+        "id": 2,
+        "question": "Which of the following is a form of energy?",
+        "options": ["Kinetic", "Potential", "Thermal", "All of the above"],
+        "correctAnswer": 3,
+        "explanation": "All are forms of energy"
+      },
+      {
+        "id": 3,
+        "question": "What happens to the speed of sound in water compared to air?",
+        "options": ["Slower", "Faster", "Same", "Depends on temperature"],
+        "correctAnswer": 1,
+        "explanation": "Sound travels faster in water than in air"
+      },
+      {
+        "id": 4,
+        "question": "Which law states that every action has an equal and opposite reaction?",
+        "options": ["Newton's First Law", "Newton's Second Law", "Newton's Third Law", "Law of Gravity"],
+        "correctAnswer": 2,
+        "explanation": "Newton's Third Law states this principle"
+      },
+      {
+        "id": 5,
+        "question": "What type of energy does a stretched rubber band have?",
+        "options": ["Kinetic", "Potential", "Thermal", "Electrical"],
+        "correctAnswer": 1,
+        "explanation": "A stretched rubber band has elastic potential energy"
+      }
+    ],
+    "timeLimit": 12,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "science-2",
+    "title": "Chemical Reactions Assessment",
+    "subject": "Science",
+    "description": "Test your understanding of chemical reactions and their types",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is a chemical reaction?",
+        "options": ["A physical change", "A transformation of substances", "A state change", "A temperature change"],
+        "correctAnswer": 1,
+        "explanation": "A chemical reaction involves the transformation of substances into new products"
+      },
+      {
+        "id": 2,
+        "question": "Which factor does NOT affect reaction rate?",
+        "options": ["Temperature", "Concentration", "Color", "Catalysts"],
+        "correctAnswer": 2,
+        "explanation": "Color does not affect reaction rate"
+      },
+      {
+        "id": 3,
+        "question": "What type of reaction is: 2H₂ + O₂ → 2H₂O?",
+        "options": ["Synthesis", "Decomposition", "Single replacement", "Double replacement"],
+        "correctAnswer": 0,
+        "explanation": "This is a synthesis reaction where two elements combine"
+      },
+      {
+        "id": 4,
+        "question": "What is a catalyst?",
+        "options": ["A reactant", "A product", "A substance that speeds up reactions", "A substance that slows down reactions"],
+        "correctAnswer": 2,
+        "explanation": "A catalyst speeds up chemical reactions without being consumed"
+      },
+      {
+        "id": 5,
+        "question": "Which is an example of a combustion reaction?",
+        "options": ["Burning wood", "Dissolving salt", "Melting ice", "Boiling water"],
+        "correctAnswer": 0,
+        "explanation": "Burning wood is a combustion reaction with oxygen"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  },
+  {
+    "id": "social-1",
+    "title": "Ancient Civilizations Quiz",
+    "subject": "Social Science",
+    "description": "Test your knowledge of ancient civilizations and their contributions",
+    "questions": [
+      {
+        "id": 1,
+        "question": "Which ancient civilization developed cuneiform writing?",
+        "options": ["Egypt", "Mesopotamia", "Greece", "Rome"],
+        "correctAnswer": 1,
+        "explanation": "Mesopotamia developed cuneiform, the first writing system"
+      },
+      {
+        "id": 2,
+        "question": "What were the main structures built by ancient Egyptians?",
+        "options": ["Ziggurats", "Pyramids", "Colosseums", "Temples"],
+        "correctAnswer": 1,
+        "explanation": "Ancient Egyptians built pyramids as tombs for pharaohs"
+      },
+      {
+        "id": 3,
+        "question": "Which civilization is known for developing democracy?",
+        "options": ["Mesopotamia", "Egypt", "Greece", "Rome"],
+        "correctAnswer": 2,
+        "explanation": "Ancient Greece developed the first democracy in Athens"
+      },
+      {
+        "id": 4,
+        "question": "What was the main contribution of ancient Rome to modern society?",
+        "options": ["Democracy", "Pyramids", "Law and engineering", "Hieroglyphics"],
+        "correctAnswer": 2,
+        "explanation": "Rome contributed law systems and engineering innovations"
+      },
+      {
+        "id": 5,
+        "question": "Which ancient civilization built the Great Wall?",
+        "options": ["India", "China", "Japan", "Korea"],
+        "correctAnswer": 1,
+        "explanation": "Ancient China built the Great Wall for protection"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "social-2",
+    "title": "Geography and Government Test",
+    "subject": "Social Science",
+    "description": "Test your knowledge of physical geography and government systems",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is a landform?",
+        "options": ["A natural feature of Earth's surface", "A type of climate", "A body of water", "A type of soil"],
+        "correctAnswer": 0,
+        "explanation": "Landforms are natural features of Earth's surface like mountains, valleys, plains"
+      },
+      {
+        "id": 2,
+        "question": "Which climate factor is most important?",
+        "options": ["Latitude", "Longitude", "Population", "Economy"],
+        "correctAnswer": 0,
+        "explanation": "Latitude is the most important factor affecting climate"
+      },
+      {
+        "id": 3,
+        "question": "What is democracy?",
+        "options": ["Rule by one person", "Rule by the people", "Rule by the wealthy", "Rule by the military"],
+        "correctAnswer": 1,
+        "explanation": "Democracy means 'rule by the people'"
+      },
+      {
+        "id": 4,
+        "question": "Which is NOT a type of government?",
+        "options": ["Democracy", "Monarchy", "Dictatorship", "Capitalism"],
+        "correctAnswer": 3,
+        "explanation": "Capitalism is an economic system, not a government type"
+      },
+      {
+        "id": 5,
+        "question": "What is the purpose of elections in a democracy?",
+        "options": ["To choose leaders", "To make laws", "To collect taxes", "All of the above"],
+        "correctAnswer": 0,
+        "explanation": "Elections allow citizens to choose their leaders"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "english-1",
+    "title": "Grammar Fundamentals Quiz",
+    "subject": "English",
+    "description": "Test your understanding of parts of speech and basic grammar",
+    "questions": [
+      {
+        "id": 1,
+        "question": "Which part of speech describes a noun?",
+        "options": ["Verb", "Adjective", "Adverb", "Pronoun"],
+        "correctAnswer": 1,
+        "explanation": "Adjectives describe nouns (e.g., 'red' car, 'tall' building)"
+      },
+      {
+        "id": 2,
+        "question": "What part of speech is 'quickly' in 'She runs quickly'?",
+        "options": ["Noun", "Verb", "Adjective", "Adverb"],
+        "correctAnswer": 3,
+        "explanation": "'Quickly' describes how she runs, so it's an adverb"
+      },
+      {
+        "id": 3,
+        "question": "Which word is a pronoun?",
+        "options": ["Happy", "Running", "He", "Beautiful"],
+        "correctAnswer": 2,
+        "explanation": "'He' is a pronoun that replaces a noun"
+      },
+      {
+        "id": 4,
+        "question": "What type of sentence is 'What time is it?'?",
+        "options": ["Declarative", "Interrogative", "Imperative", "Exclamatory"],
+        "correctAnswer": 1,
+        "explanation": "This is an interrogative sentence (asks a question)"
+      },
+      {
+        "id": 5,
+        "question": "Which word is a conjunction?",
+        "options": ["And", "Quickly", "Happy", "Running"],
+        "correctAnswer": 0,
+        "explanation": "'And' connects words or phrases, making it a conjunction"
+      }
+    ],
+    "timeLimit": 8,
+    "difficulty": "Beginner"
+  },
+  {
+    "id": "english-2",
+    "title": "Reading Comprehension Assessment",
+    "subject": "English",
+    "description": "Test your reading comprehension and analysis skills",
+    "questions": [
+      {
+        "id": 1,
+        "question": "What is the main purpose of previewing a text?",
+        "options": ["To finish reading quickly", "To understand the structure", "To memorize content", "To skip difficult parts"],
+        "correctAnswer": 1,
+        "explanation": "Previewing helps understand the text's structure and main ideas"
+      },
+      {
+        "id": 2,
+        "question": "What type of question asks for facts directly stated in the text?",
+        "options": ["Literal", "Inferential", "Evaluative", "Critical"],
+        "correctAnswer": 0,
+        "explanation": "Literal questions ask for facts directly stated in the text"
+      },
+      {
+        "id": 3,
+        "question": "Which reading strategy involves creating mental pictures?",
+        "options": ["Predicting", "Visualizing", "Questioning", "Summarizing"],
+        "correctAnswer": 1,
+        "explanation": "Visualizing involves creating mental pictures while reading"
+      },
+      {
+        "id": 4,
+        "question": "What is the purpose of making connections while reading?",
+        "options": ["To finish faster", "To understand better", "To memorize more", "To skip parts"],
+        "correctAnswer": 1,
+        "explanation": "Making connections helps readers understand the text better"
+      },
+      {
+        "id": 5,
+        "question": "Which is NOT a reading comprehension strategy?",
+        "options": ["Previewing", "Predicting", "Memorizing", "Summarizing"],
+        "correctAnswer": 2,
+        "explanation": "Memorizing is not a comprehension strategy; understanding is more important"
+      }
+    ],
+    "timeLimit": 10,
+    "difficulty": "Intermediate"
+  }
+] 

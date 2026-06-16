@@ -1,0 +1,8 @@
+C:\Users\mohit\Downloads\labb\virtual-lab\src\lab.js:885
+  circuit:[
+  ^^^^^^^
+
+SyntaxError: Unexpected identifier 'circuit'
+    at checkSyntax (node:internal/main/check_syntax:74:5)
+
+Node.js v22.20.0
