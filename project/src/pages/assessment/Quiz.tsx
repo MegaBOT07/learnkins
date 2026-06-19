@@ -63,16 +63,12 @@ const Quiz = () => {
           return;
         }
 
-        // For demo quiz IDs, skip API call and use fallback directly
-        if (id.startsWith("quiz-")) {
+        // For non-ObjectId (demo) quiz IDs, skip API call and use fallback directly
+        if (!/^[0-9a-fA-F]{24}$/.test(id)) {
           const demo = getQuizData(id);
           if (demo) {
             setQuiz(demo);
             setTimeLeft(demo.timeLimit * 60);
-            setLoading(false);
-            return;
-          } else {
-            setError("Quiz not found");
             setLoading(false);
             return;
           }
@@ -89,8 +85,8 @@ const Quiz = () => {
         }
       } catch (err: any) {
         console.error("Error fetching quiz:", err);
-        // If backend fails and this is a demo id, use fallback
-        if (id && id.startsWith("quiz-")) {
+        // If backend fails and this is a non-ObjectId id, use fallback
+        if (id && !/^[0-9a-fA-F]{24}$/.test(id)) {
           const demo = getQuizData(id);
           if (demo) {
             setQuiz(demo);
@@ -398,7 +394,7 @@ const Quiz = () => {
           answers,
           timeTaken,
           // Include demo quiz data so backend can save it even if quiz doesn't exist in DB
-          quizData.id.startsWith("quiz-") ? quizData : undefined,
+          !/^[0-9a-fA-F]{24}$/.test(quizData.id) ? quizData : undefined,
           precalcPercentage !== null && precalcCorrectCount !== null
             ? { percentage: precalcPercentage, correctCount: precalcCorrectCount }
             : undefined
@@ -516,8 +512,13 @@ const Quiz = () => {
     setCorrectAnswers(correct);
     setIncorrectAnswers(incorrect);
 
-    // Award tokens based on score (10 points = 1 token)
-    const tokensEarned = Math.floor(percentage / 10);
+    // Award tokens based on score
+    let tokensEarned = 0;
+    if (percentage >= 100) {
+      tokensEarned = 25;
+    } else if (percentage >= 40) {
+      tokensEarned = Math.floor(percentage / 5);
+    }
     if (tokensEarned > 0) {
       try {
         award(tokensEarned, `quiz-completed:${quizData.id}`, {
@@ -781,6 +782,18 @@ const Quiz = () => {
                 </div>
                 <div className="text-2xl font-black text-cyan-600">
                   {formatTime(quizData.timeLimit * 60 - timeLeft)}
+                </div>
+              </div>
+            </div>
+
+            {/* Tokens Earned */}
+            <div className="mb-6">
+              <div className="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-500 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+                <div className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
+                  Tokens Earned
+                </div>
+                <div className="text-2xl font-black text-yellow-600">
+                  {score >= 100 ? 25 : score >= 40 ? Math.floor(score / 5) : 0} 💎
                 </div>
               </div>
             </div>

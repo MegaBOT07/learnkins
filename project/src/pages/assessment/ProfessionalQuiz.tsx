@@ -122,8 +122,13 @@ const ProfessionalQuiz = () => {
         setPassed(isPass);
         setIsCompleted(true);
 
-        // Award tokens based on score (10 points = 1 token)
-        const tokensAwarded = Math.floor(pct / 10);
+        // Award tokens based on score
+        let tokensAwarded = 0;
+        if (pct >= 100) {
+          tokensAwarded = 25;
+        } else if (pct >= 40) {
+          tokensAwarded = Math.floor(pct / 5);
+        }
         if (tokensAwarded > 0) {
           try {
             award(tokensAwarded, `professional-quiz:${quiz._id}`, {
