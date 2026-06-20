@@ -2,6 +2,7 @@ import express from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import {
   getShopItems, purchaseItem, getMyPurchases,
+  getUnlockedSubjects,
   createShopItem, updateShopItem, deleteShopItem, getAdminShopStats,
 } from '../controllers/shopController.js';
 
@@ -10,6 +11,7 @@ const router = express.Router();
 // Public / authenticated browsing
 router.get('/', protect, getShopItems);
 router.get('/my-purchases', protect, getMyPurchases);
+router.get('/unlocked-subjects', protect, getUnlockedSubjects);
 router.post('/:id/purchase', protect, purchaseItem);
 
 // Admin management

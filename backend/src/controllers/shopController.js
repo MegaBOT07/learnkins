@@ -82,11 +82,15 @@ export const purchaseItem = async (req, res) => {
     }
 
     try {
+      const purchaseMeta = { ...(item.meta || {}) };
+      if (item.type === 'flashcard_pack') {
+        purchaseMeta.unlockedSubject = item.subject;
+      }
       const purchase = await UserPurchase.create({
         userId: user._id,
         itemId: item._id,
         tokensSpent: item.price,
-        meta: item.meta,
+        meta: purchaseMeta,
       });
 
       if (item.stock !== -1) {
@@ -114,6 +118,23 @@ export const purchaseItem = async (req, res) => {
     }
   } catch (err) {
     console.error('Purchase item error', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const getUnlockedSubjects = async (req, res) => {
+  try {
+    const purchases = await UserPurchase.find({ userId: req.user._id })
+      .populate('itemId')
+      .lean();
+
+    const subjects = purchases
+      .filter(p => p.itemId?.type === 'flashcard_pack' && p.meta?.unlockedSubject)
+      .map(p => p.meta.unlockedSubject);
+
+    return res.status(200).json({ success: true, data: [...new Set(subjects)] });
+  } catch (err) {
+    console.error('Get unlocked subjects error', err);
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };

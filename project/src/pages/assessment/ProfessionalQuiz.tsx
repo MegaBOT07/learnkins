@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { professionalQuizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
+import { useGame } from "../../context/GameContext";
 import { Clock, ArrowLeft, Trophy } from "lucide-react";
 
 interface Question {
@@ -35,6 +36,7 @@ const ProfessionalQuiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { award } = useTokens();
+  const { takeQuiz } = useGame();
 
   const [quiz, setQuiz] = useState<ProfessionalQuizData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,21 +131,23 @@ const ProfessionalQuiz = () => {
         } else if (pct >= 40) {
           tokensAwarded = Math.floor(pct / 5);
         }
-        if (tokensAwarded > 0) {
-          try {
-            award(tokensAwarded, `professional-quiz:${quiz._id}`, {
-              quizTitle: quiz.title,
-              score: earnedScore,
-              percentage: pct,
-              passed: isPass,
-              tokensAwarded
-            });
-          } catch (err) {
-            console.warn('Failed to award tokens', err);
+          if (tokensAwarded > 0) {
+            try {
+              award(tokensAwarded, `professional-quiz:${quiz._id}`, {
+                quizTitle: quiz.title,
+                score: earnedScore,
+                percentage: pct,
+                passed: isPass,
+                tokensAwarded
+              });
+            } catch (err) {
+              console.warn('Failed to award tokens', err);
+            }
           }
-        }
 
-        // Update progress
+          try { takeQuiz(); } catch (err) { /* GameContext may not be available */ }
+
+          // Update progress
         try {
           await progressAPI.logStudySession({
             subject: quiz.subject,

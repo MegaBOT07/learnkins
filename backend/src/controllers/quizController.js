@@ -14,6 +14,7 @@ async function awardQuizTokens(userId, quizId, percentage) {
     if (!user) return 0;
     user.experience         = (user.experience || 0) + xp;
     user.totalQuizzesTaken  = (user.totalQuizzesTaken || 0) + 1;
+    user.points             = (user.points || 0) + Math.round(percentage * 0.5);
     const newLevel = Math.floor(user.experience / 100) + 1;
     if (newLevel > (user.level || 1)) user.level = newLevel;
     await user.save();
@@ -195,6 +196,27 @@ export const submitQuiz = async (req, res) => {
     const userId = req.user?.id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
+      const localResult = req.body.localResult;
+      if (localResult && localResult.percentage !== undefined) {
+        const percentage = localResult.percentage;
+        const correctCount = localResult.correctCount || 0;
+        const totalQuestions = localResult.totalQuestions || correctCount * 2 || 1;
+        const passed = percentage >= 60;
+        const tokensEarned = await awardQuizTokens(userId, id, percentage);
+
+        return res.status(200).json({
+          success: true,
+          message: passed ? 'Quiz passed!' : 'Quiz failed. Try again!',
+          result: {
+            score: correctCount,
+            total: totalQuestions,
+            percentage: Math.round(percentage),
+            passed,
+            tokensEarned,
+            certificateEligible: false
+          }
+        });
+      }
       return res.status(400).json({
         success: false,
         message: 'Invalid quiz ID'
@@ -258,7 +280,6 @@ export const submitQuiz = async (req, res) => {
     if (userId) {
       const user = await User.findById(userId);
       if (user) {
-        user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
         if (passed && percentage === 100) {
           user.perfectScores = (user.perfectScores || 0) + 1;
         }

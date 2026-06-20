@@ -617,6 +617,8 @@ export const submitProfessionalQuiz = async (req, res) => {
       const totalXP = passBonus + correctBonus;
 
       levelUpData = user.addExperience(totalXP);
+      user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
+      user.points = (user.points || 0) + Math.round(percentage * 0.5);
       await user.save();
     }
 

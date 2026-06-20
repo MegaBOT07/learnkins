@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { quizAPI } from '../../utils/api';
 import { useTokens } from '../../context/TokenContext';
+import { useGame } from '../../context/GameContext';
 import {
   Clock,
   CheckCircle,
@@ -55,6 +56,7 @@ const PracticeQuiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const { award } = useTokens();
+  const { takeQuiz } = useGame();
 
   // Fetch quiz data from backend
   useEffect(() => {
@@ -144,6 +146,22 @@ const PracticeQuiz = () => {
     setScore(percentage);
     setCorrectAnswers(correct);
     setIncorrectAnswers(quiz.questions.length - correct);
+
+    const tokensEarned = percentage >= 100 ? 25 : percentage >= 40 ? Math.floor(percentage / 5) : 0;
+    if (tokensEarned > 0) {
+      try {
+        award(tokensEarned, `practice-quiz:${quiz._id || quiz.id}`, {
+          quizId: quiz._id || quiz.id,
+          score: Math.round(percentage),
+          tokensAwarded: tokensEarned,
+          correctAnswers: correct
+        });
+      } catch (err) {
+        console.warn('Failed to award tokens for quiz completion', err);
+      }
+    }
+
+    try { takeQuiz(); } catch (err) { /* GameContext may not be available */ }
   };
 
   // Timer effect
@@ -175,17 +193,6 @@ const PracticeQuiz = () => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentQuestionIndex] = answerIndex;
     setSelectedAnswers(newAnswers);
-
-    try {
-      if (quiz) {
-        award?.(1, 'quiz:select', {
-          quizId: quiz._id || quiz.id,
-          questionIndex: currentQuestionIndex,
-        });
-      }
-    } catch (e) {
-      console.warn('Failed to award token for question selection', e);
-    }
   };
 
   const handleNextQuestion = () => {
@@ -364,12 +371,13 @@ const PracticeQuiz = () => {
                 </div>
                 <p className="text-gray-600 font-medium mb-6">{getScoreMessage(score)}</p>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                   {[
                     { value: questionCount, label: 'Total Questions', border: 'border-cyan-500', color: 'text-cyan-600' },
                     { value: correctAnswers, label: 'Correct', border: 'border-green-500', color: 'text-green-600' },
                     { value: incorrectAnswers, label: 'Incorrect', border: 'border-red-500', color: 'text-red-600' },
                     { value: formatTime(quiz.timeLimit * 60 - timeLeft), label: 'Time Used', border: 'border-purple-500', color: 'text-purple-600' },
+                    { value: score >= 100 ? 25 : score >= 40 ? Math.floor(score / 5) : 0, label: 'Tokens Earned', border: 'border-yellow-500', color: 'text-yellow-600' },
                   ].map((stat, idx) => (
                     <div key={idx} className={`text-center p-4 bg-white rounded-2xl border-2 ${stat.border} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
                       <div className={`text-2xl font-black ${stat.color}`}>{stat.value}</div>

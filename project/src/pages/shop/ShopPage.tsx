@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { shopAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,6 +48,7 @@ const TYPE_COLORS: Record<string, string> = {
 const CATEGORIES = ["all", "flashcard_pack", "quiz_unlock", "power_up", "boost", "cosmetic"] as const;
 
 export default function ShopPage() {
+  const navigate = useNavigate();
   const { balance, fetchBalance } = useTokens();
   const [items, setItems] = useState<ShopItem[]>([]);
   const [purchases, setPurchases] = useState<UserPurchase[]>([]);
@@ -363,6 +365,14 @@ export default function ShopPage() {
                             </span>
                           )}
                         </div>
+                        {item?.type === "flashcard_pack" && item?.subject && (
+                          <button
+                            onClick={() => navigate(`/flashcards?subject=${item.subject}`)}
+                            className="mt-2 text-xs px-3 py-1.5 bg-black text-white rounded-lg font-bold border-2 border-black hover:bg-white hover:text-black transition-all"
+                          >
+                            View Flashcards
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   );

@@ -14,7 +14,7 @@ import {
   Filter,
   Star,
 } from "lucide-react";
-import { flashcardAPI } from "../../utils/api";
+import { flashcardAPI, shopAPI } from "../../utils/api";
 import { flashcardAiService } from "../../services/flashcardAiService";
 
 interface Flashcard {
@@ -57,6 +57,7 @@ const Flashcards = () => {
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPreviewCards, setAiPreviewCards] = useState<Flashcard[]>([]);
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
+  const [purchasedSubjects, setPurchasedSubjects] = useState<string[]>([]);
   const { redeem, canRedeem } = useTokens();
   const [unlocked, setUnlocked] = useState<Record<string, boolean>>(() => {
     try {
@@ -137,6 +138,20 @@ const Flashcards = () => {
       }
     };
     fetchFlashcards();
+
+    const fetchPurchasedSubjects = async () => {
+      try {
+        const res = await shopAPI.getUnlockedSubjects();
+        const subs = res.data?.data || [];
+        if (mounted && Array.isArray(subs)) {
+          setPurchasedSubjects(subs);
+        }
+      } catch (e) {
+        // Not authenticated or shop unavailable — ignore
+      }
+    };
+    fetchPurchasedSubjects();
+
     return () => { mounted = false; };
   }, []);
 
@@ -525,7 +540,7 @@ const Flashcards = () => {
 
                     <h3 className="text-lg font-black text-black mb-2 line-clamp-2">{card.question}</h3>
 
-                    {unlocked[card.id] ? (
+                    {unlocked[card.id] || purchasedSubjects.includes(card.subject) ? (
                       <p className="text-gray-600 text-sm font-medium mb-4">{card.answer}</p>
                     ) : (
                       <div className="text-gray-600 text-sm mb-4">

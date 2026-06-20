@@ -222,6 +222,7 @@ export const shopAPI = {
   getItems: (params = {}) => api.get('/shop', { params }),
   purchase: (id) => api.post(`/shop/${id}/purchase`),
   getMyPurchases: () => api.get('/shop/my-purchases'),
+  getUnlockedSubjects: () => api.get('/shop/unlocked-subjects'),
   // Admin
   createItem: (data) => api.post('/shop', data),
   updateItem: (id, data) => api.put(`/shop/${id}`, data),

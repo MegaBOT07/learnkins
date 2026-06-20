@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { quizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
+import { useGame } from "../../context/GameContext";
 import {
   Clock,
   CheckCircle,
@@ -35,6 +36,8 @@ interface QuizData {
 const Quiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnPath = searchParams.get('from') || '/games-quiz';
 
   const [quiz, setQuiz] = useState<QuizData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +54,7 @@ const Quiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const { award } = useTokens();
+  const { takeQuiz } = useGame();
 
   // Fetch quiz data from backend
   useEffect(() => {
@@ -466,13 +470,6 @@ const Quiz = () => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentQuestionIndex] = answerIndex;
     setSelectedAnswers(newAnswers);
-    try {
-      // award 1 token per question click and save meta to server when authenticated
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      award?.(1, `quiz:select`, { quizId: quizData.id, questionId: currentQuestion.id, index: currentQuestionIndex });
-    } catch (e) {
-      console.warn('Failed to award token for question selection', e);
-    }
   };
 
   const handleNextQuestion = () => {
@@ -532,6 +529,8 @@ const Quiz = () => {
       }
     }
 
+    try { takeQuiz(); } catch (err) { /* GameContext may not be available */ }
+
     setShowPopup(true);
   };
 
@@ -587,7 +586,7 @@ const Quiz = () => {
           </div>
           <div className="text-red-700 text-lg font-bold mb-4">{error || "Failed to load quiz"}</div>
           <button
-            onClick={() => navigate("/quizzes")}
+            onClick={() => navigate(returnPath)}
             className="px-6 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
           >
             Back to Quizzes
@@ -638,7 +637,7 @@ const Quiz = () => {
                   Start Quiz
                 </button>
                 <button
-                  onClick={() => navigate("/quizzes")}
+                  onClick={() => navigate(returnPath)}
                   className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all"
                 >
                   <ArrowLeft className="w-4 h-4 inline mr-2" />
@@ -699,7 +698,7 @@ const Quiz = () => {
                   Review Answers
                 </button>
                 <button
-                  onClick={() => navigate("/quizzes")}
+                  onClick={() => navigate(returnPath)}
                   className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all"
                 >
                   Back to Quizzes
@@ -812,7 +811,7 @@ const Quiz = () => {
               <button
                 onClick={() => {
                   setShowPopup(false);
-                  navigate("/quizzes");
+                  navigate(returnPath);
                 }}
                 className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all"
               >
@@ -863,7 +862,7 @@ const Quiz = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/quizzes")}
+                onClick={() => navigate(returnPath)}
                 className="w-10 h-10 rounded-xl border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-all"
                 aria-label="Back to quizzes"
               >
