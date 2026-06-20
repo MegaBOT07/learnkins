@@ -21,6 +21,7 @@ import ProfessionalQuizzes from "./pages/assessment/ProfessionalQuizzes";
 import ProfessionalQuiz from "./pages/assessment/ProfessionalQuiz";
 
 import Community from "./pages/community/Community";
+import StudyGroupDetail from "./pages/community/StudyGroupDetail";
 import ParentalControl from "./pages/parental/ParentalControl";
 import Contact from "./pages/contact/Contact";
 import Flashcards from "./pages/learning/Flashcards";
@@ -132,6 +133,7 @@ function AppLayout() {
           <Route path="/professional-quiz/:id" element={<ProfessionalQuiz />} />
 
           <Route path="/community" element={<Community />} />
+          <Route path="/community/groups/:id" element={<StudyGroupDetail />} />
           <Route path="/parental-control" element={<ParentalControl />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/flashcards" element={<Flashcards />} />

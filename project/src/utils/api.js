@@ -181,10 +181,24 @@ export const communityAPI = {
 
   // Study Groups
   getStudyGroups: (params = {}) => api.get("/community/groups", { params }),
+  getStudyGroup: (id) => api.get(`/community/groups/${id}`),
   createStudyGroup: (groupData) => api.post("/community/groups", groupData),
   joinStudyGroup: (id) => api.post(`/community/groups/${id}/join`),
+  leaveStudyGroup: (id) => api.post(`/community/groups/${id}/leave`),
+  removeGroupMember: (groupId, userId) => api.delete(`/community/groups/${groupId}/members/${userId}`),
   updateStudyGroup: (id, payload) => api.put(`/community/groups/${id}`, payload),
   deleteStudyGroup: (id) => api.delete(`/community/groups/${id}`),
+
+  // Group Messages
+  getGroupMessages: (groupId, params = {}) => api.get(`/community/groups/${groupId}/messages`, { params }),
+  sendGroupMessage: (groupId, data) => api.post(`/community/groups/${groupId}/messages`, data),
+
+  // Group Posts
+  getGroupPosts: (groupId, params = {}) => api.get(`/community/groups/${groupId}/posts`, { params }),
+  createGroupPost: (groupId, data) => api.post(`/community/groups/${groupId}/posts`, data),
+  deleteGroupPost: (groupId, postId) => api.delete(`/community/groups/${groupId}/posts/${postId}`),
+  likeGroupPost: (groupId, postId) => api.post(`/community/groups/${groupId}/posts/${postId}/like`),
+  replyToGroupPost: (groupId, postId, data) => api.post(`/community/groups/${groupId}/posts/${postId}/replies`, data),
 
   // Achievements
   getAchievements: () => api.get("/community/achievements"),

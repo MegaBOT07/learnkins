@@ -10,10 +10,20 @@ import {
   updateDiscussionReply,
   deleteDiscussionReply,
   getStudyGroups,
+  getStudyGroup,
   createStudyGroup,
   joinStudyGroup,
+  leaveStudyGroup,
+  removeGroupMember,
   updateStudyGroup,
   deleteStudyGroup,
+  getGroupMessages,
+  sendGroupMessage,
+  getGroupPosts,
+  createGroupPost,
+  deleteGroupPost,
+  likeGroupPost,
+  replyToGroupPost,
   getAchievements,
   getUserAchievements,
   awardAchievement,
@@ -162,10 +172,24 @@ router.put("/discussions/:id/replies/:replyId", validateReply, updateDiscussionR
 router.delete("/discussions/:id/replies/:replyId", deleteDiscussionReply);
 
 // Study group routes
+router.get("/groups/:id", getStudyGroup);
 router.post("/groups", validateStudyGroup, createStudyGroup);
 router.post("/groups/:id/join", joinStudyGroup);
+router.post("/groups/:id/leave", leaveStudyGroup);
+router.delete("/groups/:id/members/:userId", removeGroupMember);
 router.put("/groups/:id", validateStudyGroupUpdate, updateStudyGroup);
 router.delete("/groups/:id", deleteStudyGroup);
+
+// Group messages
+router.get("/groups/:id/messages", getGroupMessages);
+router.post("/groups/:id/messages", sendGroupMessage);
+
+// Group posts
+router.get("/groups/:id/posts", getGroupPosts);
+router.post("/groups/:id/posts", createGroupPost);
+router.delete("/groups/:id/posts/:postId", deleteGroupPost);
+router.post("/groups/:id/posts/:postId/like", likeGroupPost);
+router.post("/groups/:id/posts/:postId/replies", replyToGroupPost);
 
 // Achievement routes
 router.get("/achievements/user", getUserAchievements);

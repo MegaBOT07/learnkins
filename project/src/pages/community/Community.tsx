@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import type { Achievement, Discussion, Reply, StudyGroup } from "../../types/community";
@@ -149,6 +150,7 @@ const normalizeAchievement = (item: any, userEarnedIds: Set<string>): Achievemen
 };
 
 const Community = () => {
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const meId = String(user?._id || user?.id || "");
 
@@ -1087,7 +1089,8 @@ const Community = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.08 }}
                       whileHover={{ y: -6 }}
-                      className={`bg-white p-6 rounded-2xl border-2 ${color.border} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all`}
+                      onClick={() => navigate(`/community/groups/${group.id}`)}
+                      className={`bg-white p-6 rounded-2xl border-2 ${color.border} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer`}
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div>
@@ -1114,7 +1117,7 @@ const Community = () => {
                           <span>{group.memberCount || 0} / {group.maxMembers} members</span>
                         </div>
                         <button
-                          onClick={() => handleJoinGroup(group.id, group.isMember)}
+                          onClick={(e) => { e.stopPropagation(); handleJoinGroup(group.id, group.isMember); }}
                           disabled={Boolean(group.isMember) || isFull || joiningGroupId === group.id}
                           className={`px-5 py-2.5 rounded-xl text-sm font-black border-2 transition-all ${group.isMember ? "bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed" : isFull ? "bg-amber-50 text-amber-700 border-amber-200 cursor-not-allowed" : "bg-black text-white border-black hover:bg-white hover:text-black active:scale-95 shadow-[3px_3px_0px_0px_rgba(0,0,0,0.2)]"}`}
                         >

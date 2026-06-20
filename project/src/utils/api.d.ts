@@ -435,12 +435,26 @@ export interface CommunityAPI {
 
   // Study Groups
   getStudyGroups: (params?: any) => Promise<AxiosResponse<any>>;
+  getStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
   createStudyGroup: (
     groupData: GroupData
   ) => Promise<AxiosResponse<any>>;
   joinStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
+  leaveStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
+  removeGroupMember: (groupId: string, userId: string) => Promise<AxiosResponse<any>>;
   updateStudyGroup: (id: string, payload: Partial<GroupData> & { tags?: string[] }) => Promise<AxiosResponse<any>>;
   deleteStudyGroup: (id: string) => Promise<AxiosResponse<any>>;
+
+  // Group Messages
+  getGroupMessages: (groupId: string, params?: any) => Promise<AxiosResponse<any>>;
+  sendGroupMessage: (groupId: string, data: { content: string; attachments?: any[] }) => Promise<AxiosResponse<any>>;
+
+  // Group Posts
+  getGroupPosts: (groupId: string, params?: any) => Promise<AxiosResponse<any>>;
+  createGroupPost: (groupId: string, data: { title: string; content: string; tags?: string[] }) => Promise<AxiosResponse<any>>;
+  deleteGroupPost: (groupId: string, postId: string) => Promise<AxiosResponse<any>>;
+  likeGroupPost: (groupId: string, postId: string) => Promise<AxiosResponse<any>>;
+  replyToGroupPost: (groupId: string, postId: string, data: { content: string }) => Promise<AxiosResponse<any>>;
 
   // Achievements
   getAchievements: () => Promise<AxiosResponse<any>>;

@@ -43,6 +43,55 @@ export interface StudyGroup {
   isMember?: boolean;
   rules?: string[];
   tags?: string[];
+  creator?: {
+    _id?: string;
+    id?: string;
+    name?: string;
+    avatar?: string;
+    email?: string;
+  };
+  isActive?: boolean;
+  activityLevel?: string;
+  lastActivity?: string;
+  availableSpots?: number;
+}
+
+export interface GroupMessage {
+  _id: string;
+  group: string;
+  sender: {
+    _id: string;
+    name: string;
+    avatar?: string;
+  };
+  content: string;
+  attachments?: Array<{
+    url: string;
+    type: string;
+    name: string;
+  }>;
+  createdAt: string;
+}
+
+export interface GroupPost {
+  id: string;
+  _id?: string;
+  group: string;
+  author?: {
+    _id?: string;
+    id?: string;
+    name?: string;
+    avatar?: string;
+  };
+  title: string;
+  content: string;
+  tags?: string[];
+  likes: number;
+  replies: number;
+  replyItems?: Reply[];
+  isLiked?: boolean;
+  isPinned?: boolean;
+  createdAt: string;
 }
 
 export interface Achievement {
