@@ -24,6 +24,21 @@ import {
 const Science = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const [notif, setNotif] = useState<string | null>(null);
+
+  const handleDownload = (fileUrl?: string, title?: string) => {
+    if (fileUrl) {
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = title || "download";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      setNotif("Download not available yet. Content is being prepared.");
+      setTimeout(() => setNotif(null), 3500);
+    }
+  };
 
   const chapters = [
     {
@@ -139,6 +154,11 @@ const Science = () => {
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+      {notif && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-rose-600 text-white px-6 py-3 rounded-xl shadow-xl font-semibold text-sm">
+          {notif}
+        </div>
+      )}
       {/* Header Section */}
       <section className="relative bg-purple-500 text-white border-b-4 border-black overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
@@ -331,7 +351,7 @@ const Science = () => {
                     </div>
                     <div className="flex space-x-2">
                       <Link to="/notes" className="flex-1 bg-black text-white text-center py-3 px-4 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95">Read Notes</Link>
-                      <button className="px-4 py-3 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all" title="Download notes"><Download className="h-4 w-4" /></button>
+                      <button onClick={() => handleDownload()} className="px-4 py-3 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all" title="Download notes"><Download className="h-4 w-4" /></button>
                     </div>
                   </div>
                 ))}
@@ -363,7 +383,7 @@ const Science = () => {
                       <button 
                         onClick={() => navigate('/practice-quizzes?subject=science')}
                         className="flex-1 bg-black text-white py-3 px-4 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95">Start Practice</button>
-                      <button className="px-4 py-3 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all" title="Download worksheet"><Download className="h-4 w-4" /></button>
+                      <button onClick={() => handleDownload()} className="px-4 py-3 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all" title="Download worksheet"><Download className="h-4 w-4" /></button>
                     </div>
                   </div>
                 ))}

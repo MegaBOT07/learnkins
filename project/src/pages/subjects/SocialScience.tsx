@@ -21,6 +21,21 @@ import {
 
 const SocialScience = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [notif, setNotif] = useState<string | null>(null);
+
+  const handleDownload = (fileUrl?: string, title?: string) => {
+    if (fileUrl) {
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = title || "download";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      setNotif("Download not available yet. Content is being prepared.");
+      setTimeout(() => setNotif(null), 3500);
+    }
+  };
 
   const chapters = [
     { id: 1, title: "Ancient Civilizations", description: "Explore the rise and fall of ancient civilizations", topics: ["Mesopotamia", "Egypt", "Greece", "Rome", "China"], duration: "4 weeks", difficulty: "Intermediate", materials: { videos: 8, notes: 12, worksheets: 6, quizzes: 4 } },
@@ -45,6 +60,11 @@ const SocialScience = () => {
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+      {notif && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-rose-600 text-white px-6 py-3 rounded-xl shadow-xl font-semibold text-sm">
+          {notif}
+        </div>
+      )}
       {/* Header Section */}
       <section className="relative bg-green-500 text-white border-b-4 border-black overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
@@ -234,7 +254,7 @@ const SocialScience = () => {
                     <h3 className="text-lg font-black text-black mb-2">{chapter.title}</h3>
                     <p className="text-gray-600 text-sm font-medium mb-3">{chapter.description}</p>
                     <div className="text-sm text-gray-500 font-bold mb-4">{chapter.materials.worksheets} worksheets</div>
-                    <button className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95">Download</button>
+                    <button onClick={() => handleDownload()} className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95">Download</button>
                   </div>
                 ))}
               </div>

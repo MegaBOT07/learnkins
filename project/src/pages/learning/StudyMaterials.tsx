@@ -15,6 +15,21 @@ const StudyMaterials = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [recentMaterials, setRecentMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notif, setNotif] = useState<string | null>(null);
+
+  const handleDownload = (fileUrl?: string, title?: string) => {
+    if (fileUrl) {
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = title || "download";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      setNotif("Download not available yet. Content is being prepared.");
+      setTimeout(() => setNotif(null), 3500);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,6 +55,7 @@ const StudyMaterials = () => {
           title: mat.title,
           subject: mat.subject || "General",
           type: mat.type || "Notes",
+          fileUrl: mat.fileUrl || undefined,
           downloads: mat.downloads || 0,
           date: new Date(mat.createdAt).toISOString().split('T')[0],
           color: "border-blue-500"
@@ -91,6 +107,11 @@ const StudyMaterials = () => {
 
   return (
     <div className="min-h-screen bg-white text-black selection:bg-black selection:text-white">
+      {notif && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-rose-600 text-white px-6 py-3 rounded-xl shadow-xl font-semibold text-sm">
+          {notif}
+        </div>
+      )}
       {/* Header Section */}
       <section className="relative bg-black text-white border-b-4 border-blue-500 overflow-hidden">
         <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
@@ -214,7 +235,10 @@ const StudyMaterials = () => {
                     {material.downloads}
                   </div>
                 </div>
-                <button className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => handleDownload(material.fileUrl, material.title)}
+                  className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2"
+                >
                   <Download className="h-4 w-4" />
                   <span>Download</span>
                 </button>
