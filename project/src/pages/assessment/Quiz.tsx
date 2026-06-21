@@ -48,6 +48,7 @@ const Quiz = () => {
   const [isQuizStarted, setIsQuizStarted] = useState(false);
   const [isQuizCompleted, setIsQuizCompleted] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
@@ -487,6 +488,10 @@ const Quiz = () => {
   };
 
   const handleQuizComplete = async () => {
+    if (isQuizCompleted) {
+      setShowResults(true);
+      return;
+    }
     setIsQuizCompleted(true);
     await handleSubmitQuiz();
     calculateScore();
@@ -692,7 +697,7 @@ const Quiz = () => {
 
               <div className="space-y-3 max-w-sm mx-auto">
                 <button
-                  onClick={() => setShowResults(false)}
+                  onClick={() => { setShowResults(false); setShowReview(true); }}
                   className="w-full bg-black text-white py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
                 >
                   Review Answers
@@ -706,6 +711,67 @@ const Quiz = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Answer Review ── */
+  if (showReview) {
+    return (
+      <div className="min-h-screen bg-white p-6">
+        <div className="max-w-4xl mx-auto pt-8">
+          <div className="bg-white rounded-2xl border-2 border-black p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] mb-6">
+            <h1 className="text-2xl font-black text-black mb-6">Review Answers</h1>
+            {quizData.questions.map((q, qIdx) => {
+              const userAnswer = selectedAnswers[qIdx];
+              const isCorrect = userAnswer === q.correctAnswer;
+              return (
+                <div key={q.id} className="mb-6 pb-6 border-b-2 border-gray-100 last:border-b-0 last:pb-0 last:mb-0">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                      {isCorrect ? <CheckCircle className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-black mb-1">Question {qIdx + 1}</p>
+                      <p className="text-gray-700">{q.question}</p>
+                    </div>
+                  </div>
+                  <div className="ml-10 space-y-2">
+                    {q.options.map((opt, oIdx) => {
+                      let style = "border-gray-200 bg-gray-50 text-gray-700";
+                      if (oIdx === q.correctAnswer) {
+                        style = "border-green-500 bg-green-50 text-green-800";
+                      } else if (oIdx === userAnswer && !isCorrect) {
+                        style = "border-red-500 bg-red-50 text-red-800";
+                      }
+                      return (
+                        <div key={oIdx} className={`rounded-xl border-2 p-3 font-medium ${style} ${oIdx === userAnswer ? 'ring-2 ring-offset-1 ring-black' : ''}`}>
+                          <div className="flex items-center justify-between">
+                            <span>{opt}</span>
+                            {oIdx === q.correctAnswer && <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 ml-2" />}
+                            {oIdx === userAnswer && !isCorrect && <XCircle className="w-4 h-4 text-red-600 flex-shrink-0 ml-2" />}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {q.explanation && (
+                    <div className="ml-10 mt-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                      <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">Explanation</p>
+                      <p className="text-sm text-blue-900">{q.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => { setShowReview(false); setShowResults(true); }}
+            className="w-full bg-black text-white py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
+          >
+            Back to Results
+          </button>
         </div>
       </div>
     );
@@ -943,14 +1009,14 @@ const Quiz = () => {
           </button>
 
           <button
-            onClick={isLastQuestion ? handleQuizComplete : handleNextQuestion}
-            disabled={selectedAnswers[currentQuestionIndex] === undefined}
-            className={`px-6 py-3 rounded-xl border-2 border-black font-bold transition-all ${selectedAnswers[currentQuestionIndex] === undefined
+            onClick={isQuizCompleted ? () => setShowResults(true) : isLastQuestion ? handleQuizComplete : handleNextQuestion}
+            disabled={!isQuizCompleted && selectedAnswers[currentQuestionIndex] === undefined}
+            className={`px-6 py-3 rounded-xl border-2 border-black font-bold transition-all ${!isQuizCompleted && selectedAnswers[currentQuestionIndex] === undefined
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
                 : "bg-black text-white hover:bg-white hover:text-black"
               }`}
           >
-            {isLastQuestion ? "Finish Quiz" : "Next"}
+            {isQuizCompleted ? "Back to Results" : isLastQuestion ? "Finish Quiz" : "Next"}
           </button>
         </div>
       </div>

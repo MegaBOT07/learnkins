@@ -635,6 +635,26 @@ const seedContent = async () => {
           console.error(`✗ Error processing flashcard file ${file}:`, fileErr.message);
         }
       }
+      if (totalFlashcards === 0) {
+        console.log('📇 No JSON notes found, seeding inline flashcards...');
+        const inlineFlashcards = [
+          { question: 'What is the chemical symbol for water?', answer: 'H₂O', subject: 'science', chapter: 'Chemistry', difficulty: 'Easy', tags: ['chemistry', 'molecules'], createdBy: adminId },
+          { question: 'What planet is known as the Red Planet?', answer: 'Mars', subject: 'science', chapter: 'Astronomy', difficulty: 'Easy', tags: ['space', 'planets'], createdBy: adminId },
+          { question: 'What is the powerhouse of the cell?', answer: 'Mitochondria', subject: 'science', chapter: 'Biology', difficulty: 'Easy', tags: ['biology', 'cells'], createdBy: adminId },
+          { question: 'What is the value of Pi (π) to 2 decimal places?', answer: '3.14', subject: 'mathematics', chapter: 'Geometry', difficulty: 'Easy', tags: ['geometry', 'constants'], createdBy: adminId },
+          { question: 'What is the square root of 144?', answer: '12', subject: 'mathematics', chapter: 'Algebra', difficulty: 'Easy', tags: ['algebra', 'roots'], createdBy: adminId },
+          { question: 'What is the formula for the area of a rectangle?', answer: 'Length × Width', subject: 'mathematics', chapter: 'Geometry', difficulty: 'Easy', tags: ['geometry', 'area'], createdBy: adminId },
+          { question: 'What is the past tense of "go"?', answer: 'Went', subject: 'english', chapter: 'Grammar', difficulty: 'Easy', tags: ['grammar', 'verbs'], createdBy: adminId },
+          { question: 'What is a noun?', answer: 'A noun is a word that names a person, place, thing, or idea.', subject: 'english', chapter: 'Grammar', difficulty: 'Easy', tags: ['grammar', 'parts-of-speech'], createdBy: adminId },
+          { question: 'Who wrote "Romeo and Juliet"?', answer: 'William Shakespeare', subject: 'english', chapter: 'Literature', difficulty: 'Medium', tags: ['literature', 'shakespeare'], createdBy: adminId },
+          { question: 'What is the capital of France?', answer: 'Paris', subject: 'social-science', chapter: 'Geography', difficulty: 'Easy', tags: ['geography', 'capitals'], createdBy: adminId },
+          { question: 'Who was the first President of the United States?', answer: 'George Washington', subject: 'social-science', chapter: 'History', difficulty: 'Easy', tags: ['history', 'presidents'], createdBy: adminId },
+          { question: 'What is democracy?', answer: 'A system of government where citizens vote for their leaders.', subject: 'social-science', chapter: 'Civics', difficulty: 'Medium', tags: ['civics', 'government'], createdBy: adminId },
+        ];
+        await Flashcard.insertMany(inlineFlashcards);
+        totalFlashcards = inlineFlashcards.length;
+        console.log(`✅ Inline flashcards seeded: ${totalFlashcards}`);
+      }
       console.log(`✅ Flashcards seeded: ${totalFlashcards}`);
     } else {
       console.log('ℹ️ Flashcards already exist, skipping seed.');

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTokens } from "../../context/TokenContext";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   Plus,
@@ -36,7 +36,9 @@ const Flashcards = () => {
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [filteredCards, setFilteredCards] = useState<Flashcard[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("all");
+  const [searchParams] = useSearchParams();
+  const subjectFromUrl = searchParams.get("subject");
+  const [selectedSubject, setSelectedSubject] = useState(subjectFromUrl && ["science", "mathematics", "social-science", "english"].includes(subjectFromUrl) ? subjectFromUrl : "all");
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -104,7 +106,7 @@ const Flashcards = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await flashcardAPI.getFlashcards("all");
+        const res = await flashcardAPI.getFlashcards(selectedSubject);
         const data = res.data?.data || [];
         if (mounted && Array.isArray(data)) {
           const normalized = data.map((card: any) => ({
