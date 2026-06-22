@@ -117,16 +117,16 @@ const Quizzes = () => {
     return matchesSearch && matchesSubject && matchesGrade && matchesDifficulty;
   });
 
-  const getDifficultyStyle = (difficulty: string) => {
+  const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "Easy":
-        return "bg-green-100 text-green-900 border-green-400";
+        return "bg-green-100 text-green-800";
       case "Medium":
-        return "bg-yellow-100 text-yellow-900 border-yellow-400";
+        return "bg-yellow-100 text-yellow-800";
       case "Hard":
-        return "bg-red-100 text-red-900 border-red-400";
+        return "bg-red-100 text-red-800";
       default:
-        return "bg-gray-100 text-gray-900 border-gray-400";
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -145,44 +145,21 @@ const Quizzes = () => {
     }
   };
 
-  const getSubjectBorder = (subject: string) => {
-    switch (subject) {
-      case "Science":
-        return "border-purple-500";
-      case "Mathematics":
-        return "border-blue-500";
-      case "English":
-        return "border-orange-500";
-      case "Social Science":
-        return "border-green-500";
-      default:
-        return "border-cyan-500";
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* ── Header ── */}
-      <section className="relative bg-black text-white border-b-4 border-cyan-500 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-3">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">
             Quick Quizzes
           </h1>
-          <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Test your knowledge with these engaging quizzes.
           </p>
         </div>
-      </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* ── Search & Filters ── */}
-        <div className="bg-white rounded-2xl border-2 border-black p-6 mb-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
@@ -193,7 +170,7 @@ const Quizzes = () => {
                   placeholder="Search quizzes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border-2 border-black rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -202,7 +179,7 @@ const Quizzes = () => {
             <div>
               <label
                 htmlFor="subject-filter"
-                className="block text-xs font-black text-black uppercase tracking-wider mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Subject
               </label>
@@ -210,7 +187,7 @@ const Quizzes = () => {
                 id="subject-filter"
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label="Filter by subject"
               >
                 {subjects.map((subject) => (
@@ -225,7 +202,7 @@ const Quizzes = () => {
             <div>
               <label
                 htmlFor="grade-filter"
-                className="block text-xs font-black text-black uppercase tracking-wider mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Grade
               </label>
@@ -233,7 +210,7 @@ const Quizzes = () => {
                 id="grade-filter"
                 value={selectedGrade}
                 onChange={(e) => setSelectedGrade(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label="Filter by grade"
               >
                 {grades.map((grade) => (
@@ -248,7 +225,7 @@ const Quizzes = () => {
             <div>
               <label
                 htmlFor="difficulty-filter"
-                className="block text-xs font-black text-black uppercase tracking-wider mb-1"
+                className="block text-sm font-medium text-gray-700 mb-1"
               >
                 Difficulty
               </label>
@@ -256,7 +233,7 @@ const Quizzes = () => {
                 id="difficulty-filter"
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label="Filter by difficulty"
               >
                 {difficulties.map((difficulty) => (
@@ -269,49 +246,49 @@ const Quizzes = () => {
           </div>
         </div>
 
-        {/* ── Quiz Grid ── */}
+        {/* Quiz Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredQuizzes.map((quiz) => (
             <div
               key={quiz.id}
-              className={`bg-white rounded-2xl border-2 ${getSubjectBorder(quiz.subject)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all overflow-hidden`}
+              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
             >
               <div className="p-6">
                 {/* Trophy Icon */}
                 <div className="flex justify-center mb-4">
-                  <div className="w-14 h-14 bg-black rounded-xl flex items-center justify-center border-2 border-black">
-                    <span className="text-2xl">{getSubjectIcon(quiz.subject)}</span>
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Trophy className="w-8 h-8 text-blue-600" />
                   </div>
                 </div>
 
                 {/* Quiz Title */}
-                <h3 className="text-lg font-black text-black text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 text-center mb-4">
                   {quiz.title}
                 </h3>
 
                 {/* Quiz Details */}
-                <div className="space-y-2 mb-5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 font-medium">Questions:</span>
-                    <span className="font-bold text-black">{quiz.questionCount}</span>
+                <div className="space-y-2 mb-6">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Questions:</span>
+                    <span className="font-medium">{quiz.questionCount}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 font-medium">Duration:</span>
-                    <span className="font-bold text-black">{quiz.timeLimit} min</span>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Duration:</span>
+                    <span className="font-medium">{quiz.timeLimit} min</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600 font-medium">Difficulty:</span>
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Difficulty:</span>
                     <span
-                      className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getDifficultyStyle(
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
                         quiz.difficulty
                       )}`}
                     >
                       {quiz.difficulty}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 font-medium">Participants:</span>
-                    <span className="font-bold text-black">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Participants:</span>
+                    <span className="font-medium">
                       {quiz.participants.toLocaleString()}
                     </span>
                   </div>
@@ -320,7 +297,7 @@ const Quizzes = () => {
                 {/* Action Button */}
                 <Link
                   to={`/quiz/${quiz.id}`}
-                  className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold text-center block hover:bg-white hover:text-black transition-all"
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-center font-medium block"
                 >
                   Start Quiz
                 </Link>
@@ -329,13 +306,13 @@ const Quizzes = () => {
           ))}
         </div>
 
-        {/* ── Empty State ── */}
+        {/* Empty State */}
         {filteredQuizzes.length === 0 && (
           <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 border-2 border-black mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
               <Search className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-black text-black mb-2">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
               No quizzes found
             </h3>
             <p className="text-gray-600 mb-4">
@@ -348,30 +325,33 @@ const Quizzes = () => {
                 setSelectedGrade("all");
                 setSelectedDifficulty("all");
               }}
-              className="bg-black text-white px-6 py-2.5 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Clear Filters
             </button>
           </div>
         )}
 
-        {/* ── Stats ── */}
+        {/* Stats */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { value: quizzes.length, label: "Total Quizzes", color: "border-cyan-500 text-cyan-600" },
-            { value: quizzes.filter((q) => q.difficulty === "Easy").length, label: "Beginner Friendly", color: "border-green-500 text-green-600" },
-            { value: quizzes.filter((q) => q.difficulty === "Hard").length, label: "Advanced Level", color: "border-purple-500 text-purple-600" },
-          ].map((stat, idx) => (
-            <div
-              key={idx}
-              className={`bg-white rounded-2xl border-2 ${stat.color.split(" ")[0]} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-6 text-center`}
-            >
-              <div className={`text-3xl font-black mb-1 ${stat.color.split(" ")[1]}`}>
-                {stat.value}
-              </div>
-              <div className="text-gray-600 font-bold text-sm">{stat.label}</div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">
+              {quizzes.length}
             </div>
-          ))}
+            <div className="text-gray-600">Total Quizzes</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">
+              {quizzes.filter((q) => q.difficulty === "Easy").length}
+            </div>
+            <div className="text-gray-600">Beginner Friendly</div>
+          </div>
+          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
+              {quizzes.filter((q) => q.difficulty === "Hard").length}
+            </div>
+            <div className="text-gray-600">Advanced Level</div>
+          </div>
         </div>
       </div>
     </div>

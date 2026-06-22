@@ -234,6 +234,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('subjects_cache');
       dispatch({ type: 'LOGOUT' });
     }
   };

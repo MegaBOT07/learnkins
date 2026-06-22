@@ -19,6 +19,12 @@ export interface SubjectData {
   grade?: string;
 }
 
+export interface SubjectsResponse {
+  success: boolean;
+  count: number;
+  data: SubjectResponse[];
+}
+
 export interface MaterialData {
   title: string;
   description?: string;
@@ -35,6 +41,14 @@ export interface QuizData {
   subject?: string;
   difficulty?: string;
   timeLimit?: number;
+}
+
+export interface QuizFilters {
+  subject?: string;
+  grade?: string;
+  difficulty?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface GameData {
@@ -309,7 +323,9 @@ export interface UserAPI {
 }
 
 export interface SubjectAPI {
-  getSubjects: () => Promise<AxiosResponse<SubjectResponse[]>>;
+  getSubjects: (
+    grade?: string
+  ) => Promise<AxiosResponse<SubjectsResponse>>;
   getSubject: (id: string) => Promise<AxiosResponse<SubjectResponse>>;
   createSubject: (
     subjectData: SubjectData
@@ -337,7 +353,8 @@ export interface MaterialAPI {
 }
 
 export interface QuizAPI {
-  getQuizzes: (subjectId?: string) => Promise<AxiosResponse<{ success: boolean; data: QuizResponse[] }>>;
+  getHomepageQuizCards: () => Promise<AxiosResponse<any>>;
+  getQuizzes: (filters?: QuizFilters) => Promise<AxiosResponse<{ success: boolean; count: number; total: number; data: QuizResponse[] }>>;
   getQuiz: (id: string) => Promise<AxiosResponse<QuizResponse>>;
   createQuiz: (quizData: QuizData) => Promise<AxiosResponse<QuizResponse>>;
   updateQuiz: (

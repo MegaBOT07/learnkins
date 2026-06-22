@@ -14,9 +14,15 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user")
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    if (user) {
+      config.headers["X-User-Info"] = user;
+    }
+
     return config;
   },
   (error) => {
@@ -70,7 +76,7 @@ export const userAPI = {
 
 // Subject API
 export const subjectAPI = {
-  getSubjects: () => api.get("/subjects"),
+  getSubjects: (grade) => api.get("/subjects", { params: { grade } }),
   getSubject: (id) => api.get(`/subjects/${id}`),
   createSubject: (subjectData) => api.post("/subjects", subjectData),
   updateSubject: (id, subjectData) => api.put(`/subjects/${id}`, subjectData),
@@ -89,12 +95,14 @@ export const materialAPI = {
 
 // Quiz API
 export const quizAPI = {
-  getQuizzes: (subjectId) => api.get(`/quizzes?subject=${subjectId}`),
+  getHomepageQuizCards: () => api.get("/quizzes/homepageQuizCards"),
+  getQuizzes: (filters = {}) => api.get("/quizzes", { params: filters }),
   getQuiz: (id) => api.get(`/quizzes/${id}`),
   createQuiz: (quizData) => api.post("/quizzes", quizData),
   updateQuiz: (id, quizData) => api.put(`/quizzes/${id}`, quizData),
   deleteQuiz: (id) => api.delete(`/quizzes/${id}`),
   submitQuiz: (id, answers, timeTaken, quizData, localResult) => api.post(`/quizzes/${id}/submit`, { answers, timeTaken, quizData, localResult }),
+  getLeaderboard: (subject = 'all') => api.get('/quizzes/leaderboard', { params: { subject } }),
 };
 
 // Game API

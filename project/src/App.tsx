@@ -13,6 +13,8 @@ import SubjectDetail from "./pages/subjects/SubjectDetail";
 import StudyMaterials from "./pages/learning/StudyMaterials";
 // @ts-ignore
 import GamesQuiz from "./pages/assessment/GamesQuiz";
+import SubjectQuizzes from "./pages/assessment/SubjectQuizzes"
+import Leaderboard from "./pages/assessment/LeaderBoard";
 import Quiz from "./pages/assessment/Quiz";
 import Games from "./pages/games/Games";
 import Game from "./pages/games/Game";
@@ -104,6 +106,8 @@ function AppLayout() {
           <Route path="/subjects/:slug/:chapterId/videos" element={<VideoPage />} />
           <Route path="/study-materials" element={<StudyMaterials />} />
           <Route path="/games-quiz" element={<GamesQuiz />} />
+          <Route path="/games-quiz/:subject" element={<SubjectQuizzes />} />
+          <Route path="/games-quiz/leaderboard" element={<Leaderboard />} />
           <Route path="/games" element={<Games />} />
 
           {/* Integrated game routes */}

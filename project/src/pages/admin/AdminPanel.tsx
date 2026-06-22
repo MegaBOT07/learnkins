@@ -85,8 +85,33 @@ const AdminPanel = () => {
   });
 
   const [newQuiz, setNewQuiz] = useState({
-    title: "", description: "", subject: "science", grade: "6th", difficulty: "Medium", questions: [] as any[]
+    title: "",
+    description: "",
+    subject: "",
+    grade: "",
+    difficulty: "Medium",
+    questions: [] as any[]
   });
+
+  const [availableSubjects, setAvailableSubjects] = useState<any[]>([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  const fetchSubjectsByGrade = async (grade: string) => {
+    try {
+      setLoadingSubjects(true);
+
+      const response = await subjectAPI.getSubjects(grade);
+
+      if (response.data.success) {
+        setAvailableSubjects(response.data.data);
+      }
+    } catch (error) {
+      console.error(error);
+      setAvailableSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
 
   // Transform frontend question format → backend model format
   const transformQuestions = (inputs: any[]) => inputs.map((q: any) => ({
@@ -382,6 +407,17 @@ const AdminPanel = () => {
   };
 
   const handleCreateQuiz = async () => {
+
+    if (!newQuiz.grade) {
+      alert("Please select a grade");
+      return;
+    }
+
+    if (!newQuiz.subject) {
+      alert("Please select a subject");
+      return;
+    }
+
     try {
       setLoading(true);
       await quizAPI.createQuiz({
@@ -392,7 +428,17 @@ const AdminPanel = () => {
       });
       alert("Quiz built successfully!");
       setShowQuizModal(false);
-      setNewQuiz({ title: "", description: "", subject: "science", grade: "6th", difficulty: "Medium", questions: [] });
+      setNewQuiz({
+        title: "",
+        description: "",
+        subject: "",
+        grade: "",
+        difficulty: "Medium",
+        questions: []
+      });
+
+
+      setAvailableSubjects([]);
       setQuizQuestionInputs([]);
       fetchAll();
     } catch (err) {
@@ -436,7 +482,7 @@ const AdminPanel = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `learnkins-students-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `learnkins-students-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -653,9 +699,9 @@ const AdminPanel = () => {
       const correctIdx = typeof q.correctAnswer === 'number'
         ? q.correctAnswer
         : opts.findIndex((_: string, i: number) => {
-            const opt = q.options?.[i];
-            return opt?.isCorrect === true || i === parseInt(q.correctAnswer);
-          });
+          const opt = q.options?.[i];
+          return opt?.isCorrect === true || i === parseInt(q.correctAnswer);
+        });
       return {
         question: q.question || "",
         options: opts,
@@ -1791,7 +1837,7 @@ const AdminPanel = () => {
                   {/* 7-day activity */}
                   {tokenStats?.dailyActivity?.length > 0 && (
                     <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                      <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><TrendingUp size={16}/> 7-Day Activity</h3>
+                      <h3 className="font-bold text-slate-800 text-sm mb-4 flex items-center gap-2"><TrendingUp size={16} /> 7-Day Activity</h3>
                       <div className="flex items-end gap-2 h-24">
                         {tokenStats.dailyActivity.map((d: any, i: number) => {
                           const maxAmt = Math.max(...tokenStats.dailyActivity.map((x: any) => x.totalAmount ?? x.amount ?? 1));
@@ -1811,7 +1857,7 @@ const AdminPanel = () => {
                   <div className="grid lg:grid-cols-2 gap-5">
                     {/* Top earners */}
                     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Award size={16}/> Top 10 Earners</h3>
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Award size={16} /> Top 10 Earners</h3>
                       {!tokenStats?.topEarners?.length ? (
                         <p className="text-slate-400 text-sm py-4 text-center">No data yet</p>
                       ) : (
@@ -1824,7 +1870,7 @@ const AdminPanel = () => {
                                 <p className="text-xs text-slate-400 truncate">{u.email}</p>
                               </div>
                               <div className="text-right">
-                                <p className="text-sm font-bold text-indigo-600 flex items-center gap-1"><Gem size={12}/>{u.tokens ?? u.balance ?? 0}</p>
+                                <p className="text-sm font-bold text-indigo-600 flex items-center gap-1"><Gem size={12} />{u.tokens ?? u.balance ?? 0}</p>
                                 <p className="text-xs text-slate-400">Lv {u.level ?? 1}</p>
                               </div>
                             </div>
@@ -1835,7 +1881,7 @@ const AdminPanel = () => {
 
                     {/* Recent transactions */}
                     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Activity size={16}/> Recent Transactions</h3>
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><Activity size={16} /> Recent Transactions</h3>
                       {!tokenStats?.recentTransactions?.length ? (
                         <p className="text-slate-400 text-sm py-4 text-center">No transactions yet</p>
                       ) : (
@@ -1860,7 +1906,7 @@ const AdminPanel = () => {
                   {/* Shop stats */}
                   {shopStats && (
                     <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><ShoppingBag size={16}/> Shop Overview</h3>
+                      <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><ShoppingBag size={16} /> Shop Overview</h3>
                       <div className="grid sm:grid-cols-3 gap-4 text-center">
                         <div className="bg-slate-50 rounded-lg p-3">
                           <p className="text-xl font-extrabold text-slate-900">{shopStats.totalItems ?? 0}</p>
@@ -1895,15 +1941,15 @@ const AdminPanel = () => {
                     onClick={fetchTokenStats}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-all"
                   >
-                    <TrendingUp size={14}/> Refresh Stats
+                    <TrendingUp size={14} /> Refresh Stats
                   </button>
 
                   {/* Shop Items Management */}
                   <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><ShoppingBag size={16}/> Shop Items</h3>
+                      <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><ShoppingBag size={16} /> Shop Items</h3>
                       <button onClick={() => setShowShopItemModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-all">
-                        <Plus size={14}/> Add Item
+                        <Plus size={14} /> Add Item
                       </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2135,31 +2181,65 @@ const AdminPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Assessment Title</label>
-                    <input className={theme.input} value={editingQuiz ? editingQuiz.title : newQuiz.title} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, title: e.target.value}) : setNewQuiz({...newQuiz, title: e.target.value})} />
+                    <input className={theme.input} value={editingQuiz ? editingQuiz.title : newQuiz.title} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, title: e.target.value }) : setNewQuiz({ ...newQuiz, title: e.target.value })} />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                    <textarea className={theme.input} rows={2} value={editingQuiz ? (editingQuiz.description || '') : newQuiz.description} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, description: e.target.value}) : setNewQuiz({...newQuiz, description: e.target.value})} />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={editingQuiz ? editingQuiz.subject : newQuiz.subject} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, subject: e.target.value}) : setNewQuiz({...newQuiz, subject: e.target.value})}>
-                      <option value="science">Science</option>
-                      <option value="mathematics">Mathematics</option>
-                      <option value="english">English</option>
-                    </select>
+                    <textarea className={theme.input} rows={2} value={editingQuiz ? (editingQuiz.description || '') : newQuiz.description} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, description: e.target.value }) : setNewQuiz({ ...newQuiz, description: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, grade: e.target.value}) : setNewQuiz({...newQuiz, grade: e.target.value})}>
-                      <option value="6th">Grade 6</option>
-                      <option value="7th">Grade 7</option>
-                      <option value="8th">Grade 8</option>
+                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, grade: e.target.value }) : setNewQuiz({ ...newQuiz, grade: e.target.value })}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={editingQuiz ? editingQuiz.subject : newQuiz.subject}
+                      disabled={
+                        !(editingQuiz ? editingQuiz.grade : newQuiz.grade)
+                      }
+
+                      onChange={(e) => {
+                        const grade = e.target.value;
+                        if (editingQuiz) {
+                          setEditingQuiz({
+                            ...editingQuiz,
+                            grade,
+                            subject: "",
+                          });
+                        } else {
+                          setNewQuiz({
+                            ...newQuiz,
+                            grade,
+                            subject: "",
+                          });
+                        }
+
+                        fetchSubjectsByGrade(grade);
+                      }}>
+                      <option value="">
+                        {loadingSubjects
+                          ? "Loading Subjects..."
+                          : "Select Subject"}
+                      </option>
+
+                      {availableSubjects.map((subject: any) => (
+                        <option
+                          key={subject._id}
+                          value={subject.slug}
+                        >
+                          {subject.name}
+                        </option>
+                      ))}
+
                     </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={editingQuiz ? editingQuiz.difficulty : newQuiz.difficulty} onChange={(e) => editingQuiz ? setEditingQuiz({...editingQuiz, difficulty: e.target.value}) : setNewQuiz({...newQuiz, difficulty: e.target.value})}>
+                    <select className={theme.input} value={editingQuiz ? editingQuiz.difficulty : newQuiz.difficulty} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, difficulty: e.target.value }) : setNewQuiz({ ...newQuiz, difficulty: e.target.value })}>
                       <option value="Easy">Easy</option>
                       <option value="Medium">Medium</option>
                       <option value="Hard">Hard</option>
@@ -2171,7 +2251,7 @@ const AdminPanel = () => {
                 <div className="border-t border-slate-100 pt-4 mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Questions ({quizQuestionInputs.length})</label>
-                    <button type="button" onClick={addQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12}/> Add Question</button>
+                    <button type="button" onClick={addQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12} /> Add Question</button>
                   </div>
                   {quizQuestionInputs.map((q, qi) => (
                     <div key={qi} className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
@@ -2214,29 +2294,29 @@ const AdminPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
-                    <input className={theme.input} value={newSubject.name} onChange={(e) => setNewSubject({...newSubject, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} placeholder="e.g. Physics" />
+                    <input className={theme.input} value={newSubject.name} onChange={(e) => setNewSubject({ ...newSubject, name: e.target.value, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })} placeholder="e.g. Physics" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Slug</label>
-                    <input className={theme.input} value={newSubject.slug} onChange={(e) => setNewSubject({...newSubject, slug: e.target.value})} placeholder="physics" />
+                    <input className={theme.input} value={newSubject.slug} onChange={(e) => setNewSubject({ ...newSubject, slug: e.target.value })} placeholder="physics" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={newSubject.description} onChange={(e) => setNewSubject({...newSubject, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={newSubject.description} onChange={(e) => setNewSubject({ ...newSubject, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
-                    <input className={theme.input} value={newSubject.icon} onChange={(e) => setNewSubject({...newSubject, icon: e.target.value})} placeholder="book" />
+                    <input className={theme.input} value={newSubject.icon} onChange={(e) => setNewSubject({ ...newSubject, icon: e.target.value })} placeholder="book" />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Color</label>
-                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={newSubject.color} onChange={(e) => setNewSubject({...newSubject, color: e.target.value})} />
+                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={newSubject.color} onChange={(e) => setNewSubject({ ...newSubject, color: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={newSubject.grade} onChange={(e) => setNewSubject({...newSubject, grade: e.target.value})}>
+                    <select className={theme.input} value={newSubject.grade} onChange={(e) => setNewSubject({ ...newSubject, grade: e.target.value })}>
                       <option value="6th">6th</option>
                       <option value="7th">7th</option>
                       <option value="8th">8th</option>
@@ -2264,29 +2344,29 @@ const AdminPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Name</label>
-                    <input className={theme.input} value={editingSubject.name || ''} onChange={(e) => setEditingSubject({...editingSubject, name: e.target.value})} />
+                    <input className={theme.input} value={editingSubject.name || ''} onChange={(e) => setEditingSubject({ ...editingSubject, name: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Slug</label>
-                    <input className={theme.input} value={editingSubject.slug || ''} onChange={(e) => setEditingSubject({...editingSubject, slug: e.target.value})} />
+                    <input className={theme.input} value={editingSubject.slug || ''} onChange={(e) => setEditingSubject({ ...editingSubject, slug: e.target.value })} />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={editingSubject.description || ''} onChange={(e) => setEditingSubject({...editingSubject, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={editingSubject.description || ''} onChange={(e) => setEditingSubject({ ...editingSubject, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
-                    <input className={theme.input} value={editingSubject.icon || ''} onChange={(e) => setEditingSubject({...editingSubject, icon: e.target.value})} />
+                    <input className={theme.input} value={editingSubject.icon || ''} onChange={(e) => setEditingSubject({ ...editingSubject, icon: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Color</label>
-                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={editingSubject.color || '#6366f1'} onChange={(e) => setEditingSubject({...editingSubject, color: e.target.value})} />
+                    <input type="color" className="h-10 w-full rounded-lg border border-slate-200 cursor-pointer" value={editingSubject.color || '#6366f1'} onChange={(e) => setEditingSubject({ ...editingSubject, color: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={editingSubject.grade || '6th'} onChange={(e) => setEditingSubject({...editingSubject, grade: e.target.value})}>
+                    <select className={theme.input} value={editingSubject.grade || '6th'} onChange={(e) => setEditingSubject({ ...editingSubject, grade: e.target.value })}>
                       <option value="6th">6th</option>
                       <option value="7th">7th</option>
                       <option value="8th">8th</option>
@@ -2313,16 +2393,16 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={newProQuiz.title} onChange={(e) => setNewProQuiz({...newProQuiz, title: e.target.value})} />
+                  <input className={theme.input} value={newProQuiz.title} onChange={(e) => setNewProQuiz({ ...newProQuiz, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={newProQuiz.description} onChange={(e) => setNewProQuiz({...newProQuiz, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={newProQuiz.description} onChange={(e) => setNewProQuiz({ ...newProQuiz, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={newProQuiz.subject} onChange={(e) => setNewProQuiz({...newProQuiz, subject: e.target.value})}>
+                    <select className={theme.input} value={newProQuiz.subject} onChange={(e) => setNewProQuiz({ ...newProQuiz, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
                       <option value="english">English</option>
@@ -2331,7 +2411,7 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={newProQuiz.difficulty} onChange={(e) => setNewProQuiz({...newProQuiz, difficulty: e.target.value})}>
+                    <select className={theme.input} value={newProQuiz.difficulty} onChange={(e) => setNewProQuiz({ ...newProQuiz, difficulty: e.target.value })}>
                       <option value="Easy">Easy</option>
                       <option value="Medium">Medium</option>
                       <option value="Hard">Hard</option>
@@ -2341,15 +2421,15 @@ const AdminPanel = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (min)</label>
-                    <input type="number" className={theme.input} value={newProQuiz.timeLimit} onChange={(e) => setNewProQuiz({...newProQuiz, timeLimit: parseInt(e.target.value) || 15})} />
+                    <input type="number" className={theme.input} value={newProQuiz.timeLimit} onChange={(e) => setNewProQuiz({ ...newProQuiz, timeLimit: parseInt(e.target.value) || 15 })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pass Score (%)</label>
-                    <input type="number" className={theme.input} value={newProQuiz.passingScore} onChange={(e) => setNewProQuiz({...newProQuiz, passingScore: parseInt(e.target.value) || 50})} />
+                    <input type="number" className={theme.input} value={newProQuiz.passingScore} onChange={(e) => setNewProQuiz({ ...newProQuiz, passingScore: parseInt(e.target.value) || 50 })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={newProQuiz.grade} onChange={(e) => setNewProQuiz({...newProQuiz, grade: e.target.value})}>
+                    <select className={theme.input} value={newProQuiz.grade} onChange={(e) => setNewProQuiz({ ...newProQuiz, grade: e.target.value })}>
                       <option value="all">All</option>
                       <option value="6th">6th</option>
                       <option value="7th">7th</option>
@@ -2377,16 +2457,16 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={editingProQuiz.title || ''} onChange={(e) => setEditingProQuiz({...editingProQuiz, title: e.target.value})} />
+                  <input className={theme.input} value={editingProQuiz.title || ''} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={editingProQuiz.description || ''} onChange={(e) => setEditingProQuiz({...editingProQuiz, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={editingProQuiz.description || ''} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={editingProQuiz.difficulty || 'Medium'} onChange={(e) => setEditingProQuiz({...editingProQuiz, difficulty: e.target.value})}>
+                    <select className={theme.input} value={editingProQuiz.difficulty || 'Medium'} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, difficulty: e.target.value })}>
                       <option value="Easy">Easy</option>
                       <option value="Medium">Medium</option>
                       <option value="Hard">Hard</option>
@@ -2394,7 +2474,7 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pass Score (%)</label>
-                    <input type="number" className={theme.input} value={editingProQuiz.passingScore || 50} onChange={(e) => setEditingProQuiz({...editingProQuiz, passingScore: parseInt(e.target.value) || 50})} />
+                    <input type="number" className={theme.input} value={editingProQuiz.passingScore || 50} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, passingScore: parseInt(e.target.value) || 50 })} />
                   </div>
                 </div>
               </div>
@@ -2417,16 +2497,16 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={newShopItem.title} onChange={(e) => setNewShopItem({...newShopItem, title: e.target.value})} />
+                  <input className={theme.input} value={newShopItem.title} onChange={(e) => setNewShopItem({ ...newShopItem, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={newShopItem.description} onChange={(e) => setNewShopItem({...newShopItem, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={newShopItem.description} onChange={(e) => setNewShopItem({ ...newShopItem, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
-                    <select className={theme.input} value={newShopItem.type} onChange={(e) => setNewShopItem({...newShopItem, type: e.target.value})}>
+                    <select className={theme.input} value={newShopItem.type} onChange={(e) => setNewShopItem({ ...newShopItem, type: e.target.value })}>
                       <option value="flashcard_pack">Flashcard Pack</option>
                       <option value="quiz_unlock">Quiz Unlock</option>
                       <option value="power_up">Power Up</option>
@@ -2436,17 +2516,17 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Price (💎)</label>
-                    <input type="number" className={theme.input} value={newShopItem.price} onChange={(e) => setNewShopItem({...newShopItem, price: parseInt(e.target.value) || 10})} />
+                    <input type="number" className={theme.input} value={newShopItem.price} onChange={(e) => setNewShopItem({ ...newShopItem, price: parseInt(e.target.value) || 10 })} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
-                    <input className={theme.input} value={newShopItem.icon} onChange={(e) => setNewShopItem({...newShopItem, icon: e.target.value})} />
+                    <input className={theme.input} value={newShopItem.icon} onChange={(e) => setNewShopItem({ ...newShopItem, icon: e.target.value })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={newShopItem.subject} onChange={(e) => setNewShopItem({...newShopItem, subject: e.target.value})}>
+                    <select className={theme.input} value={newShopItem.subject} onChange={(e) => setNewShopItem({ ...newShopItem, subject: e.target.value })}>
                       <option value="all">All</option>
                       <option value="science">Science</option>
                       <option value="mathematics">Math</option>
@@ -2455,7 +2535,7 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
-                    <input type="number" className={theme.input} value={newShopItem.stock} onChange={(e) => setNewShopItem({...newShopItem, stock: parseInt(e.target.value) || -1})} placeholder="-1 = unlimited" />
+                    <input type="number" className={theme.input} value={newShopItem.stock} onChange={(e) => setNewShopItem({ ...newShopItem, stock: parseInt(e.target.value) || -1 })} placeholder="-1 = unlimited" />
                   </div>
                 </div>
               </div>
@@ -2478,20 +2558,20 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={editingShopItem.title || ''} onChange={(e) => setEditingShopItem({...editingShopItem, title: e.target.value})} />
+                  <input className={theme.input} value={editingShopItem.title || ''} onChange={(e) => setEditingShopItem({ ...editingShopItem, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} value={editingShopItem.description || ''} onChange={(e) => setEditingShopItem({...editingShopItem, description: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={editingShopItem.description || ''} onChange={(e) => setEditingShopItem({ ...editingShopItem, description: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Price (💎)</label>
-                    <input type="number" className={theme.input} value={editingShopItem.price || 0} onChange={(e) => setEditingShopItem({...editingShopItem, price: parseInt(e.target.value) || 0})} />
+                    <input type="number" className={theme.input} value={editingShopItem.price || 0} onChange={(e) => setEditingShopItem({ ...editingShopItem, price: parseInt(e.target.value) || 0 })} />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
-                    <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({...editingShopItem, stock: parseInt(e.target.value) || -1})} />
+                    <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({ ...editingShopItem, stock: parseInt(e.target.value) || -1 })} />
                   </div>
                 </div>
               </div>
@@ -2514,16 +2594,16 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Question</label>
-                  <textarea className={theme.input} rows={2} value={editingFlashcard.question || ''} onChange={(e) => setEditingFlashcard({...editingFlashcard, question: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={editingFlashcard.question || ''} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, question: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Answer</label>
-                  <textarea className={theme.input} rows={2} value={editingFlashcard.answer || ''} onChange={(e) => setEditingFlashcard({...editingFlashcard, answer: e.target.value})} />
+                  <textarea className={theme.input} rows={2} value={editingFlashcard.answer || ''} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, answer: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={editingFlashcard.subject || 'science'} onChange={(e) => setEditingFlashcard({...editingFlashcard, subject: e.target.value})}>
+                    <select className={theme.input} value={editingFlashcard.subject || 'science'} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
                       <option value="english">English</option>
@@ -2531,7 +2611,7 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={editingFlashcard.difficulty || 'Medium'} onChange={(e) => setEditingFlashcard({...editingFlashcard, difficulty: e.target.value})}>
+                    <select className={theme.input} value={editingFlashcard.difficulty || 'Medium'} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, difficulty: e.target.value })}>
                       <option value="Easy">Easy</option>
                       <option value="Medium">Medium</option>
                       <option value="Hard">Hard</option>
@@ -2558,11 +2638,11 @@ const AdminPanel = () => {
               <div className="p-6 grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={editingGame.title || ''} onChange={(e) => setEditingGame({...editingGame, title: e.target.value})} />
+                  <input className={theme.input} value={editingGame.title || ''} onChange={(e) => setEditingGame({ ...editingGame, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                  <select className={theme.input} value={editingGame.category || 'mathematics'} onChange={(e) => setEditingGame({...editingGame, category: e.target.value})}>
+                  <select className={theme.input} value={editingGame.category || 'mathematics'} onChange={(e) => setEditingGame({ ...editingGame, category: e.target.value })}>
                     <option value="mathematics">Mathematics</option>
                     <option value="science">Science</option>
                     <option value="english">English</option>
@@ -2570,7 +2650,7 @@ const AdminPanel = () => {
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Game URL</label>
-                  <input className={theme.input} value={editingGame.gameUrl || ''} onChange={(e) => setEditingGame({...editingGame, gameUrl: e.target.value})} />
+                  <input className={theme.input} value={editingGame.gameUrl || ''} onChange={(e) => setEditingGame({ ...editingGame, gameUrl: e.target.value })} />
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
@@ -2592,16 +2672,16 @@ const AdminPanel = () => {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={editingMaterial.title || ''} onChange={(e) => setEditingMaterial({...editingMaterial, title: e.target.value})} />
+                  <input className={theme.input} value={editingMaterial.title || ''} onChange={(e) => setEditingMaterial({ ...editingMaterial, title: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Video URL</label>
-                  <input className={theme.input} value={editingMaterial.fileUrl || ''} onChange={(e) => setEditingMaterial({...editingMaterial, fileUrl: e.target.value})} />
+                  <input className={theme.input} value={editingMaterial.fileUrl || ''} onChange={(e) => setEditingMaterial({ ...editingMaterial, fileUrl: e.target.value })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={editingMaterial.subject || 'science'} onChange={(e) => setEditingMaterial({...editingMaterial, subject: e.target.value})}>
+                    <select className={theme.input} value={editingMaterial.subject || 'science'} onChange={(e) => setEditingMaterial({ ...editingMaterial, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
                       <option value="english">English</option>
@@ -2609,7 +2689,7 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={editingMaterial.grade || '6th'} onChange={(e) => setEditingMaterial({...editingMaterial, grade: e.target.value})}>
+                    <select className={theme.input} value={editingMaterial.grade || '6th'} onChange={(e) => setEditingMaterial({ ...editingMaterial, grade: e.target.value })}>
                       <option value="6th">6th</option>
                       <option value="7th">7th</option>
                       <option value="8th">8th</option>
@@ -2625,7 +2705,7 @@ const AdminPanel = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 
