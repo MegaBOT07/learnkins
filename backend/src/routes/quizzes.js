@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  getHomepageQuizCards,
   getQuizzes,
   getQuiz,
   createQuiz,
@@ -7,22 +8,27 @@ import {
   deleteQuiz,
   submitQuiz,
   getQuizResults,
-  getQuizStatistics
+  getQuizStatistics,
+  getSubjects,
+  getLeaderboard
 } from '../controllers/quizController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // Public routes
-router.get('/', getQuizzes);
-router.get('/:id', getQuiz);
+router.get('/homepageQuizCards', getHomepageQuizCards)
 
 // Protected routes
 router.use(protect);
 
 // Student routes
+router.get('/leaderboard', getLeaderboard);
+router.get('/', getQuizzes);
+router.get('/subjects', getSubjects);
 router.post('/:id/submit', submitQuiz);
 router.get('/:id/results', getQuizResults);
+router.get('/:id', getQuiz);
 
 // Teacher/Admin routes
 router.post('/', authorize('admin', 'teacher'), createQuiz);

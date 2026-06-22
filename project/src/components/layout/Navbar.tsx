@@ -196,7 +196,7 @@ const Navbar = () => {
                                 onClick={() => setIsGamesDropdownOpen(false)}
                               >
                                 <Target size={20} strokeWidth={2.5} className="group-hover:text-orange-600" />
-                                <span>Subject Quizzes</span>
+                                <span> Quizzes</span>
                               </Link>
 
                               <Link
