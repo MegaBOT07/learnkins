@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { quizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
+import { useGame } from "../../context/GameContext";
 import {
   Clock,
   CheckCircle,
@@ -54,6 +55,7 @@ const Quiz = () => {
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const { award } = useTokens();
+  const { takeQuiz, addPoints, addExperience } = useGame();
 
 
   const normalizeQuiz = (quiz: any) => {
@@ -140,6 +142,15 @@ const Quiz = () => {
           quizData.questions.length - result.correctCount
         );
 
+
+        // Update game progress stats (profile quizzesTaken, totalPoints)
+        try {
+          takeQuiz();
+          addPoints(result.correctCount * 10);
+          addExperience(result.correctCount * 5);
+        } catch (err) {
+          console.warn('Failed to update game progress', err);
+        }
 
         setShowPopup(true);
       }

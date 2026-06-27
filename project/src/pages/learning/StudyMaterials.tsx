@@ -214,7 +214,31 @@ const StudyMaterials = () => {
                     {material.downloads}
                   </div>
                 </div>
-                <button className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2">
+                <button
+                  onClick={() => {
+                    if (material.fileUrl) {
+                      const link = document.createElement("a");
+                      link.href = material.fileUrl;
+                      link.download = material.title || "material";
+                      link.target = "_blank";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    } else {
+                      const content = `${material.title}\nSubject: ${material.subject}\nType: ${material.type}\nDate: ${material.date}`;
+                      const blob = new Blob([content], { type: "text/plain" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `${material.title.replace(/\s+/g, "_")}.txt`;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                    }
+                  }}
+                  className="w-full bg-black text-white py-2.5 rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 flex items-center justify-center space-x-2"
+                >
                   <Download className="h-4 w-4" />
                   <span>Download</span>
                 </button>

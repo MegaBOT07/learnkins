@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { professionalQuizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
+import { useGame } from "../../context/GameContext";
 import { Clock, ArrowLeft, Trophy } from "lucide-react";
 
 interface Question {
@@ -35,6 +36,7 @@ const ProfessionalQuiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { award } = useTokens();
+  const { takeQuiz, addPoints, addExperience } = useGame();
 
   const [quiz, setQuiz] = useState<ProfessionalQuizData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,6 +138,15 @@ const ProfessionalQuiz = () => {
           } catch (err) {
             console.warn('Failed to award tokens', err);
           }
+        }
+
+        // Update game context stats (profile quizzesTaken, totalPoints)
+        try {
+          takeQuiz();
+          addPoints(earnedScore);
+          addExperience(Math.floor(pct / 2));
+        } catch (err) {
+          console.warn('Failed to update game progress', err);
         }
 
         // Update progress

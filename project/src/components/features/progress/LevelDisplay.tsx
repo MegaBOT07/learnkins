@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import { Trophy, Star, Zap } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trophy, Star, Zap, X } from 'lucide-react';
 import ProgressBar from './ProgressBar';
 
 interface LevelDisplayProps {
@@ -19,6 +20,7 @@ const LevelDisplay = ({
   streak, 
   className = "" 
 }: LevelDisplayProps) => {
+  const [levelUpDismissed, setLevelUpDismissed] = useState(false);
   const progressPercentage = (experience / experienceToNext) * 100;
 
   const getLevelColor = (level: number) => {
@@ -39,7 +41,7 @@ const LevelDisplay = ({
 
   return (
     <motion.div
-      className={`bg-white rounded-xl shadow-lg p-6 border border-gray-200 ${className}`}
+      className={`relative bg-white rounded-xl shadow-lg p-6 border border-gray-200 ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -131,21 +133,27 @@ const LevelDisplay = ({
       </div>
 
       {/* Level Up Animation */}
-      {progressPercentage >= 100 && (
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="text-center text-white">
-            <div className="text-4xl mb-2">🎉</div>
-            <div className="text-xl font-bold">Level Up!</div>
-            <div className="text-sm">You've reached level {level + 1}!</div>
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {progressPercentage >= 100 && !levelUpDismissed && (
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center cursor-pointer z-10"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{ duration: 0.5 }}
+            onClick={() => setLevelUpDismissed(true)}
+          >
+            <div className="text-center text-white">
+              <div className="text-4xl mb-2">🎉</div>
+              <div className="text-xl font-bold">Level Up!</div>
+              <div className="text-sm">You've reached level {level + 1}!</div>
+              <div className="mt-3 text-xs opacity-80 flex items-center justify-center gap-1">
+                <X className="h-3 w-3" /> Click to dismiss
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

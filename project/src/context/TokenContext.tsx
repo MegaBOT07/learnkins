@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { tokenAPI } from "../utils/api";
 
 type Transaction = {
@@ -11,8 +11,8 @@ type Transaction = {
 type TokenContextType = {
   balance: number;
   transactions: Transaction[];
-  award: (amount: number, reason?: string, meta?: any) => Promise<void> | void;
-  redeem: (amount: number, reason?: string, meta?: any) => Promise<boolean> | boolean;
+  award: (amount: number, reason?: string, meta?: any) => Promise<void>;
+  redeem: (amount: number, reason?: string, meta?: any) => Promise<boolean>;
   canRedeem: (amount: number) => boolean;
   claimDailyReward: () => Promise<boolean>;
   canClaimDaily: boolean;
@@ -24,10 +24,17 @@ const DAILY_KEY = "learnkins_daily_claimed";
 
 const TokenContext = createContext<TokenContextType | undefined>(undefined);
 
+/** Helper: format a server transaction into our local Transaction shape */
+const formatServerTx = (t: any): Transaction => ({
+  id: t._id || t.id || String(Date.now()),
+  amount: Number(t.amount) || 0,
+  reason: t.reason || "",
+  date: t.createdAt || new Date().toISOString(),
+});
+
 export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [balance, setBalance] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [lastRewardDay, setLastRewardDay] = useState<string>("");
   const [canClaimDaily, setCanClaimDaily] = useState<boolean>(false);
 
   const checkDailyEligibility = () => {
@@ -38,34 +45,20 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCanClaimDaily(lastDate !== today);
   };
 
+  // On mount: hydrate from localStorage, then sync from server
   useEffect(() => {
     checkDailyEligibility();
     const init = async () => {
       try {
+        // Hydrate from localStorage first
         const raw = localStorage.getItem(TOKEN_KEY);
-        let localBalance = 0;
-        let localTx: Transaction[] = [];
-        let localLastReward = "";
-
         if (raw) {
           const parsed = JSON.parse(raw);
-          localBalance = parsed.balance || 0;
-          localTx = parsed.transactions || [];
-          localLastReward = parsed.lastRewardDay || "";
-          setBalance(localBalance);
-          setTransactions(localTx);
-          setLastRewardDay(localLastReward);
+          setBalance(Number(parsed.balance) || 0);
+          setTransactions(Array.isArray(parsed.transactions) ? parsed.transactions : []);
         }
 
-        // Check for daily reward immediately
-        const today = new Date().toISOString().split('T')[0];
-        if (localLastReward !== today) {
-          // award() will handle state and server update
-          await award(5, "Daily Login Reward 🎁");
-          setLastRewardDay(today);
-        }
-
-        // If user is authenticated, sync from server to get authoritative state
+        // If user is authenticated, sync from server (authoritative source)
         const token = localStorage.getItem("token");
         if (token) {
           try {
@@ -75,16 +68,10 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ]);
 
             if (balResp?.data?.balance != null) {
-              setBalance(balResp.data.balance);
+              setBalance(Number(balResp.data.balance) || 0);
             }
             if (txResp?.data?.transactions) {
-              const formatted = txResp.data.transactions.map((t: any) => ({
-                id: t._id,
-                amount: t.amount,
-                reason: t.reason,
-                date: t.createdAt
-              }));
-              setTransactions(formatted);
+              setTransactions(txResp.data.transactions.map(formatServerTx));
             }
           } catch (e) {
             console.warn("Token sync failed", e);
@@ -97,140 +84,124 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     init();
   }, []);
 
-  // Update localStorage whenever state changes
+  // Persist to localStorage whenever balance/transactions change
   useEffect(() => {
-    if (lastRewardDay) {
-      localStorage.setItem(TOKEN_KEY, JSON.stringify({
-        balance,
-        transactions,
-        lastRewardDay
-      }));
+    try {
+      localStorage.setItem(TOKEN_KEY, JSON.stringify({ balance, transactions }));
+    } catch (e) {
+      console.error("Failed to persist tokens", e);
     }
-  }, [balance, transactions, lastRewardDay]);
+  }, [balance, transactions]);
 
-  const award = async (amount: number, reason = "award", meta: any = null) => {
-    if (amount <= 0) return;
+  const award = useCallback(async (amount: number, reason = "award", meta: any = null) => {
+    const n = Number(amount) || 0;
+    if (n <= 0) return;
 
-    // Create unique ID for optimistic update
-    const tempId = "temp-" + Date.now();
-    const optimisticTx: Transaction = {
-      id: tempId,
-      amount,
-      reason,
-      date: new Date().toISOString()
-    };
+    // Optimistic local update using functional setState to avoid stale closures
+    const tempId = `temp-${Date.now()}`;
+    const tempTx: Transaction = { id: tempId, amount: n, reason, date: new Date().toISOString() };
 
-    // Optimistic Update
-    setBalance(prev => prev + amount);
-    setTransactions(prev => [optimisticTx, ...prev].slice(0, 100));
+    setBalance(prev => Number(prev) + n);
+    setTransactions(prev => [tempTx, ...prev].slice(0, 100));
 
+    // If authenticated, persist to server
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const resp = await tokenAPI.award(amount, reason, meta);
+        const resp = await tokenAPI.award(n, reason, meta);
         if (resp?.data?.balance != null) {
-          const serverBalance = resp.data.balance;
+          const serverBalance = Number(resp.data.balance) || 0;
           const serverTx = resp.data.transaction;
-          const serverTxFormatted = {
-            id: serverTx._id,
-            amount: serverTx.amount,
-            reason: serverTx.reason,
-            date: serverTx.createdAt
-          };
+          const serverTxFormatted = formatServerTx(serverTx);
 
+          // Replace the optimistic temp tx with the real server tx
           setBalance(serverBalance);
           setTransactions(prev => {
-            // Replace matching temp transaction or just prepend if not found
-            const filtered = prev.filter(t => t.id !== tempId);
-            return [serverTxFormatted, ...filtered].slice(0, 100);
+            const withoutTemp = prev.filter(t => t.id !== tempId);
+            return [serverTxFormatted, ...withoutTemp].slice(0, 100);
           });
         }
       } catch (e) {
         console.warn("Server award failed", e);
       }
     }
-  };
+  }, []);
 
-  const canRedeem = (amount: number) => balance >= amount;
+  const canRedeem = useCallback((amount: number) => balance >= Number(amount), [balance]);
 
-  const redeem = async (amount: number, reason = "redeem", meta: any = null) => {
-    if (amount <= 0) return false;
-    if (!canRedeem(amount)) return false;
+  const redeem = useCallback(async (amount: number, reason = "redeem", meta: any = null): Promise<boolean> => {
+    const n = Number(amount) || 0;
+    if (n <= 0) return false;
+    if (balance < n) return false;
 
-    const tempId = "temp-" + Date.now();
-    const optimisticTx: Transaction = {
-      id: tempId,
-      amount: -amount,
-      reason,
-      date: new Date().toISOString()
-    };
+    // Optimistic local update using functional setState
+    const tempId = `temp-${Date.now()}`;
+    const tempTx: Transaction = { id: tempId, amount: -n, reason, date: new Date().toISOString() };
 
-    // Optimistic Update
-    setBalance(prev => prev - amount);
-    setTransactions(prev => [optimisticTx, ...prev].slice(0, 100));
+    setBalance(prev => Number(prev) - n);
+    setTransactions(prev => [tempTx, ...prev].slice(0, 100));
 
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const resp = await tokenAPI.redeem(amount, reason, meta);
+        const resp = await tokenAPI.redeem(n, reason, meta);
         if (resp?.data?.balance != null) {
-          const serverBalance = resp.data.balance;
+          const serverBalance = Number(resp.data.balance) || 0;
           const serverTx = resp.data.transaction;
-          const serverTxFormatted = {
-            id: serverTx._id,
-            amount: serverTx.amount,
-            reason: serverTx.reason,
-            date: serverTx.createdAt
-          };
+          const serverTxFormatted = formatServerTx(serverTx);
 
+          // Replace the optimistic temp tx with the real server tx
           setBalance(serverBalance);
           setTransactions(prev => {
-            const filtered = prev.filter(t => t.id !== tempId);
-            return [serverTxFormatted, ...filtered].slice(0, 100);
+            const withoutTemp = prev.filter(t => t.id !== tempId);
+            return [serverTxFormatted, ...withoutTemp].slice(0, 100);
           });
           return true;
         }
       } catch (e) {
         console.warn("Server redeem failed", e);
-        // Rollback on error
-        const [balResp, txResp] = await Promise.all([
-          tokenAPI.getBalance(),
-          tokenAPI.getTransactions()
-        ]);
-        if (balResp?.data?.balance != null) setBalance(balResp.data.balance);
-        if (txResp?.data?.transactions) {
-          setTransactions(txResp.data.transactions.map((t: any) => ({
-            id: t._id,
-            amount: t.amount,
-            reason: t.reason,
-            date: t.createdAt
-          })));
+        // Rollback: re-sync from server
+        try {
+          const [balResp, txResp] = await Promise.all([
+            tokenAPI.getBalance(),
+            tokenAPI.getTransactions()
+          ]);
+          if (balResp?.data?.balance != null) setBalance(Number(balResp.data.balance) || 0);
+          if (txResp?.data?.transactions) setTransactions(txResp.data.transactions.map(formatServerTx));
+        } catch (e2) {
+          console.warn('Failed to rollback/re-sync tokens', e2);
         }
         return false;
       }
     }
     return true;
-  };
+  }, [balance]);
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
       const resp = await tokenAPI.getBalance();
-      if (resp?.data?.balance != null) setBalance(resp.data.balance);
+      if (resp?.data?.balance != null) setBalance(Number(resp.data.balance) || 0);
     } catch { /* silent */ }
-  };
+  }, []);
 
-  const claimDailyReward = async (): Promise<boolean> => {
+  const claimDailyReward = useCallback(async (): Promise<boolean> => {
     if (!canClaimDaily) return false;
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const resp = await tokenAPI.claimDaily();
+        const resp = await (tokenAPI as any).claimDaily();
         if (resp?.data?.success) {
-          const newBalance = resp.data.balance;
-          const tx: Transaction = { id: Date.now().toString(), amount: resp.data.tokensEarned || 5, reason: "Daily login reward 🎁", date: new Date().toISOString() };
-          persist(newBalance, [tx, ...transactions].slice(0, 100));
+          const newBalance = Number(resp.data.balance) || 0;
+          const tx: Transaction = {
+            id: Date.now().toString(),
+            amount: resp.data.tokensEarned || 5,
+            reason: "Daily login reward 🎁",
+            date: new Date().toISOString()
+          };
+          setBalance(newBalance);
+          setTransactions(prev => [tx, ...prev].slice(0, 100));
           localStorage.setItem(DAILY_KEY, new Date().toISOString());
           setCanClaimDaily(false);
           return true;
@@ -248,7 +219,7 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem(DAILY_KEY, new Date().toISOString());
     setCanClaimDaily(false);
     return true;
-  };
+  }, [canClaimDaily, award]);
 
   return (
     <TokenContext.Provider value={{ balance, transactions, award, redeem, canRedeem, claimDailyReward, canClaimDaily, fetchBalance }}>
