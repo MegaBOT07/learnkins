@@ -150,7 +150,7 @@ Return ONLY the JSON array, no other text.`;
         'X-Title': 'Learnkins',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
         messages: [
           {
             role: 'user',
@@ -176,9 +176,15 @@ Return ONLY the JSON array, no other text.`;
       questions = JSON.parse(content);
     } catch (e) {
       // Try to extract JSON if wrapped in markdown
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        questions = JSON.parse(jsonMatch[0]);
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          questions = JSON.parse(jsonMatch[0]);
+        } else {
+          console.warn("Could not find JSON array in OpenRouter response");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse extracted JSON array:", parseError);
       }
     }
 

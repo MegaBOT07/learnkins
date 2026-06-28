@@ -360,7 +360,7 @@ Valid difficulties: Easy, Medium, Hard`;
         'X-Title': 'Learnkins',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2000,
         temperature: 0.7,
@@ -379,8 +379,16 @@ Valid difficulties: Easy, Medium, Hard`;
     try {
       cards = JSON.parse(content);
     } catch {
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) cards = JSON.parse(jsonMatch[0]);
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          cards = JSON.parse(jsonMatch[0]);
+        } else {
+          console.warn("Could not find JSON array in OpenRouter response");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse extracted JSON array:", parseError);
+      }
     }
 
     res.status(200).json({ success: true, data: cards });
