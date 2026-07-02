@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { progressAPI, authAPI } from '../utils/api';
+import { progressAPI, authAPI, communityAPI } from '../utils/api';
 
 interface Achievement {
   id: string;
@@ -158,27 +158,90 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   });
 
+  const CATEGORY_MAP: Record<string, string> = {
+    study: 'learning',
+    quiz: 'learning',
+    game: 'learning',
+    community: 'social',
+    streak: 'mastery',
+    special: 'exploration',
+  };
+
+  const mapBackendAchievements = (
+    allAch: any[],
+    earnedSet: Set<string>,
+    stats: any
+  ) => {
+    return allAch.map((ach: any) => {
+      const id = ach._id?.toString() || ach.id;
+      const unlocked = earnedSet.has(id);
+      const reqs = ach.requirements || {};
+
+      let maxProgress = 1;
+      let currentProgress = 0;
+
+      if (reqs.studyHours) { maxProgress = reqs.studyHours; currentProgress = stats?.totalStudyHours || 0; }
+      else if (reqs.quizzesTaken) { maxProgress = reqs.quizzesTaken; currentProgress = stats?.totalQuizzesTaken || 0; }
+      else if (reqs.gamesPlayed) { maxProgress = reqs.gamesPlayed; currentProgress = stats?.totalGamesPlayed || 0; }
+      else if (reqs.streakDays) { maxProgress = reqs.streakDays; currentProgress = stats?.currentStreak || 0; }
+      else if (reqs.perfectScores) { maxProgress = reqs.perfectScores; }
+      else if (reqs.communityPosts) { maxProgress = reqs.communityPosts; currentProgress = stats?.communityPosts || 0; }
+      else if (unlocked) { currentProgress = 1; }
+
+      return {
+        id,
+        title: ach.name,
+        description: ach.description,
+        icon: ach.icon || '🎯',
+        unlocked,
+        progress: unlocked ? maxProgress : Math.min(currentProgress, maxProgress),
+        maxProgress,
+        points: ach.points || 0,
+        category: CATEGORY_MAP[ach.category] || 'exploration',
+      };
+    });
+  };
+
   // ── Sync with real server data once on mount ─────────────────
   const syncFromServer = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const [meRes, statsRes] = await Promise.allSettled([
+      const [meRes, statsRes, achRes] = await Promise.allSettled([
         authAPI.getMe(),
         progressAPI.getStats(),
+        communityAPI.getAchievements(),
       ]);
-      const me    = meRes.status    === 'fulfilled' ? (meRes.value?.data?.data    ?? meRes.value?.data)    : null;
+      const me    = meRes.status    === 'fulfilled' ? (meRes.value?.data?.user    ?? meRes.value?.data?.data    ?? meRes.value?.data)    : null;
       const stats = statsRes.status === 'fulfilled' ? (statsRes.value?.data?.data ?? statsRes.value?.data) : null;
+      const allAch = achRes.status  === 'fulfilled' ? (achRes.value?.data?.achievements ?? []) : [];
+
+      const completedSubjects: string[] = [];
+      if (stats?.subjectProgress) {
+        for (const [subject, data] of Object.entries(stats.subjectProgress)) {
+          if ((data as any).averageProgress >= 100) {
+            completedSubjects.push(subject);
+          }
+        }
+      }
 
       setUserProgress(prev => ({
         ...prev,
-        level:       me?.level       ?? prev.level,
-        experience:  me?.experience  ?? prev.experience,
-        experienceToNext: calculateExperienceToNext(me?.level ?? prev.level),
-        streak:      me?.currentStreak ?? prev.streak,
-        quizzesTaken: me?.totalQuizzesTaken ?? stats?.quizzesTaken ?? prev.quizzesTaken,
-        gamesPlayed:  me?.totalGamesPlayed  ?? stats?.gamesPlayed  ?? prev.gamesPlayed,
-        totalPoints:  me?.points ?? prev.totalPoints,
+        level:              me?.level          ?? prev.level,
+        experience:         me?.experience     ?? prev.experience,
+        experienceToNext:   calculateExperienceToNext(me?.level ?? prev.level),
+        streak:             me?.currentStreak  ?? prev.streak,
+        quizzesTaken:       me?.totalQuizzesTaken ?? stats?.totalActivities  ?? prev.quizzesTaken,
+        gamesPlayed:        me?.totalGamesPlayed   ?? prev.gamesPlayed,
+        totalPoints:        me?.points         ?? prev.totalPoints,
+        subjectsCompleted:  completedSubjects.length > 0 ? completedSubjects : prev.subjectsCompleted,
+        achievements:       allAch.length > 0
+          ? mapBackendAchievements(
+              allAch,
+              new Set((me?.achievements ?? []).map((a: any) => (a._id?.toString() ?? a.toString()))),
+              me
+            )
+          : prev.achievements,
       }));
     } catch (err) {
       // silent — keep local state

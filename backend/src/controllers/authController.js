@@ -52,19 +52,19 @@ export const register = async (req, res, next) => {
 
       let parent = await User.findOne({ email: parentEmail.toLowerCase() });
       if (!parent) {
-        // Create parent account
+        // Create parent account using the same password as the student
         parent = await User.create({
           name: `Parent of ${name}`,
           email: parentEmail,
-          password: crypto.randomBytes(20).toString('hex'), // Temporary password
+          password,
           role: 'parent'
         });
 
         // Send welcome email to parent
         await sendEmail({
           email: parentEmail,
-          subject: 'Welcome to Brillix - Parent Account Created',
-          message: `A parent account has been created for you. Please reset your password to access your account.`
+          subject: 'Your LearnKins Parent Account is Ready',
+          message: `A parent account has been created for your child ${name}.\n\nYou can log in with:\nEmail: ${parentEmail}\nPassword: (same password your child used to sign up)\n\nVisit: ${process.env.CLIENT_URL || 'http://localhost:5173'}/login`
         });
       }
 
@@ -198,7 +198,8 @@ export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .populate('children', 'name email grade')
-      .populate('parentId', 'name email');
+      .populate('parentId', 'name email')
+      .populate('achievements');
 
     res.status(200).json({
       success: true,
