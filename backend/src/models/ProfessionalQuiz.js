@@ -47,12 +47,16 @@ const professionalQuizSchema = new mongoose.Schema({
       type: String,
       required: true
     },
-    options: [{
+    type: {
       type: String,
-      required: true
+      enum: ['multiple-choice', 'true-false', 'short-answer'],
+      default: 'multiple-choice'
+    },
+    options: [{
+      type: String
     }],
     correctAnswer: {
-      type: Number,
+      type: mongoose.Schema.Types.Mixed,
       required: true
     },
     explanation: String,
@@ -70,6 +74,10 @@ const professionalQuizSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isAIGenerated: {
+    type: Boolean,
+    default: false
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
@@ -86,7 +94,7 @@ const professionalQuizSchema = new mongoose.Schema({
     timeTaken: Number,
     answers: [{
       questionId: String,
-      selectedAnswer: Number,
+      selectedAnswer: mongoose.Schema.Types.Mixed,
       isCorrect: Boolean,
       pointsEarned: Number
     }],

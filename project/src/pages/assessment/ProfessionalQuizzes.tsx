@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { ArrowRight, Trophy, Clock, Users, Filter, Search, Star } from "lucide-react";
+import { ArrowRight, Trophy, Clock, Users, Search, Star } from "lucide-react";
 import { professionalQuizAPI, subjectAPI } from "../../utils/api";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
@@ -15,6 +15,7 @@ interface ProfessionalQuiz {
   timeLimit: number;
   totalQuestions: number;
   passingScore: number;
+  isAIGenerated?: boolean;
   statistics: {
     totalAttempts: number;
     averageScore: number;
@@ -37,6 +38,7 @@ const ProfessionalQuizzes = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState(initialSubject);
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [filterType, setFilterType] = useState("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [subjects, setSubjects] = useState<{ slug: string; name: string }[]>([]);
@@ -46,6 +48,8 @@ const ProfessionalQuizzes = () => {
   const [aiTotalQuestions, setAiTotalQuestions] = useState(10);
   const [newAITopic, setNewAITopic] = useState("");
   const [newAISubject, setNewAISubject] = useState("science");
+  const [questionType, setQuestionType] = useState("mixed");
+  const [attemptsMap, setAttemptsMap] = useState<Record<string, any>>({});
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -76,7 +80,7 @@ const ProfessionalQuizzes = () => {
     setPage(1);
     fetchQuizzes(abortController.signal, 1);
     return () => abortController.abort();
-  }, [selectedSubject, selectedDifficulty, location.key]);
+  }, [selectedSubject, selectedDifficulty, filterType, location.key]);
 
   const fetchQuizzes = async (signal?: AbortSignal, pageNumber = 1, append = false) => {
     try {
@@ -86,6 +90,7 @@ const ProfessionalQuizzes = () => {
       const params: Record<string, string> = { page: String(pageNumber), limit: '6' };
       if (selectedSubject !== "all") params.subject = selectedSubject;
       if (selectedDifficulty !== "all") params.difficulty = selectedDifficulty;
+      if (filterType !== "all") params.type = filterType;
       const response = await professionalQuizAPI.getQuizzes(params, signal);
       const data = response.data?.data || [];
       setTotal(response.data?.total || 0);
@@ -95,6 +100,20 @@ const ProfessionalQuizzes = () => {
       } else {
         setQuizzes(data);
         setFilteredQuizzes(data);
+      }
+      // Also fetch all user attempts to show "Review" on already-attempted cards
+      if (isAuthenticated) {
+        try {
+          const attemptsRes = await professionalQuizAPI.getAllMyAttempts();
+          const attempts = attemptsRes.data?.data || [];
+          const map: Record<string, any> = {};
+          for (const a of attempts) {
+            map[a.quizId] = a;
+          }
+          setAttemptsMap(map);
+        } catch (err) {
+          // non-critical
+        }
       }
     } catch (err: any) {
       if (err?.name === 'CanceledError') return;
@@ -221,13 +240,23 @@ const ProfessionalQuizzes = () => {
       {/* ── Main Content ── */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-black tracking-tight mb-2">
-              Available Professional Quizzes
-            </h2>
-            <p className="text-gray-600">
-              Choose from certification quizzes across multiple subjects
-            </p>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h2 className="text-3xl font-black text-black tracking-tight mb-2">
+                Available Professional Quizzes
+              </h2>
+              <p className="text-gray-600">
+                Choose from certification quizzes across multiple subjects
+              </p>
+            </div>
+            {isAuthenticated && (
+              <Link
+                to="/my-attempts"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-black rounded-xl border-2 border-black font-bold text-sm hover:bg-black hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                My Attempts
+              </Link>
+            )}
           </div>
 
           {/* ── Filters & AI Generator ── */}
@@ -278,17 +307,19 @@ const ProfessionalQuizzes = () => {
                   <option value="Hard">Hard</option>
                 </select>
               </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedSubject("all");
-                    setSelectedDifficulty("all");
-                  }}
-                  className="w-full px-4 py-2.5 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all font-bold"
+              <div>
+                <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
+                  Type
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 >
-                  <Filter className="h-4 w-4 mx-auto" />
-                </button>
+                  <option value="all">All Quiz</option>
+                  <option value="ai">AI Generated</option>
+                  <option value="teacher">By Teachers</option>
+                </select>
               </div>
             </div>
 
@@ -338,7 +369,22 @@ const ProfessionalQuizzes = () => {
                     className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   />
                 </div>
-                <div className="md:col-span-12">
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
+                    Question Type
+                  </label>
+                  <select
+                    value={questionType}
+                    onChange={(e) => setQuestionType(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  >
+                    <option value="mixed">Mixed (All Types)</option>
+                    <option value="multiple-choice">Multiple Choice</option>
+                    <option value="true-false">True / False</option>
+                    <option value="short-answer">Short Answer</option>
+                  </select>
+                </div>
+                <div className="md:col-span-3">
                   <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
                     Topic (optional)
                   </label>
@@ -354,12 +400,19 @@ const ProfessionalQuizzes = () => {
                   <button
                     disabled={aiLoading}
                     onClick={async () => {
+                      if (!isAuthenticated) {
+                        setShowAuthPrompt(true);
+                        return;
+                      }
                       try {
                         setAILoading(true);
                         const resp = await professionalQuizAPI.createAIQuiz({
                           difficulty: newAIDifficulty,
                           totalQuestions: aiTotalQuestions,
                           subject: newAISubject,
+                          topic: newAITopic,
+                          grade: userGrade,
+                          questionType,
                         });
                         const created = resp.data?.data;
                         if (created && created._id) {
@@ -421,11 +474,18 @@ const ProfessionalQuizzes = () => {
                   >
                     <div className="p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <span
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getDifficultyStyle(quiz.difficulty)}`}
-                        >
-                          {quiz.difficulty}
-                        </span>
+                        <div className="flex gap-1.5">
+                          {quiz.isAIGenerated && (
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-400 bg-purple-100 text-purple-900">
+                              AI
+                            </span>
+                          )}
+                          <span
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getDifficultyStyle(quiz.difficulty)}`}
+                          >
+                            {quiz.difficulty}
+                          </span>
+                        </div>
                         <span
                           className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getSubjectBorder(quiz.subject)} bg-white`}
                         >
@@ -484,18 +544,27 @@ const ProfessionalQuizzes = () => {
                         <span>{quiz.statistics.passRate}% pass rate</span>
                       </div>
 
-                    <button
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          setShowAuthPrompt(true);
-                        } else {
-                          navigate(`/professional-quiz/${quiz._id}`);
-                        }
-                      }}
-                      className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
-                    >
-                      Start Quiz
-                    </button>
+                    {attemptsMap[quiz._id] ? (
+                      <Link
+                        to={`/professional-quiz/${quiz._id}/attempt/${attemptsMap[quiz._id]._id}`}
+                        className="block w-full text-center py-2.5 px-4 rounded-xl border-2 border-yellow-500 bg-yellow-50 text-yellow-900 font-bold hover:bg-yellow-100 transition-all"
+                      >
+                        Review
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            setShowAuthPrompt(true);
+                          } else {
+                            navigate(`/professional-quiz/${quiz._id}`);
+                          }
+                        }}
+                        className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
+                      >
+                        Start Quiz
+                      </button>
+                    )}
                     </div>
                   </div>
                 ))}
@@ -532,12 +601,14 @@ const ProfessionalQuizzes = () => {
             </p>
             <Link
               to="/login"
+              state={{ from: { pathname: location.pathname } }}
               className="block w-full text-center px-6 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all mb-3"
             >
               Sign In
             </Link>
             <Link
               to="/register"
+              state={{ from: { pathname: location.pathname } }}
               className="block w-full text-center px-6 py-3 bg-yellow-500 text-black rounded-xl border-2 border-yellow-500 font-black hover:bg-white hover:text-black transition-all"
             >
               Create Account

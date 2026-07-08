@@ -360,7 +360,7 @@ Valid difficulties: Easy, Medium, Hard`;
         'X-Title': 'Learnkins',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        model: 'openrouter/free',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 2000,
         temperature: 0.7,
