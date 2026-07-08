@@ -250,7 +250,7 @@ export const adminAPI = {
 
 // Professional Quiz API
 export const professionalQuizAPI = {
-  getQuizzes: (params = {}) => api.get('/professional-quizzes', { params }),
+  getQuizzes: (params = {}, signal) => api.get('/professional-quizzes', { params, signal }),
   getQuiz: (id) => api.get(`/professional-quizzes/${id}`),
   createQuiz: (quizData) => api.post('/professional-quizzes', quizData),
   createAIQuiz: (payload) => api.post('/professional-quizzes/ai-generate', payload),
@@ -258,6 +258,7 @@ export const professionalQuizAPI = {
   deleteQuiz: (id) => api.delete(`/professional-quizzes/${id}`),
   submitQuiz: (id, answers, timeTaken) => api.post(`/professional-quizzes/${id}/submit`, { answers, timeTaken }),
   getUserAttempts: (id) => api.get(`/professional-quizzes/${id}/attempts`),
+  getAllMyAttempts: () => api.get('/professional-quizzes/my-attempts'),
 };
 
 // Payment API

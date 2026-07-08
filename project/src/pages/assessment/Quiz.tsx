@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { quizAPI, progressAPI } from "../../utils/api";
+import { storeNewAchievements } from "../../utils/achievements";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
 import {
@@ -142,6 +143,10 @@ const Quiz = () => {
           quizData.questions.length - result.correctCount
         );
 
+        // Store any newly unlocked achievements for Progress page to show
+        if (response.data.newAchievements?.length > 0) {
+          storeNewAchievements(response.data.newAchievements);
+        }
 
         // Update game progress stats (profile quizzesTaken, totalPoints)
         try {

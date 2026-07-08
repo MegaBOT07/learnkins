@@ -222,7 +222,7 @@ const achievements = [
     points: 40,
     criteria: '10 total study hours',
     category: 'special',
-    requirements: { quizzesTaken: 0, gamesPlayed: 0, streakDays: 0, perfectScores: 0, communityPosts: 0 },
+    requirements: { studyHours: 10, quizzesTaken: 0, gamesPlayed: 0, streakDays: 0, perfectScores: 0, communityPosts: 0 },
     isActive: true,
   },
   {
@@ -233,7 +233,7 @@ const achievements = [
     points: 100,
     criteria: '50 total study hours',
     category: 'special',
-    requirements: { quizzesTaken: 0, gamesPlayed: 0, streakDays: 0, perfectScores: 0, communityPosts: 0 },
+    requirements: { studyHours: 50, quizzesTaken: 0, gamesPlayed: 0, streakDays: 0, perfectScores: 0, communityPosts: 0 },
     isActive: true,
   },
   {

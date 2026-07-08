@@ -9,21 +9,43 @@ import fetch from 'node-fetch';
 // @access  Public
 export const getProfessionalQuizzes = async (req, res) => {
   try {
-    const { subject, grade, difficulty } = req.query;
+    const { subject, difficulty, type, page = 1, limit = 6 } = req.query;
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
 
     let filter = { isActive: true };
+
+    const userInfo = req.headers['x-user-info'];
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        if (user.role === 'student' && user.grade) {
+          filter.grade = user.grade;
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+
     if (subject) filter.subject = subject;
-    if (grade) filter.grade = grade;
     if (difficulty) filter.difficulty = difficulty;
+    if (type === 'ai') filter.isAIGenerated = true;
+    if (type === 'teacher') filter.isAIGenerated = false;
 
     const quizzes = await ProfessionalQuiz.find(filter)
       .select('-questions') // Don't send full questions in list
       .populate('createdBy', 'name email')
+      .limit(limitNumber)
+      .skip((pageNumber - 1) * limitNumber)
       .sort({ createdAt: -1 });
+
+    const total = await ProfessionalQuiz.countDocuments(filter);
 
     res.status(200).json({
       success: true,
       count: quizzes.length,
+      total,
       data: quizzes
     });
   } catch (error) {
@@ -119,26 +141,38 @@ export const createProfessionalQuiz = async (req, res) => {
 };
 
 // Helper function to call OpenRouter AI API for generating quiz questions
-const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, topic) => {
+const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, topic, grade = '', questionType = 'mixed') => {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
     throw new Error('OPENROUTER_API_KEY is not configured in environment');
   }
 
-  const topicClause = topic && topic.trim() ? ` focusing specifically on the topic: "${topic.trim()}"` : '';
+  const topicClause = topic && topic.trim() ? ` on "${topic.trim()}"` : '';
+  const gradeClause = grade && grade !== 'all' ? ` for grade ${grade}` : '';
 
-  const prompt = `Generate ${totalQuestions} multiple-choice quiz questions on ${subject}${topicClause} at ${difficulty} difficulty level.
-Return a JSON array with objects containing:
-{
-  "question": "Question text",
-  "options": ["Option A", "Option B", "Option C", "Option D"],
-  "correctAnswer": 0 (index of correct option, 0-3),
-  "explanation": "Brief explanation"
-}
+  let typeInstruction = '';
+  if (questionType === 'mixed') {
+    typeInstruction = 'Mix of multiple-choice, true-false, and short-answer questions.';
+  } else if (questionType === 'multiple-choice') {
+    typeInstruction = 'All questions must be multiple-choice with 4 options each.';
+  } else if (questionType === 'true-false') {
+    typeInstruction = 'All questions must be true-false with options ["True","False"].';
+  } else if (questionType === 'short-answer') {
+    typeInstruction = 'All questions must be short-answer (single word or number only).';
+  }
 
-Make the questions realistic, varied, and appropriate for ${difficulty} difficulty.
-Return ONLY the JSON array, no other text.`;
+  const prompt = `Generate ${totalQuestions} quiz questions for ${subject}${topicClause}${gradeClause}, ${difficulty} difficulty.
+${typeInstruction}
+
+Return a JSON array. Each object format:
+- MC: {"type":"multiple-choice","question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}
+- TF: {"type":"true-false","question":"...","options":["True","False"],"correctAnswer":0,"explanation":"..."}
+- SA: {"type":"short-answer","question":"...","options":[],"correctAnswer":"word or number","explanation":"..."}
+
+correctAnswer is index 0-3 for MC/TF, text string for short-answer.
+Short answers are single words or numeric values only.
+No trailing commas. Return ONLY valid JSON, no other text.`;
 
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -150,7 +184,7 @@ Return ONLY the JSON array, no other text.`;
         'X-Title': 'Learnkins',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
+        model: 'openrouter/free',
         messages: [
           {
             role: 'user',
@@ -158,7 +192,7 @@ Return ONLY the JSON array, no other text.`;
           },
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 8192,
       }),
     });
 
@@ -170,21 +204,40 @@ Return ONLY the JSON array, no other text.`;
     const data = await response.json();
     const content = data.choices[0]?.message?.content || '[]';
 
-    // Parse the response and sanitize
     let questions = [];
     try {
       questions = JSON.parse(content);
     } catch (e) {
-      // Try to extract JSON if wrapped in markdown
+      let cleaned = content;
+      // Remove markdown code fences
+      cleaned = cleaned.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/g, '');
+      // Remove any text before the first [ and after the last ]
+      const firstBracket = cleaned.indexOf('[');
+      const lastBracket = cleaned.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket !== -1) {
+        cleaned = cleaned.slice(firstBracket, lastBracket + 1);
+      }
       try {
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          questions = JSON.parse(jsonMatch[0]);
-        } else {
-          console.warn("Could not find JSON array in OpenRouter response");
+        questions = JSON.parse(cleaned);
+      } catch (e2) {
+        try {
+          // Fix trailing commas (common issue with LLM output)
+          cleaned = cleaned.replace(/,(\s*[\]}])/g, '$1');
+          questions = JSON.parse(cleaned);
+        } catch (e3) {
+          // Attempt recovery from truncated response
+          const truncatedMatch = content.match(/\{[^{}]*"question"\s*:\s*"[^"]*"[^{}]*\}/g);
+          if (truncatedMatch && truncatedMatch.length > 0) {
+            console.warn(`Recovered ${truncatedMatch.length} questions from truncated response`);
+            questions = truncatedMatch.map(q => {
+              try { return JSON.parse(q); } catch { return null; }
+            }).filter(Boolean);
+          }
+          if (questions.length === 0) {
+            console.error("Raw AI response content:", content);
+            throw new Error("Failed to parse AI response as JSON");
+          }
         }
-      } catch (parseError) {
-        console.error("Failed to parse extracted JSON array:", parseError);
       }
     }
 
@@ -200,7 +253,7 @@ Return ONLY the JSON array, no other text.`;
 // @access  Private
 export const createAIQuiz = async (req, res) => {
   try {
-    const { difficulty = 'Easy', subject = 'science', grade = 'all', title, totalQuestions = 10 } = req.body;
+    const { difficulty = 'Easy', subject = 'science', grade = 'all', title, totalQuestions = 10, questionType = 'mixed' } = req.body;
     const userId = req.user?.id;
 
     const allowedSubjects = ['science', 'mathematics', 'social-science', 'english'];
@@ -211,7 +264,7 @@ export const createAIQuiz = async (req, res) => {
     let aiQuestions = [];
     try {
       const topic = req.body.topic || '';
-      aiQuestions = await generateQuestionsWithOpenAI(difficulty, finalSubject, totalQuestions, topic);
+      aiQuestions = await generateQuestionsWithOpenAI(difficulty, finalSubject, totalQuestions, topic, grade, questionType);
     } catch (aiError) {
       console.warn('OpenAI generation failed, falling back to placeholder questions:', aiError.message);
       // Fallback to placeholder questions if OpenAI fails
@@ -219,6 +272,7 @@ export const createAIQuiz = async (req, res) => {
       for (let i = 0; i < totalQuestions; i++) {
         aiQuestions.push({
           question: `${difficulty} question ${i + 1} on ${finalSubject}${fallbackTopic}`,
+          type: 'multiple-choice',
           options: [
             `Option A for question ${i + 1}`,
             `Option B for question ${i + 1}`,
@@ -235,8 +289,9 @@ export const createAIQuiz = async (req, res) => {
     const questions = aiQuestions.map((q, i) => ({
       id: `${Date.now()}-${i}`,
       question: q.question,
-      options: q.options || ['A', 'B', 'C', 'D'],
-      correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
+      type: q.type || 'multiple-choice',
+      options: q.options || (q.type === 'true-false' ? ['True', 'False'] : ['A', 'B', 'C', 'D']),
+      correctAnswer: q.correctAnswer,
       explanation: q.explanation || '',
       points: pointsPerQuestion,
     }));
@@ -416,7 +471,14 @@ export const submitProfessionalQuiz = async (req, res) => {
 
     quiz.questions.forEach((question, index) => {
       const selectedAnswer = answers[index];
-      const isCorrect = selectedAnswer === question.correctAnswer;
+      let isCorrect = false;
+
+      if (question.type === 'short-answer') {
+        isCorrect = String(selectedAnswer).trim().toLowerCase() === String(question.correctAnswer).trim().toLowerCase();
+      } else {
+        isCorrect = selectedAnswer === question.correctAnswer;
+      }
+
       const pointsEarned = isCorrect ? (question.points || 1) : 0;
 
       totalPoints += (question.points || 1);
@@ -447,28 +509,9 @@ export const submitProfessionalQuiz = async (req, res) => {
 
     quiz.attempts.push(attempt);
 
-    // Update statistics
-    quiz.statistics.totalAttempts += 1;
-    if (passed) {
-      quiz.statistics.totalPassed += 1;
-    }
-
-    // Recalculate average score
-    const allScores = quiz.attempts.map(a => a.percentage);
-    quiz.statistics.averageScore = Math.round(
-      allScores.reduce((sum, score) => sum + score, 0) / allScores.length
-    );
-    quiz.statistics.passRate = Math.round(
-      (quiz.statistics.totalPassed / quiz.statistics.totalAttempts) * 100
-    );
-
-    // Recalculate average time
-    const allTimes = quiz.attempts.map(a => a.timeTaken || 0).filter(t => t > 0);
-    if (allTimes.length > 0) {
-      quiz.statistics.averageTime = Math.round(
-        allTimes.reduce((sum, time) => sum + time, 0) / allTimes.length
-      );
-    }
+    // Recalculate statistics
+    const stats = quiz.getStatistics();
+    quiz.statistics = stats;
 
     await quiz.save();
 
@@ -526,6 +569,55 @@ export const submitProfessionalQuiz = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while submitting professional quiz'
+    });
+  }
+};
+
+// @desc    Get all attempts across all quizzes for the logged-in user
+// @route   GET /api/professional-quizzes/my-attempts
+// @access  Private
+export const getAllUserAttempts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const quizzes = await ProfessionalQuiz.find(
+      { 'attempts.userId': userId },
+      { title: 1, subject: 1, difficulty: 1, totalQuestions: 1, questions: 1, attempts: 1 }
+    );
+
+    const allAttempts = quizzes.flatMap(quiz => {
+      const userAttempts = quiz.attempts.filter(
+        a => a.userId.toString() === userId
+      );
+      return userAttempts.map(attempt => ({
+        _id: attempt._id,
+        quizId: quiz._id,
+        quizTitle: quiz.title,
+        subject: quiz.subject,
+        difficulty: quiz.difficulty,
+        totalQuestions: quiz.totalQuestions,
+        score: attempt.score,
+        percentage: attempt.percentage,
+        passed: attempt.passed,
+        timeTaken: attempt.timeTaken,
+        attemptDate: attempt.attemptDate,
+        answers: attempt.answers,
+        questions: quiz.questions,
+      }));
+    });
+
+    allAttempts.sort((a, b) => new Date(b.attemptDate) - new Date(a.attemptDate));
+
+    res.status(200).json({
+      success: true,
+      count: allAttempts.length,
+      data: allAttempts
+    });
+  } catch (error) {
+    console.error('Get all user attempts error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching attempts'
     });
   }
 };

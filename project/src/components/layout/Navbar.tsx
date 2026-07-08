@@ -190,7 +190,7 @@ const Navbar = () => {
                               </button>
 
                               <Link
-                                to="/games-quiz"
+                                to="/quizzes"
                                 className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-2 border-transparent hover:border-orange-500 hover:bg-orange-50 rounded-xl transition-all"
                                 onClick={() => setIsGamesDropdownOpen(false)}
                               >
@@ -198,7 +198,8 @@ const Navbar = () => {
                                 <span> Quizzes</span>
                               </Link>
 
-                              <Link
+                              {/*
+                                       <Link
                                 to="/quizzes"
                                 className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-2 border-transparent hover:border-blue-500 hover:bg-blue-50 rounded-xl transition-all"
                                 onClick={() => setIsGamesDropdownOpen(false)}
@@ -206,6 +207,7 @@ const Navbar = () => {
                                 <GraduationCap size={20} strokeWidth={2.5} className="group-hover:text-blue-600" />
                                 <span>Professional Quizzes</span>
                               </Link>
+                              */}
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -275,16 +277,15 @@ const Navbar = () => {
                               {user?.email}
                             </div>
                             <div className="flex items-center gap-2 mt-2">
-                              <span className={`text-xs px-2 py-1 rounded-md font-bold uppercase tracking-wider border-2 ${
-                                user?.role === 'admin' ? 'bg-red-600 text-white border-red-600' :
-                                user?.role === 'parent' ? 'bg-orange-500 text-white border-orange-500' :
-                                user?.role === 'teacher' ? 'bg-green-600 text-white border-green-600' :
-                                'bg-indigo-600 text-white border-indigo-600'
-                              }`}>
+                              <span className={`text-xs px-2 py-1 rounded-md font-bold uppercase tracking-wider border-2 ${user?.role === 'admin' ? 'bg-red-600 text-white border-red-600' :
+                                  user?.role === 'parent' ? 'bg-orange-500 text-white border-orange-500' :
+                                    user?.role === 'teacher' ? 'bg-green-600 text-white border-green-600' :
+                                      'bg-indigo-600 text-white border-indigo-600'
+                                }`}>
                                 {user?.role === 'admin' ? '🛡️ Admin' :
-                                 user?.role === 'parent' ? '👨‍👩‍👧 Parent' :
-                                 user?.role === 'teacher' ? '🎓 Teacher' :
-                                 '📚 Student'}
+                                  user?.role === 'parent' ? '👨‍👩‍👧 Parent' :
+                                    user?.role === 'teacher' ? '🎓 Teacher' :
+                                      '📚 Student'}
                               </span>
                             </div>
                           </div>

@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowRight, Trophy, Clock, Users, Filter, Search, Star } from "lucide-react";
-import { professionalQuizAPI } from "../../utils/api";
+import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { ArrowRight, Trophy, Clock, Users, Search, Star } from "lucide-react";
+import { professionalQuizAPI, subjectAPI } from "../../utils/api";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
-import type { LucideIcon } from "lucide-react";
 
 interface ProfessionalQuiz {
   _id: string;
@@ -16,6 +15,7 @@ interface ProfessionalQuiz {
   timeLimit: number;
   totalQuestions: number;
   passingScore: number;
+  isAIGenerated?: boolean;
   statistics: {
     totalAttempts: number;
     averageScore: number;
@@ -27,75 +27,125 @@ const ProfessionalQuizzes = () => {
   const [searchParams] = useSearchParams();
   const initialSubject = searchParams.get("subject") || "all";
   // @ts-ignore
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const userGrade = user?.grade || "";
 
   const [quizzes, setQuizzes] = useState<ProfessionalQuiz[]>([]);
   const [filteredQuizzes, setFilteredQuizzes] = useState<ProfessionalQuiz[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState(initialSubject);
   const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [subjects, setSubjects] = useState<{ slug: string; name: string }[]>([]);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [newAIDifficulty, setNewAIDifficulty] = useState("Easy");
   const [aiLoading, setAILoading] = useState(false);
   const [aiTotalQuestions, setAiTotalQuestions] = useState(10);
   const [newAITopic, setNewAITopic] = useState("");
   const [newAISubject, setNewAISubject] = useState("science");
+  const [questionType, setQuestionType] = useState("mixed");
+  const [attemptsMap, setAttemptsMap] = useState<Record<string, any>>({});
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    fetchQuizzes();
-  }, []);
+    if (!isAuthenticated) {
+      setSubjects([
+        { slug: "science", name: "Science" },
+        { slug: "mathematics", name: "Mathematics" },
+        { slug: "social-science", name: "Social Science" },
+        { slug: "english", name: "English" },
+      ]);
+      return;
+    }
+    const fetchSubjects = async () => {
+      try {
+        const grade = userGrade || undefined;
+        const res = await subjectAPI.getSubjects(grade);
+        setSubjects(res.data?.data || []);
+      } catch {
+        // keep empty — "All Subjects" still works
+      }
+    };
+    fetchSubjects();
+  }, [userGrade, isAuthenticated]);
 
-  const fetchQuizzes = async () => {
+  useEffect(() => {
+    const abortController = new AbortController();
+    setPage(1);
+    fetchQuizzes(abortController.signal, 1);
+    return () => abortController.abort();
+  }, [selectedSubject, selectedDifficulty, filterType, location.key]);
+
+  const fetchQuizzes = async (signal?: AbortSignal, pageNumber = 1, append = false) => {
     try {
-      setLoading(true);
+      if (pageNumber === 1) setLoading(true);
+      else setLoadingMore(true);
       setError(null);
-      const response = await professionalQuizAPI.getQuizzes();
+      const params: Record<string, string> = { page: String(pageNumber), limit: '6' };
+      if (selectedSubject !== "all") params.subject = selectedSubject;
+      if (selectedDifficulty !== "all") params.difficulty = selectedDifficulty;
+      if (filterType !== "all") params.type = filterType;
+      const response = await professionalQuizAPI.getQuizzes(params, signal);
       const data = response.data?.data || [];
-      setQuizzes(data);
-      setFilteredQuizzes(data);
+      setTotal(response.data?.total || 0);
+      if (append) {
+        setQuizzes(prev => [...prev, ...data]);
+        setFilteredQuizzes(prev => [...prev, ...data]);
+      } else {
+        setQuizzes(data);
+        setFilteredQuizzes(data);
+      }
+      // Also fetch all user attempts to show "Review" on already-attempted cards
+      if (isAuthenticated) {
+        try {
+          const attemptsRes = await professionalQuizAPI.getAllMyAttempts();
+          const attempts = attemptsRes.data?.data || [];
+          const map: Record<string, any> = {};
+          for (const a of attempts) {
+            map[a.quizId] = a;
+          }
+          setAttemptsMap(map);
+        } catch (err) {
+          // non-critical
+        }
+      }
     } catch (err: any) {
+      if (err?.name === 'CanceledError') return;
       console.error("Error fetching professional quizzes:", err);
       setError(err?.response?.data?.message || "Failed to load professional quizzes");
       setQuizzes([]);
       setFilteredQuizzes([]);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  const handleLoadMore = async () => {
+    if (loadingMore) return;
+    const nextPage = page + 1;
+    await fetchQuizzes(undefined, nextPage, true);
+    setPage(nextPage);
+  };
+
   useEffect(() => {
-    let filtered = quizzes;
-
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (quiz) =>
-          quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          quiz.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (!searchTerm) {
+      setFilteredQuizzes(quizzes);
+      return;
     }
-
-    if (selectedSubject !== "all") {
-      filtered = filtered.filter((quiz) => quiz.subject === selectedSubject);
-    }
-
-    if (selectedDifficulty !== "all") {
-      filtered = filtered.filter((quiz) => quiz.difficulty === selectedDifficulty);
-    }
-
-    if (userGrade) {
-      filtered = filtered.filter((quiz) => {
-        const quizGrade = quiz.grade?.toString().toLowerCase().trim() || "";
-        return quizGrade === userGrade.toLowerCase().trim() ||
-               quizGrade.includes(userGrade.toLowerCase().trim()) ||
-               userGrade.toLowerCase().trim().includes(quizGrade);
-      });
-    }
-
+    const filtered = quizzes.filter(
+      (quiz) =>
+        quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        quiz.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
     setFilteredQuizzes(filtered);
-  }, [searchTerm, selectedSubject, selectedDifficulty, quizzes, userGrade]);
+  }, [searchTerm, quizzes]);
 
   const getDifficultyStyle = (difficulty: string) => {
     switch (difficulty) {
@@ -125,11 +175,15 @@ const ProfessionalQuizzes = () => {
     }
   };
 
+  const avgPassRate = quizzes.length
+    ? Math.round(quizzes.reduce((sum, q) => sum + q.statistics.passRate, 0) / quizzes.length)
+    : 0;
+
   const statItems = [
     { label: "Total Quizzes", value: quizzes.length.toString(), icon: <Trophy className="h-7 w-7" />, border: "border-cyan-500", color: "text-cyan-600" },
     { label: "Certifications", value: "12+", icon: <Star className="h-7 w-7" />, border: "border-yellow-500", color: "text-yellow-600" },
     { label: "Active Users", value: "5,000+", icon: <Users className="h-7 w-7" />, border: "border-green-500", color: "text-green-600" },
-    { label: "Avg. Pass Rate", value: "78%", icon: <Clock className="h-7 w-7" />, border: "border-purple-500", color: "text-purple-600" },
+    { label: "Avg. Pass Rate", value: `${avgPassRate}%`, icon: <Clock className="h-7 w-7" />, border: "border-purple-500", color: "text-purple-600" },
   ];
 
   return (
@@ -149,11 +203,11 @@ const ProfessionalQuizzes = () => {
             </Link>
             <ArrowRight className="h-4 w-4" />
             <span className="px-3 py-1.5 bg-white text-black rounded-lg border-2 border-white font-black">
-              Professional Quizzes
+              Quizzes
             </span>
           </div>
           <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-4">
-            Professional Quizzes
+             Quizzes
           </h1>
           <p className="text-lg text-gray-300 max-w-3xl mx-auto">
             Challenge yourself with certification-ready quizzes and earn credentials
@@ -186,13 +240,23 @@ const ProfessionalQuizzes = () => {
       {/* ── Main Content ── */}
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-black tracking-tight mb-2">
-              Available Professional Quizzes
-            </h2>
-            <p className="text-gray-600">
-              Choose from certification quizzes across multiple subjects
-            </p>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h2 className="text-3xl font-black text-black tracking-tight mb-2">
+                Available Professional Quizzes
+              </h2>
+              <p className="text-gray-600">
+                Choose from certification quizzes across multiple subjects
+              </p>
+            </div>
+            {isAuthenticated && (
+              <Link
+                to="/my-attempts"
+                className="flex items-center gap-2 px-4 py-2.5 bg-white text-black rounded-xl border-2 border-black font-bold text-sm hover:bg-black hover:text-white transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                My Attempts
+              </Link>
+            )}
           </div>
 
           {/* ── Filters & AI Generator ── */}
@@ -223,10 +287,9 @@ const ProfessionalQuizzes = () => {
                   className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 >
                   <option value="all">All Subjects</option>
-                  <option value="science">Science</option>
-                  <option value="mathematics">Mathematics</option>
-                  <option value="social-science">Social Science</option>
-                  <option value="english">English</option>
+                  {subjects.map(s => (
+                    <option key={s.slug} value={s.slug}>{s.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -244,17 +307,19 @@ const ProfessionalQuizzes = () => {
                   <option value="Hard">Hard</option>
                 </select>
               </div>
-              <div className="flex items-end">
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedSubject("all");
-                    setSelectedDifficulty("all");
-                  }}
-                  className="w-full px-4 py-2.5 border-2 border-black text-black rounded-xl hover:bg-black hover:text-white transition-all font-bold"
+              <div>
+                <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
+                  Type
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                 >
-                  <Filter className="h-4 w-4 mx-auto" />
-                </button>
+                  <option value="all">All Quiz</option>
+                  <option value="ai">AI Generated</option>
+                  <option value="teacher">By Teachers</option>
+                </select>
               </div>
             </div>
 
@@ -304,7 +369,22 @@ const ProfessionalQuizzes = () => {
                     className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
                   />
                 </div>
-                <div className="md:col-span-12">
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
+                    Question Type
+                  </label>
+                  <select
+                    value={questionType}
+                    onChange={(e) => setQuestionType(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  >
+                    <option value="mixed">Mixed (All Types)</option>
+                    <option value="multiple-choice">Multiple Choice</option>
+                    <option value="true-false">True / False</option>
+                    <option value="short-answer">Short Answer</option>
+                  </select>
+                </div>
+                <div className="md:col-span-3">
                   <label className="block text-xs font-black text-black uppercase tracking-wider mb-2">
                     Topic (optional)
                   </label>
@@ -320,12 +400,19 @@ const ProfessionalQuizzes = () => {
                   <button
                     disabled={aiLoading}
                     onClick={async () => {
+                      if (!isAuthenticated) {
+                        setShowAuthPrompt(true);
+                        return;
+                      }
                       try {
                         setAILoading(true);
                         const resp = await professionalQuizAPI.createAIQuiz({
                           difficulty: newAIDifficulty,
                           totalQuestions: aiTotalQuestions,
                           subject: newAISubject,
+                          topic: newAITopic,
+                          grade: userGrade,
+                          questionType,
                         });
                         const created = resp.data?.data;
                         if (created && created._id) {
@@ -378,90 +465,157 @@ const ProfessionalQuizzes = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredQuizzes.map((quiz) => (
-                <div
-                  key={quiz._id}
-                  className={`bg-white rounded-2xl border-2 ${getSubjectBorder(quiz.subject)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all overflow-hidden`}
-                >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getDifficultyStyle(quiz.difficulty)}`}
-                      >
-                        {quiz.difficulty}
-                      </span>
-                      <span
-                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getSubjectBorder(quiz.subject)} bg-white`}
-                      >
-                        {quiz.subject}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-black text-black mb-2 line-clamp-2">
-                      {quiz.title}
-                    </h3>
-
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {quiz.description}
-                    </p>
-
-                    <div className="grid grid-cols-3 gap-3 mb-5 py-4 border-t-2 border-b-2 border-black">
-                      <div className="text-center">
-                        <div className="text-lg font-black text-cyan-600">
-                          {quiz.totalQuestions}
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredQuizzes.map((quiz) => (
+                  <div
+                    key={quiz._id}
+                    className={`bg-white rounded-2xl border-2 ${getSubjectBorder(quiz.subject)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all overflow-hidden`}
+                  >
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex gap-1.5">
+                          {quiz.isAIGenerated && (
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-bold border border-purple-400 bg-purple-100 text-purple-900">
+                              AI
+                            </span>
+                          )}
+                          <span
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getDifficultyStyle(quiz.difficulty)}`}
+                          >
+                            {quiz.difficulty}
+                          </span>
                         </div>
-                        <div className="text-xs text-gray-600 font-bold">Questions</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-black text-green-600">
-                          {quiz.timeLimit}m
-                        </div>
-                        <div className="text-xs text-gray-600 font-bold">Time</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-lg font-black text-orange-600">
-                          {quiz.passingScore}%
-                        </div>
-                        <div className="text-xs text-gray-600 font-bold">Pass Score</div>
-                      </div>
-                    </div>
-
-                    <div className="mb-4 text-sm">
-                      <div className="flex justify-between text-gray-600 mb-1">
-                        <span className="font-bold">Avg Score</span>
-                        <span className="font-black">
-                          {Math.round(quiz.statistics.averageScore)}%
+                        <span
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${getSubjectBorder(quiz.subject)} bg-white`}
+                        >
+                          {quiz.subject}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 border border-black">
-                        <div
-                          className="bg-black h-full rounded-full"
-                          style={{
-                            width: `${Math.min(quiz.statistics.averageScore, 100)}%`,
-                          }}
-                        ></div>
+
+                      <h3 className="text-lg font-black text-black mb-2 line-clamp-2">
+                        {quiz.title}
+                      </h3>
+
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {quiz.description}
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-3 mb-5 py-4 border-t-2 border-b-2 border-black">
+                        <div className="text-center">
+                          <div className="text-lg font-black text-cyan-600">
+                            {quiz.totalQuestions}
+                          </div>
+                          <div className="text-xs text-gray-600 font-bold">Questions</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-green-600">
+                            {quiz.timeLimit}m
+                          </div>
+                          <div className="text-xs text-gray-600 font-bold">Time</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-orange-600">
+                            {quiz.passingScore}%
+                          </div>
+                          <div className="text-xs text-gray-600 font-bold">Pass Score</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center justify-between text-xs text-gray-600 mb-5 font-bold">
-                      <span>{quiz.statistics.totalAttempts} attempts</span>
-                      <span>{quiz.statistics.passRate}% pass rate</span>
-                    </div>
+                      <div className="mb-4 text-sm">
+                        <div className="flex justify-between text-gray-600 mb-1">
+                          <span className="font-bold">Avg Score</span>
+                          <span className="font-black">
+                            {Math.round(quiz.statistics.averageScore)}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 border border-black">
+                          <div
+                            className="bg-black h-full rounded-full"
+                            style={{
+                              width: `${Math.min(quiz.statistics.averageScore, 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
 
-                    <button
-                      onClick={() => navigate(`/professional-quiz/${quiz._id}`)}
-                      className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
-                    >
-                      Start Quiz
-                    </button>
+                      <div className="flex items-center justify-between text-xs text-gray-600 mb-5 font-bold">
+                        <span>{quiz.statistics.totalAttempts} attempts</span>
+                        <span>{quiz.statistics.passRate}% pass rate</span>
+                      </div>
+
+                    {attemptsMap[quiz._id] ? (
+                      <Link
+                        to={`/professional-quiz/${quiz._id}/attempt/${attemptsMap[quiz._id]._id}`}
+                        className="block w-full text-center py-2.5 px-4 rounded-xl border-2 border-yellow-500 bg-yellow-50 text-yellow-900 font-bold hover:bg-yellow-100 transition-all"
+                      >
+                        Review
+                      </Link>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            setShowAuthPrompt(true);
+                          } else {
+                            navigate(`/professional-quiz/${quiz._id}`);
+                          }
+                        }}
+                        className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
+                      >
+                        Start Quiz
+                      </button>
+                    )}
+                    </div>
                   </div>
+                ))}
+              </div>
+              {isAuthenticated && filteredQuizzes.length < total && (
+                <div className="text-center mt-8">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-8 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loadingMore ? "Loading..." : "Load More Quizzes"}
+                  </button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </section>
+
+      {/* ── Auth Prompt Modal ── */}
+      {showAuthPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl border-2 border-yellow-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setShowAuthPrompt(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold leading-none"
+            >
+              &times;
+            </button>
+            <h3 className="text-2xl font-black text-black mb-2">Login Required</h3>
+            <p className="text-gray-600 mb-6">
+              You need to sign in or create an account to take this quiz.
+            </p>
+            <Link
+              to="/login"
+              state={{ from: { pathname: location.pathname } }}
+              className="block w-full text-center px-6 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all mb-3"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              state={{ from: { pathname: location.pathname } }}
+              className="block w-full text-center px-6 py-3 bg-yellow-500 text-black rounded-xl border-2 border-yellow-500 font-black hover:bg-white hover:text-black transition-all"
+            >
+              Create Account
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -7,7 +7,8 @@ import {
   updateProfessionalQuiz,
   deleteProfessionalQuiz,
   submitProfessionalQuiz,
-  getUserAttempts
+  getUserAttempts,
+  getAllUserAttempts
 } from '../controllers/professionalQuizController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -15,6 +16,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getProfessionalQuizzes);
+router.get('/my-attempts', protect, getAllUserAttempts);
 router.get('/:id', getProfessionalQuiz);
 
 // Private routes (authenticated users)

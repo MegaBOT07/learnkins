@@ -27,7 +27,6 @@ import newsletterRoutes from './routes/newsletter.js';
 // Import models for seeding
 import User from "./models/User.js";
 import ShopItem from "./models/ShopItem.js";
-import ProfessionalQuiz from "./models/ProfessionalQuiz.js";
 import Material from "./models/Material.js";
 import Subject from "./models/Subject.js";
 import { seedAchievements } from "./seeds/seedAchievements.js";
@@ -281,7 +280,7 @@ const seedSubjects = async () => {
       },
       {
         name: "Mathematics",
-        slug: "maths",
+        slug: "mathematics",
         description: "Master mathematical concepts from basic arithmetic to advanced problem-solving techniques.",
         icon: "calculator",
         color: "#3b82f6",
@@ -331,79 +330,6 @@ const seedSubjects = async () => {
 
 const seedContent = async () => {
   try {
-    // --- Professional Quizzes ---
-    const quizCount = await ProfessionalQuiz.countDocuments();
-    if (quizCount === 0) {
-      const admin = await User.findOne({ role: 'admin' });
-      const adminId = admin?._id;
-      const quizzes = [
-        {
-          title: 'Science Fundamentals – Grade 6',
-          description: 'Test your knowledge of basic science concepts including matter, motion, and living organisms.',
-          subject: 'science', grade: '6th', difficulty: 'Easy', timeLimit: 20, passingScore: 60, totalQuestions: 5, createdBy: adminId, isActive: true,
-          questions: [
-            { id: 'sq1', question: 'What is the basic unit of life?', options: ['Cell', 'Atom', 'Molecule', 'Tissue'], correctAnswer: 0, explanation: 'The cell is the fundamental unit of life.', points: 1 },
-            { id: 'sq2', question: 'Which planet is closest to the Sun?', options: ['Venus', 'Earth', 'Mercury', 'Mars'], correctAnswer: 2, explanation: 'Mercury is the closest planet to the Sun.', points: 1 },
-            { id: 'sq3', question: 'What is the chemical formula of water?', options: ['H2O2', 'H2O', 'HO', 'OH2'], correctAnswer: 1, explanation: 'Water has two hydrogen atoms and one oxygen atom.', points: 1 },
-            { id: 'sq4', question: 'Which gas do plants absorb during photosynthesis?', options: ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Hydrogen'], correctAnswer: 2, explanation: 'Plants absorb CO2 and release oxygen during photosynthesis.', points: 1 },
-            { id: 'sq5', question: 'What is the force that pulls objects toward Earth?', options: ['Magnetism', 'Friction', 'Gravity', 'Tension'], correctAnswer: 2, explanation: 'Gravity is the force of attraction between objects.', points: 1 },
-          ]
-        },
-        {
-          title: 'Mathematics Challenge – Grade 6',
-          description: 'Solve arithmetic, fractions, and basic algebra problems for Grade 6 students.',
-          subject: 'mathematics', grade: '6th', difficulty: 'Medium', timeLimit: 25, passingScore: 60, totalQuestions: 5, createdBy: adminId, isActive: true,
-          questions: [
-            { id: 'mq1', question: 'What is 15% of 200?', options: ['25', '30', '35', '20'], correctAnswer: 1, explanation: '15/100 × 200 = 30', points: 1 },
-            { id: 'mq2', question: 'Simplify the fraction 12/16.', options: ['2/4', '3/4', '6/8', '1/2'], correctAnswer: 1, explanation: 'HCF of 12 and 16 is 4; 12÷4=3, 16÷4=4.', points: 1 },
-            { id: 'mq3', question: 'What is the value of x if 3x + 6 = 21?', options: ['3', '4', '5', '6'], correctAnswer: 2, explanation: '3x = 15, so x = 5.', points: 1 },
-            { id: 'mq4', question: 'What is the area of a rectangle with length 8 cm and width 5 cm?', options: ['13 cm²', '26 cm²', '40 cm²', '45 cm²'], correctAnswer: 2, explanation: 'Area = length × width = 8 × 5 = 40 cm².', points: 1 },
-            { id: 'mq5', question: 'The LCM of 4 and 6 is:', options: ['12', '24', '6', '8'], correctAnswer: 0, explanation: 'LCM(4,6) = 12', points: 1 },
-          ]
-        },
-        {
-          title: 'English Grammar Quiz – Grade 7',
-          description: 'Test your English grammar knowledge including tenses, parts of speech, and sentence structure.',
-          subject: 'english', grade: '7th', difficulty: 'Medium', timeLimit: 20, passingScore: 60, totalQuestions: 5, createdBy: adminId, isActive: true,
-          questions: [
-            { id: 'eq1', question: 'Choose the correct form: She ___ to school every day.', options: ['go', 'goes', 'going', 'gone'], correctAnswer: 1, explanation: 'Third person singular uses "goes" in present simple.', points: 1 },
-            { id: 'eq2', question: 'What is the noun in: "The brave soldier fought courageously"?', options: ['brave', 'soldier', 'fought', 'courageously'], correctAnswer: 1, explanation: '"soldier" is the noun (person).', points: 1 },
-            { id: 'eq3', question: 'Which sentence is correct?', options: ['I has a dog.', 'He have two cats.', 'They are happy.', 'She were late.'], correctAnswer: 2, explanation: '"They are happy" uses the correct form of "to be".', points: 1 },
-            { id: 'eq4', question: 'What is the plural of "child"?', options: ['childs', 'childes', 'children', 'childrens'], correctAnswer: 2, explanation: 'The irregular plural of child is children.', points: 1 },
-            { id: 'eq5', question: 'Choose the antonym of "ancient":', options: ['old', 'modern', 'historical', 'vintage'], correctAnswer: 1, explanation: 'Ancient means very old; modern is its opposite.', points: 1 },
-          ]
-        },
-        {
-          title: 'Social Science – History & Geography Grade 7',
-          description: 'Explore important historical events, geographical facts, and civics for Grade 7.',
-          subject: 'social-science', grade: '7th', difficulty: 'Easy', timeLimit: 20, passingScore: 60, totalQuestions: 5, createdBy: adminId, isActive: true,
-          questions: [
-            { id: 'ss1', question: 'Which is the largest continent by area?', options: ['Africa', 'North America', 'Asia', 'Europe'], correctAnswer: 2, explanation: 'Asia is the largest continent, covering about 44.6 million km².', points: 1 },
-            { id: 'ss2', question: 'Who was the first Prime Minister of India?', options: ['Mahatma Gandhi', 'Jawaharlal Nehru', 'Sardar Patel', 'Subhas Bose'], correctAnswer: 1, explanation: 'Jawaharlal Nehru served as India\'s first Prime Minister from 1947.', points: 1 },
-            { id: 'ss3', question: 'The French Revolution began in which year?', options: ['1776', '1789', '1804', '1815'], correctAnswer: 1, explanation: 'The French Revolution began in 1789.', points: 1 },
-            { id: 'ss4', question: 'Which river is the longest in the world?', options: ['Amazon', 'Nile', 'Yangtze', 'Mississippi'], correctAnswer: 1, explanation: 'The Nile River at ~6,650 km is considered the longest river.', points: 1 },
-            { id: 'ss5', question: 'The Preamble to the Indian Constitution begins with:', options: ['We the People', 'We the Citizens', 'We the Students', 'We the Nation'], correctAnswer: 0, explanation: 'The Preamble starts with "We, the People of India".', points: 1 },
-          ]
-        },
-        {
-          title: 'Advanced Science – Grade 8',
-          description: 'Challenge yourself with Grade 8 science: physics, chemistry, and biology topics.',
-          subject: 'science', grade: '8th', difficulty: 'Hard', timeLimit: 30, passingScore: 60, totalQuestions: 5, createdBy: adminId, isActive: true,
-          questions: [
-            { id: 'as1', question: 'What is the SI unit of electric current?', options: ['Volt', 'Watt', 'Ampere', 'Ohm'], correctAnswer: 2, explanation: 'Ampere (A) is the SI unit of electric current.', points: 1 },
-            { id: 'as2', question: 'Which type of cell division is responsible for growth and repair?', options: ['Meiosis', 'Mitosis', 'Binary Fission', 'Budding'], correctAnswer: 1, explanation: 'Mitosis produces two identical daughter cells for growth and repair.', points: 1 },
-            { id: 'as3', question: 'The atomic number of Carbon is:', options: ['6', '12', '8', '14'], correctAnswer: 0, explanation: 'Carbon has 6 protons, so its atomic number is 6.', points: 1 },
-            { id: 'as4', question: 'Newton\'s Second Law states that Force equals:', options: ['Mass + Acceleration', 'Mass × Acceleration', 'Mass / Acceleration', 'Mass - Acceleration'], correctAnswer: 1, explanation: 'F = ma (Force = mass × acceleration)', points: 1 },
-            { id: 'as5', question: 'Which gas is produced during the electrolysis of water at the cathode?', options: ['Oxygen', 'Hydrogen', 'Nitrogen', 'Carbon Dioxide'], correctAnswer: 1, explanation: 'Hydrogen gas is produced at the cathode during electrolysis of water.', points: 1 },
-          ]
-        },
-      ];
-      await ProfessionalQuiz.insertMany(quizzes);
-      console.log('✅ Professional quizzes seeded:', quizzes.length);
-    } else {
-      console.log('ℹ️ Quizzes already exist, skipping seed.');
-    }
-
     // --- Learning Materials (Videos with YouTube embed URLs) ---
     const matCount = await Material.countDocuments();
     if (matCount === 0) {
