@@ -119,6 +119,32 @@ const professionalQuizSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Get quiz statistics
+professionalQuizSchema.methods.getStatistics = function () {
+  const attempts = this.attempts;
+  if (attempts.length === 0) {
+    return {
+      totalAttempts: 0,
+      averageScore: 0,
+      totalPassed: 0,
+      passRate: 0,
+      averageTime: 0
+    };
+  }
+
+  const totalAttempts = attempts.length;
+  const totalPassed = attempts.filter(a => a.passed).length;
+  const averageScore = Math.round(
+    attempts.reduce((sum, a) => sum + a.percentage, 0) / totalAttempts
+  );
+  const passRate = Math.round((totalPassed / totalAttempts) * 100);
+  const averageTime = Math.round(
+    attempts.reduce((sum, a) => sum + (a.timeTaken || 0), 0) / totalAttempts
+  );
+
+  return { totalAttempts, averageScore, totalPassed, passRate, averageTime };
+};
+
 // Index for queries
 professionalQuizSchema.index({ subject: 1, grade: 1 });
 professionalQuizSchema.index({ isActive: 1, createdBy: 1 });

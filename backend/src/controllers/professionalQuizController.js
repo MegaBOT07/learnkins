@@ -9,21 +9,41 @@ import fetch from 'node-fetch';
 // @access  Public
 export const getProfessionalQuizzes = async (req, res) => {
   try {
-    const { subject, grade, difficulty } = req.query;
+    const { subject, difficulty, page = 1, limit = 6 } = req.query;
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
 
     let filter = { isActive: true };
+
+    const userInfo = req.headers['x-user-info'];
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        if (user.role === 'student' && user.grade) {
+          filter.grade = user.grade;
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+
     if (subject) filter.subject = subject;
-    if (grade) filter.grade = grade;
     if (difficulty) filter.difficulty = difficulty;
 
     const quizzes = await ProfessionalQuiz.find(filter)
       .select('-questions') // Don't send full questions in list
       .populate('createdBy', 'name email')
+      .limit(limitNumber)
+      .skip((pageNumber - 1) * limitNumber)
       .sort({ createdAt: -1 });
+
+    const total = await ProfessionalQuiz.countDocuments(filter);
 
     res.status(200).json({
       success: true,
       count: quizzes.length,
+      total,
       data: quizzes
     });
   } catch (error) {
@@ -447,28 +467,9 @@ export const submitProfessionalQuiz = async (req, res) => {
 
     quiz.attempts.push(attempt);
 
-    // Update statistics
-    quiz.statistics.totalAttempts += 1;
-    if (passed) {
-      quiz.statistics.totalPassed += 1;
-    }
-
-    // Recalculate average score
-    const allScores = quiz.attempts.map(a => a.percentage);
-    quiz.statistics.averageScore = Math.round(
-      allScores.reduce((sum, score) => sum + score, 0) / allScores.length
-    );
-    quiz.statistics.passRate = Math.round(
-      (quiz.statistics.totalPassed / quiz.statistics.totalAttempts) * 100
-    );
-
-    // Recalculate average time
-    const allTimes = quiz.attempts.map(a => a.timeTaken || 0).filter(t => t > 0);
-    if (allTimes.length > 0) {
-      quiz.statistics.averageTime = Math.round(
-        allTimes.reduce((sum, time) => sum + time, 0) / allTimes.length
-      );
-    }
+    // Recalculate statistics
+    const stats = quiz.getStatistics();
+    quiz.statistics = stats;
 
     await quiz.save();
 

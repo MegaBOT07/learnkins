@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { professionalQuizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
+// @ts-ignore
+import { useAuth } from "../../context/AuthContext";
 import { Clock, ArrowLeft, Trophy } from "lucide-react";
 
 interface Question {
@@ -35,12 +37,15 @@ interface ProfessionalQuizData {
 const ProfessionalQuiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  // @ts-ignore
+  const { isAuthenticated } = useAuth();
   const { award } = useTokens();
   const { takeQuiz, addPoints, addExperience } = useGame();
 
   const [quiz, setQuiz] = useState<ProfessionalQuizData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isStarted, setIsStarted] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
@@ -59,8 +64,13 @@ const ProfessionalQuiz = () => {
     try {
       setLoading(true);
       const response = await professionalQuizAPI.getQuiz(id || "");
-      setQuiz(response.data.data);
-      setTimeLeft((response.data.data.timeLimit || 30) * 60);
+      const quizData = response.data?.data;
+      if (!quizData) {
+        setError("Quiz not found");
+        return;
+      }
+      setQuiz(quizData);
+      setTimeLeft((quizData.timeLimit || 30) * 60);
     } catch (err: any) {
       console.error("Error fetching professional quiz:", err);
       setError(err?.response?.data?.message || "Failed to load quiz");
@@ -108,16 +118,14 @@ const ProfessionalQuiz = () => {
 
     try {
       setSubmitting(true);
-      const answers = selectedAnswers.map((answer) => answer);
-
       const response = await professionalQuizAPI.submitQuiz(
         quiz._id,
-        answers,
+        selectedAnswers,
         (quiz.timeLimit * 60) - timeLeft
       );
 
-      if (response.data.success) {
-        const { score: earnedScore, percentage: pct, passed: isPass } = response.data.data;
+      if (response.data?.success) {
+        const { score: earnedScore, percentage: pct, passed: isPass } = response.data.data || {};
 
         setScore(earnedScore);
         setPercentage(pct);
@@ -141,10 +149,10 @@ const ProfessionalQuiz = () => {
         }
 
         // Update game context stats (profile quizzesTaken, totalPoints)
+        // Note: XP is awarded server-side via user.addExperience(totalXP)
         try {
           takeQuiz();
           addPoints(earnedScore);
-          addExperience(Math.floor(pct / 2));
         } catch (err) {
           console.warn('Failed to update game progress', err);
         }
@@ -214,66 +222,104 @@ const ProfessionalQuiz = () => {
   /* ── Pre-Start Screen ── */
   if (!isStarted) {
     return (
-      <div className="min-h-screen bg-white p-6">
-        <div className="max-w-4xl mx-auto pt-8">
-          <div className="bg-white rounded-2xl border-2 border-black p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-black text-black mb-2">
-                  {quiz.title}
-                </h1>
-                <p className="text-gray-600">{quiz.description}</p>
-              </div>
-              <button
-                onClick={() => navigate("/professional-quizzes")}
-                className="w-10 h-10 rounded-xl border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-all"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              {[
-                { value: quiz.totalQuestions, label: "Questions", border: "border-cyan-500", color: "text-cyan-600" },
-                { value: `${quiz.timeLimit}m`, label: "Time Limit", border: "border-green-500", color: "text-green-600" },
-                { value: quiz.difficulty, label: "Difficulty", border: "border-orange-500", color: "text-orange-600" },
-                { value: `${quiz.passingScore}%`, label: "Pass Score", border: "border-purple-500", color: "text-purple-600" },
-              ].map((stat, idx) => (
-                <div key={idx} className={`text-center p-4 bg-white rounded-2xl border-2 ${stat.border} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
-                  <div className={`text-2xl font-black ${stat.color}`}>
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-gray-600 font-bold uppercase tracking-wider">{stat.label}</div>
+      <>
+        <div className="min-h-screen bg-white p-6">
+          <div className="max-w-4xl mx-auto pt-8">
+            <div className="bg-white rounded-2xl border-2 border-black p-8 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h1 className="text-3xl font-black text-black mb-2">
+                    {quiz.title}
+                  </h1>
+                  <p className="text-gray-600">{quiz.description}</p>
                 </div>
-              ))}
-            </div>
-
-            {quiz.certificateTemplate && (
-              <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-4 mb-8 flex items-center space-x-3">
-                <Trophy className="h-6 w-6 text-yellow-600" />
-                <span className="font-bold text-yellow-800">
-                  Earn a certificate upon passing this quiz
-                </span>
+                <button
+                  onClick={() => navigate("/professional-quizzes")}
+                  className="w-10 h-10 rounded-xl border-2 border-black flex items-center justify-center hover:bg-black hover:text-white transition-all"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <button
-                onClick={() => setIsStarted(true)}
-                className="w-full bg-black text-white py-4 px-8 rounded-xl border-2 border-black font-black text-lg hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(234,179,8,1)]"
-              >
-                Start Quiz
-              </button>
-              <button
-                onClick={() => navigate("/professional-quizzes")}
-                className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all"
-              >
-                Back to Quizzes
-              </button>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                {[
+                  { value: quiz.totalQuestions, label: "Questions", border: "border-cyan-500", color: "text-cyan-600" },
+                  { value: `${quiz.timeLimit}m`, label: "Time Limit", border: "border-green-500", color: "text-green-600" },
+                  { value: quiz.difficulty, label: "Difficulty", border: "border-orange-500", color: "text-orange-600" },
+                  { value: `${quiz.passingScore}%`, label: "Pass Score", border: "border-purple-500", color: "text-purple-600" },
+                ].map((stat, idx) => (
+                  <div key={idx} className={`text-center p-4 bg-white rounded-2xl border-2 ${stat.border} shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
+                    <div className={`text-2xl font-black ${stat.color}`}>
+                      {stat.value}
+                    </div>
+                    <div className="text-xs text-gray-600 font-bold uppercase tracking-wider">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {quiz.certificateTemplate && (
+                <div className="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-4 mb-8 flex items-center space-x-3">
+                  <Trophy className="h-6 w-6 text-yellow-600" />
+                  <span className="font-bold text-yellow-800">
+                    Earn a certificate upon passing this quiz
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setShowAuthPrompt(true);
+                    } else {
+                      setIsStarted(true);
+                    }
+                  }}
+                  className="w-full bg-black text-white py-4 px-8 rounded-xl border-2 border-black font-black text-lg hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_0px_rgba(234,179,8,1)]"
+                >
+                  Start Quiz
+                </button>
+                <button
+                  onClick={() => navigate("/professional-quizzes")}
+                  className="w-full bg-white text-black py-3 px-6 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all"
+                >
+                  Back to Quizzes
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+        {/* Auth Prompt Modal */}
+        {showAuthPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl border-2 border-yellow-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full mx-4 relative">
+              <button
+                onClick={() => setShowAuthPrompt(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold leading-none"
+              >
+                &times;
+              </button>
+              <h3 className="text-2xl font-black text-black mb-2">Login Required</h3>
+              <p className="text-gray-600 mb-6">
+                You need to sign in or create an account to take this quiz.
+              </p>
+              <Link
+                to="/login"
+                className="block w-full text-center px-6 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all mb-3"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="block w-full text-center px-6 py-3 bg-yellow-500 text-black rounded-xl border-2 border-yellow-500 font-black hover:bg-white hover:text-black transition-all"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 

@@ -76,17 +76,15 @@ export const checkAndAwardAchievements = async (userId) => {
           break;
 
         case 'special':
-          // Check level requirements
+          if (achievement.requirements?.studyHours > 0) {
+            unlocked = stats.studyHours >= achievement.requirements.studyHours;
+          }
           if (achievement.name.includes('Level')) {
             const levelMatch = achievement.name.match(/Level (\d+)/);
             if (levelMatch) {
               const targetLevel = parseInt(levelMatch[1]);
               unlocked = stats.level >= targetLevel;
             }
-          }
-          // Check study hours
-          if (achievement.name.includes('Learner') || achievement.name.includes('Scholar')) {
-            unlocked = stats.studyHours >= (achievement.name.includes('Dedicated') ? 10 : 50);
           }
           break;
 

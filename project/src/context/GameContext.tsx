@@ -1,17 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { progressAPI, authAPI, communityAPI } from '../utils/api';
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  unlocked: boolean;
-  progress: number;
-  maxProgress: number;
-  points: number;
-  category: 'learning' | 'social' | 'exploration' | 'mastery';
-}
+import {
+  CATEGORY_MAP,
+  mapBackendToFrontend,
+  defaultAchievements as sharedDefaultAchievements,
+  FrontendAchievement,
+  BackendAchievement,
+  UserStats,
+} from '../utils/achievements';
 
 interface UserProgress {
   level: number;
@@ -20,7 +16,7 @@ interface UserProgress {
   totalPoints: number;
   streak: number;
   lastLogin: Date;
-  achievements: Achievement[];
+  achievements: FrontendAchievement[];
   subjectsCompleted: string[];
   quizzesTaken: number;
   gamesPlayed: number;
@@ -37,91 +33,13 @@ interface GameContextType {
   takeQuiz: () => void;
   playGame: () => void;
   getLevelProgress: () => number;
-  getNextAchievement: () => Achievement | null;
+  getNextAchievement: () => FrontendAchievement | null;
   logActivity: (count?: number) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-const defaultAchievements: Achievement[] = [
-  {
-    id: 'first-login',
-    title: 'First Steps',
-    description: 'Welcome to LearnKins! Start your learning journey.',
-    icon: '🎯',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    points: 10,
-    category: 'exploration'
-  },
-  {
-    id: 'subject-master',
-    title: 'Subject Master',
-    description: 'Complete your first subject.',
-    icon: '📚',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    points: 50,
-    category: 'learning'
-  },
-  {
-    id: 'quiz-champion',
-    title: 'Quiz Champion',
-    description: 'Take your first quiz.',
-    icon: '🏆',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    points: 25,
-    category: 'learning'
-  },
-  {
-    id: 'game-player',
-    title: 'Game Player',
-    description: 'Play your first educational game.',
-    icon: '🎮',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    points: 30,
-    category: 'learning'
-  },
-  {
-    id: 'streak-builder',
-    title: 'Streak Builder',
-    description: 'Maintain a 7-day learning streak.',
-    icon: '🔥',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 7,
-    points: 100,
-    category: 'mastery'
-  },
-  {
-    id: 'knowledge-seeker',
-    title: 'Knowledge Seeker',
-    description: 'Complete 5 subjects.',
-    icon: '🧠',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 5,
-    points: 200,
-    category: 'mastery'
-  },
-  {
-    id: 'social-learner',
-    title: 'Social Learner',
-    description: 'Join the community and interact with other learners.',
-    icon: '👥',
-    unlocked: false,
-    progress: 0,
-    maxProgress: 1,
-    points: 40,
-    category: 'social'
-  }
-];
+const defaultAchievements: FrontendAchievement[] = sharedDefaultAchievements;
 
 const calculateExperienceToNext = (level: number): number => {
   return Math.floor(100 * Math.pow(1.5, level - 1));
@@ -158,48 +76,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   });
 
-  const CATEGORY_MAP: Record<string, string> = {
-    study: 'learning',
-    quiz: 'learning',
-    game: 'learning',
-    community: 'social',
-    streak: 'mastery',
-    special: 'exploration',
-  };
-
   const mapBackendAchievements = (
-    allAch: any[],
+    allAch: BackendAchievement[],
     earnedSet: Set<string>,
-    stats: any
-  ) => {
-    return allAch.map((ach: any) => {
-      const id = ach._id?.toString() || ach.id;
-      const unlocked = earnedSet.has(id);
-      const reqs = ach.requirements || {};
-
-      let maxProgress = 1;
-      let currentProgress = 0;
-
-      if (reqs.studyHours) { maxProgress = reqs.studyHours; currentProgress = stats?.totalStudyHours || 0; }
-      else if (reqs.quizzesTaken) { maxProgress = reqs.quizzesTaken; currentProgress = stats?.totalQuizzesTaken || 0; }
-      else if (reqs.gamesPlayed) { maxProgress = reqs.gamesPlayed; currentProgress = stats?.totalGamesPlayed || 0; }
-      else if (reqs.streakDays) { maxProgress = reqs.streakDays; currentProgress = stats?.currentStreak || 0; }
-      else if (reqs.perfectScores) { maxProgress = reqs.perfectScores; }
-      else if (reqs.communityPosts) { maxProgress = reqs.communityPosts; currentProgress = stats?.communityPosts || 0; }
-      else if (unlocked) { currentProgress = 1; }
-
-      return {
-        id,
-        title: ach.name,
-        description: ach.description,
-        icon: ach.icon || '🎯',
-        unlocked,
-        progress: unlocked ? maxProgress : Math.min(currentProgress, maxProgress),
-        maxProgress,
-        points: ach.points || 0,
-        category: CATEGORY_MAP[ach.category] || 'exploration',
-      };
-    });
+    stats?: UserStats
+  ): FrontendAchievement[] => {
+    return allAch.map((ach) => mapBackendToFrontend(ach, earnedSet, stats));
   };
 
   // ── Sync with real server data once on mount ─────────────────
@@ -381,7 +263,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return (userProgress.experience / userProgress.experienceToNext) * 100;
   };
 
-  const getNextAchievement = (): Achievement | null => {
+  const getNextAchievement = (): FrontendAchievement | null => {
     return userProgress.achievements.find(a => !a.unlocked) || null;
   };
 

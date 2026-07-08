@@ -99,6 +99,14 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    totalFlashcardsRead: {
+      type: Number,
+      default: 0,
+    },
+    perfectScores: {
+      type: Number,
+      default: 0,
+    },
     currentStreak: {
       type: Number,
       default: 0,

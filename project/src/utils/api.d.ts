@@ -483,7 +483,7 @@ export interface CommunityAPI {
 }
 
 export interface ProfessionalQuizAPI {
-  getQuizzes: (params?: any) => Promise<AxiosResponse<any>>;
+  getQuizzes: (params?: any, signal?: AbortSignal) => Promise<AxiosResponse<any>>;
   getQuiz: (id: string) => Promise<AxiosResponse<any>>;
   createQuiz: (quizData: any) => Promise<AxiosResponse<any>>;
   createAIQuiz: (payload: { difficulty?: string; subject?: string; grade?: string; title?: string; totalQuestions?: number }) => Promise<AxiosResponse<any>>;
