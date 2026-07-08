@@ -1,5 +1,5 @@
 import React, { useState, FormEvent, ChangeEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
@@ -36,6 +36,8 @@ const Register: React.FC = () => {
 
   const { register, error, clearError } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as any)?.from?.pathname || '/';
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -102,7 +104,7 @@ const Register: React.FC = () => {
       if (result.user.role === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/');
+        navigate(from, { replace: true });
       }
     }
 

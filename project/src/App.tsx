@@ -21,6 +21,8 @@ import Game from "./pages/games/Game";
 import VideoPage from "./pages/media/VideoPage";
 import ProfessionalQuizzes from "./pages/assessment/ProfessionalQuizzes";
 import ProfessionalQuiz from "./pages/assessment/ProfessionalQuiz";
+import MyQuizAttempts from "./pages/assessment/MyQuizAttempts";
+import QuizAttemptReview from "./pages/assessment/QuizAttemptReview";
 
 import Community from "./pages/community/Community";
 import StudyGroupDetail from "./pages/community/StudyGroupDetail";
@@ -134,6 +136,8 @@ function AppLayout() {
           <Route path="/professional-quizzes" element={<Navigate to="/quizzes" replace />} />
           <Route path="/game/:id" element={<Game />} />
           <Route path="/professional-quiz/:id" element={<ProfessionalQuiz />} />
+          <Route path="/professional-quiz/:id/attempt/:attemptId" element={<QuizAttemptReview />} />
+          <Route path="/my-attempts" element={<MyQuizAttempts />} />
 
           <Route path="/community" element={<Community />} />
           <Route path="/community/groups/:id" element={<StudyGroupDetail />} />
@@ -184,9 +188,9 @@ function App() {
     localStorage.setItem("hasSeenStartupAnimation", "true");
   };
 
-  if (showStartupAnimation) {
-    return <StartupAnimation onComplete={handleAnimationComplete} />;
-  }
+  // if (showStartupAnimation) {
+  //   return <StartupAnimation onComplete={handleAnimationComplete} />;
+  // }
 
   return (
     <AuthProvider>

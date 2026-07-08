@@ -258,6 +258,7 @@ export const professionalQuizAPI = {
   deleteQuiz: (id) => api.delete(`/professional-quizzes/${id}`),
   submitQuiz: (id, answers, timeTaken) => api.post(`/professional-quizzes/${id}/submit`, { answers, timeTaken }),
   getUserAttempts: (id) => api.get(`/professional-quizzes/${id}/attempts`),
+  getAllMyAttempts: () => api.get('/professional-quizzes/my-attempts'),
 };
 
 // Payment API
