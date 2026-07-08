@@ -250,7 +250,7 @@ export const adminAPI = {
 
 // Professional Quiz API
 export const professionalQuizAPI = {
-  getQuizzes: (params = {}) => api.get('/professional-quizzes', { params }),
+  getQuizzes: (params = {}, signal) => api.get('/professional-quizzes', { params, signal }),
   getQuiz: (id) => api.get(`/professional-quizzes/${id}`),
   createQuiz: (quizData) => api.post('/professional-quizzes', quizData),
   createAIQuiz: (payload) => api.post('/professional-quizzes/ai-generate', payload),

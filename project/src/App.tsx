@@ -133,7 +133,6 @@ function AppLayout() {
           <Route path="/quiz" element={<Navigate to="/quizzes" replace />} />
           <Route path="/professional-quizzes" element={<Navigate to="/quizzes" replace />} />
           <Route path="/game/:id" element={<Game />} />
-          <Route path="/professional-quizzes" element={<ProfessionalQuizzes />} />
           <Route path="/professional-quiz/:id" element={<ProfessionalQuiz />} />
 
           <Route path="/community" element={<Community />} />

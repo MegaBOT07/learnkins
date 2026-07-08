@@ -4,54 +4,70 @@ import {
   Trophy, Star, Target, Award, TrendingUp, BarChart3, Crown, Flame, Brain, BookOpen, Users, Compass, BarChart2, Beaker, AlertCircle
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { progressAPI, userAPI, quizAPI, gameAPI } from "../../utils/api";
+import { progressAPI, userAPI, communityAPI } from "../../utils/api";
 import LevelDisplay from "../../components/features/progress/LevelDisplay";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
 import ActivityHeatmap from "../../components/features/progress/ActivityHeatmap";
+import {
+  fetchAchievementsWithCache,
+  consumeNewAchievements,
+  FrontendAchievement,
+  CATEGORY_LABELS,
+} from "../../utils/achievements";
+
+const CATEGORIES = [
+  { id: "all", name: "All", icon: <Trophy className="w-5 h-5" /> },
+  { id: "learning", name: "Learning", icon: <BookOpen className="w-5 h-5" /> },
+  { id: "social", name: "Social", icon: <Users className="w-5 h-5" /> },
+  { id: "exploration", name: "Exploration", icon: <Compass className="w-5 h-5" /> },
+  { id: "mastery", name: "Mastery", icon: <Crown className="w-5 h-5" /> },
+];
 
 const Progress = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [userProgress, setUserProgress] = useState<any>(null);
+  const [achievements, setAchievements] = useState<FrontendAchievement[]>([]);
+  const [userStats, setUserStats] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [newAchievements, setNewAchievements] = useState<any[]>([]);
-
-  const categories = [
-    { id: "all", name: "All", icon: <Trophy className="w-5 h-5" /> },
-    { id: "study", name: "Study", icon: <BookOpen className="w-5 h-5" /> },
-    { id: "quiz", name: "Quiz", icon: <Beaker className="w-5 h-5" /> },
-    { id: "game", name: "Games", icon: <BarChart2 className="w-5 h-5" /> },
-    { id: "streak", name: "Streaks", icon: <Flame className="w-5 h-5" /> },
-    { id: "special", name: "Special", icon: <Crown className="w-5 h-5" /> },
-  ];
+  const [isCached, setIsCached] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const userId = user?._id || user?.id;
-        const userRes = await userAPI.getUser(userId || '');
-        
-        if (userRes.data) {
-          const userData = userRes.data.data || userRes.data;
-          
-          setUserProgress({
-            level: userData.level || 1,
-            experience: userData.experience || 0,
-            experienceToNext: 100,
-            totalPoints: userData.points || 0,
-            totalStudyHours: userData.totalStudyHours || 0,
-            quizzesTaken: userData.totalQuizzesTaken || 0,
-            gamesPlayed: userData.totalGamesPlayed || 0,
-            streak: userData.currentStreak || 0,
-            longestStreak: userData.longestStreak || 0,
-            achievements: userData.achievements || [],
-            activityLogs: {},
-            subjectsCompleted: [],
-          });
+
+        const result = await fetchAchievementsWithCache(
+          () => communityAPI.getAchievements(),
+          () => communityAPI.getUserAchievements(),
+          () => userAPI.getUser(user?._id || user?.id || ''),
+        );
+
+        setAchievements(result.achievements);
+        setIsCached(result.fromCache);
+
+        const me = result.userStats;
+        setUserStats({
+          level: me.level || 1,
+          experience: me.experience || 0,
+          experienceToNext: 100,
+          totalPoints: me.totalPoints || 0,
+          streak: me.currentStreak || 0,
+          totalStudyHours: me.totalStudyHours || 0,
+          quizzesTaken: me.totalQuizzesTaken || 0,
+          gamesPlayed: me.totalGamesPlayed || 0,
+          longestStreak: me.longestStreak || 0,
+          subjectsCompleted: [],
+          activityLogs: {},
+        });
+
+        const newAch = consumeNewAchievements();
+        if (newAch.length > 0) {
+          setNewAchievements(newAch);
         }
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching progress:', err);
@@ -59,7 +75,7 @@ const Progress = () => {
         setLoading(false);
       }
     };
-    
+
     if (user?._id || user?.id) {
       fetchData();
     } else if (user) {
@@ -76,7 +92,7 @@ const Progress = () => {
     );
   }
 
-  if (error || !userProgress) {
+  if (error || !userStats) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-xl font-bold text-red-500">{error || 'Failed to load data'}</div>
@@ -86,17 +102,13 @@ const Progress = () => {
 
   const filteredAchievements =
     selectedCategory === "all"
-      ? userProgress.achievements
-      : userProgress.achievements.filter(
-          (a: any) => a.category === selectedCategory
-        );
+      ? achievements
+      : achievements.filter((a) => a.category === selectedCategory);
 
-  const unlockedAchievements = userProgress.achievements.filter(
-    (a: any) => a.unlocked
-  );
-  const totalPoints = userProgress.totalPoints;
+  const unlockedAchievements = achievements.filter((a) => a.unlocked);
+  const totalPoints = userStats.totalPoints;
   const completionRate =
-    (unlockedAchievements.length / userProgress.achievements.length) * 100;
+    (unlockedAchievements.length / achievements.length) * 100;
 
   const stats = [
     {
@@ -108,7 +120,7 @@ const Progress = () => {
     },
     {
       title: "Achievements",
-      value: `${unlockedAchievements.length}/${userProgress.achievements.length}`,
+      value: `${unlockedAchievements.length}/${achievements.length}`,
       icon: Trophy,
       color: "text-green-500",
       border: "border-green-500",
@@ -122,7 +134,7 @@ const Progress = () => {
     },
     {
       title: "Streak",
-      value: `${userProgress.streak} days`,
+      value: `${userStats.streak} days`,
       icon: Flame,
       color: "text-orange-500",
       border: "border-orange-500",
@@ -152,6 +164,14 @@ const Progress = () => {
             </p>
           </div>
         </motion.section>
+
+        {/* Cache indicator */}
+        {isCached && (
+          <div className="mb-4 px-4 py-2 bg-blue-50 border border-blue-300 rounded-lg text-sm text-blue-700 flex items-center">
+            <AlertCircle className="w-4 h-4 mr-2" />
+            Using cached data — connect to server for live updates
+          </div>
+        )}
 
         {/* New Achievements Notification */}
         {newAchievements.length > 0 && (
@@ -183,11 +203,11 @@ const Progress = () => {
           transition={{ delay: 0.2, duration: 0.6 }}
         >
           <LevelDisplay
-            level={userProgress.level}
-            experience={userProgress.experience}
-            experienceToNext={userProgress.experienceToNext}
-            totalPoints={userProgress.totalPoints}
-            streak={userProgress.streak}
+            level={userStats.level}
+            experience={userStats.experience}
+            experienceToNext={userStats.experienceToNext}
+            totalPoints={userStats.totalPoints}
+            streak={userStats.streak}
           />
         </motion.div>
 
@@ -239,7 +259,7 @@ const Progress = () => {
                   Achievements
                 </h2>
                 <div className="flex space-x-2 flex-wrap">
-                  {categories.map((category) => (
+                  {CATEGORIES.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
@@ -284,24 +304,24 @@ const Progress = () => {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-bold text-black">Subjects Completed</span>
                     <span className="font-black">
-                      {userProgress.subjectsCompleted.length}
+                      {userStats.subjectsCompleted?.length || 0}
                     </span>
                   </div>
-                  <ProgressBar progress={userProgress.subjectsCompleted.length} maxProgress={4} />
+                  <ProgressBar progress={userStats.subjectsCompleted?.length || 0} maxProgress={4} />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-bold text-black">Quizzes Taken</span>
-                    <span className="font-black">{userProgress.quizzesTaken}</span>
+                    <span className="font-black">{userStats.quizzesTaken}</span>
                   </div>
-                  <ProgressBar progress={userProgress.quizzesTaken} maxProgress={10} />
+                  <ProgressBar progress={userStats.quizzesTaken} maxProgress={10} />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-bold text-black">Games Played</span>
-                    <span className="font-black">{userProgress.gamesPlayed}</span>
+                    <span className="font-black">{userStats.gamesPlayed}</span>
                   </div>
-                  <ProgressBar progress={userProgress.gamesPlayed} maxProgress={5} />
+                  <ProgressBar progress={userStats.gamesPlayed} maxProgress={5} />
                 </div>
               </div>
             </motion.div>

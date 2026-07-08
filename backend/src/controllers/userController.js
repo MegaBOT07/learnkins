@@ -214,14 +214,15 @@ export const getUserAchievements = async (req, res) => {
       });
     }
 
-    const achievements = await Achievement.find({
-      'earnedBy.user': id
-    });
+    const user = await User.findById(id).populate('achievements');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.status(200).json({
       success: true,
-      count: achievements.length,
-      data: achievements
+      count: user.achievements?.length || 0,
+      data: user.achievements || []
     });
   } catch (error) {
     console.error('Get user achievements error:', error);
