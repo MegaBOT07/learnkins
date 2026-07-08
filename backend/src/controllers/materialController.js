@@ -1,12 +1,26 @@
+import path from 'path';
+import fs from 'fs';
 import Material from '../models/Material.js';
-import { v2 as cloudinary } from 'cloudinary';
 
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
+const MIME_TYPES = {
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.xls': 'application/vnd.ms-excel',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.txt': 'text/plain',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+};
+
+const UPLOADS_DIR = path.resolve('uploads');
 
 // @desc    Get all materials
 // @route   GET /api/materials
@@ -14,7 +28,7 @@ cloudinary.config({
 export const getMaterials = async (req, res) => {
   try {
     const { subject, type, grade, page = 1, limit = 10 } = req.query;
-    
+
     let filter = { isPublic: true };
     if (subject) filter.subject = subject;
     if (type) filter.type = type;
@@ -78,29 +92,11 @@ export const createMaterial = async (req, res) => {
   try {
     const { title, description, type, subject, chapter, grade, tags, difficulty } = req.body;
 
-    let fileUrl = req.body.fileUrl || ''; // accept direct URL (YouTube embed, video URL)
+    let fileUrl = req.body.fileUrl || '';
     let thumbnailUrl = req.body.thumbnailUrl || '';
 
     if (req.file) {
-      // Upload to Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: 'brillix/materials',
-        resource_type: 'auto'
-      });
-      
-      fileUrl = result.secure_url;
-      
-      // Generate thumbnail for videos
-      if (type === 'video') {
-        const thumbnailResult = await cloudinary.uploader.upload(req.file.path, {
-          folder: 'brillix/thumbnails',
-          transformation: [
-            { width: 300, height: 200, crop: 'fill' },
-            { quality: 'auto' }
-          ]
-        });
-        thumbnailUrl = thumbnailResult.secure_url;
-      }
+      fileUrl = `/uploads/${req.file.filename}`;
     }
 
     const material = await Material.create({
@@ -180,6 +176,13 @@ export const deleteMaterial = async (req, res) => {
       });
     }
 
+    if (material.fileUrl && material.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.join(UPLOADS_DIR, path.basename(material.fileUrl));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
     await material.deleteOne();
 
     res.status(200).json({
@@ -209,22 +212,60 @@ export const downloadMaterial = async (req, res) => {
       });
     }
 
-    // Increment download count
     await material.incrementDownload();
 
-    res.status(200).json({
-      success: true,
-      data: {
-        downloadUrl: material.fileUrl,
-        filename: material.title
+    if (material.fileUrl && material.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.join(UPLOADS_DIR, path.basename(material.fileUrl));
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ success: false, message: 'File not found on server' });
       }
-    });
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+      const filename = `${material.title}${ext}`;
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      fs.createReadStream(filePath).pipe(res);
+    } else if (material.fileUrl) {
+      res.redirect(material.fileUrl);
+    } else {
+      res.status(404).json({ success: false, message: 'No file available' });
+    }
   } catch (error) {
     console.error('Download material error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
     });
+  }
+};
+
+// @desc    View material file inline
+// @route   GET /api/materials/:id/view
+// @access  Public
+export const viewMaterial = async (req, res) => {
+  try {
+    const material = await Material.findById(req.params.id);
+    if (!material || !material.fileUrl) {
+      return res.status(404).json({ success: false, message: 'Material not found' });
+    }
+
+    if (material.fileUrl.startsWith('/uploads/')) {
+      const filePath = path.join(UPLOADS_DIR, path.basename(material.fileUrl));
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ success: false, message: 'File not found on server' });
+      }
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+      const isInline = mimeType === 'application/pdf' || mimeType.startsWith('image/');
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
+      fs.createReadStream(filePath).pipe(res);
+    } else {
+      res.redirect(material.fileUrl);
+    }
+  } catch (error) {
+    console.error('View material error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 };
 

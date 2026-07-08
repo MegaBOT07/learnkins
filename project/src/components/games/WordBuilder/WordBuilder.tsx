@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useGameProgress } from '../../../hooks/useGameProgress';
 import {
     Home, Heart, Clock, Zap, RotateCcw, BookOpen, Shuffle,
     ArrowRight, CheckCircle, XCircle, Type
@@ -45,6 +46,9 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 };
 
 const WordBuilder: React.FC = () => {
+    const { startGame: trackStart, completeGame: trackComplete } = useGameProgress('word-builder', 'Word Builder');
+    const hasTrackedRef = useRef(false);
+
     const [gameState, setGameState] = useState<'menu' | 'playing' | 'result'>('menu');
     const [current, setCurrent] = useState(0);
     const [score, setScore] = useState(0);
@@ -78,6 +82,7 @@ const WordBuilder: React.FC = () => {
     }, [timeLeft]);
 
     const startGame = () => {
+        trackStart(); hasTrackedRef.current = false;
         setGameState('playing'); setCurrent(0); setScore(0); setLives(3);
         setStreak(0); setUserInput(''); setFeedback(null); setTimeLeft(35);
         setShowHint(false); setSolved(0);
@@ -104,6 +109,14 @@ const WordBuilder: React.FC = () => {
         if (lives <= 0 || current + 1 >= challenges.length) { setGameState('result'); return; }
         setCurrent(p => p + 1); setUserInput(''); setFeedback(null); setTimeLeft(35); setShowHint(false);
     };
+
+    useEffect(() => {
+        if (gameState === 'result' && !hasTrackedRef.current) {
+            hasTrackedRef.current = true;
+            const maxScore = challenges.length * 20;
+            trackComplete(score, maxScore, score >= 70 ? 'Hard' : 'Medium');
+        }
+    }, [gameState]);
 
     if (gameState === 'menu') {
         return (
