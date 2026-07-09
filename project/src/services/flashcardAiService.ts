@@ -5,10 +5,22 @@ export interface FlashcardAiResponse {
   error?: string;
 }
 
+export interface AiGenerationParams {
+  topic: string;
+  subject?: string;
+  difficulty?: string;
+  count?: number;
+}
+
 class FlashcardAiService {
-  async generateFlashcards(topic: string): Promise<FlashcardAiResponse> {
+  async generateFlashcards(params: AiGenerationParams): Promise<FlashcardAiResponse> {
     try {
-      const response = await flashcardAPI.generateAIFlashcards(topic);
+      const response = await flashcardAPI.generateAIFlashcards({
+        topic: params.topic,
+        subject: params.subject || 'science',
+        difficulty: params.difficulty || 'Medium',
+        count: params.count || 5,
+      });
       const cards = response.data?.data || [];
 
       if (!Array.isArray(cards) || cards.length === 0) {
@@ -28,6 +40,21 @@ class FlashcardAiService {
         "Failed to generate flashcards";
       console.error("Flashcard AI generation error:", error);
       return { message: "", error: msg };
+    }
+  }
+
+  async saveGeneratedFlashcards(cards: any[]): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+      const response = await flashcardAPI.batchCreateFlashcards(cards);
+      const saved = response.data?.data || [];
+      return { success: true, data: saved };
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to save flashcards";
+      console.error("Save flashcards error:", error);
+      return { success: false, error: msg };
     }
   }
 }

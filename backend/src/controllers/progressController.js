@@ -230,6 +230,37 @@ export const logStudySession = async (req, res) => {
   }
 };
 
+// @desc    Log game completion activity
+// @route   POST /api/progress/game-activity
+// @access  Private
+export const logGameActivity = async (req, res) => {
+  try {
+    const { gameTitle, score, maxScore, difficulty } = req.body;
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+    await user.save();
+
+    const newAchievements = await checkAndAwardAchievements(user._id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Game activity logged',
+      newAchievements
+    });
+  } catch (error) {
+    console.error('Log game activity error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 // @desc    Log video watch progress
 // @route   POST /api/progress/video
 // @access  Private

@@ -113,9 +113,8 @@ flashcardSchema.methods.incrementStudyCount = async function(userId) {
 
 // Add rating
 flashcardSchema.methods.addRating = async function(userId, rating) {
-  // Check if user already rated
   const existingRating = this.rating.ratings.find(
-    r => r.user.toString() === userId.toString()
+    r => r.user && r.user.toString() === userId.toString()
   );
 
   if (existingRating) {
@@ -125,9 +124,10 @@ flashcardSchema.methods.addRating = async function(userId, rating) {
     this.rating.count += 1;
   }
 
-  // Recalculate average
-  const totalRating = this.rating.ratings.reduce((sum, r) => sum + r.rating, 0);
-  this.rating.average = totalRating / this.rating.ratings.length;
+  const totalRating = this.rating.ratings.reduce((sum, r) => sum + (r.rating || 0), 0);
+  this.rating.average = this.rating.ratings.length > 0
+    ? totalRating / this.rating.ratings.length
+    : 0;
 
   await this.save();
 };

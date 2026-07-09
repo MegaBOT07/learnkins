@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTokens } from "../../context/TokenContext";
+import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -13,6 +14,7 @@ import {
   Search,
   Filter,
   Star,
+  Save,
 } from "lucide-react";
 import { flashcardAPI } from "../../utils/api";
 import { flashcardAiService } from "../../services/flashcardAiService";
@@ -52,12 +54,18 @@ const Flashcards = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [aiTopic, setAiTopic] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiPreviewCards, setAiPreviewCards] = useState<Flashcard[]>([]);
+  const [aiSubject, setAiSubject] = useState("science");
+  const [aiDifficulty, setAiDifficulty] = useState("Medium");
+  const [aiCount, setAiCount] = useState(5);
+  const [aiSaving, setAiSaving] = useState(false);
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
   const { redeem, canRedeem } = useTokens();
+  const { isAuthenticated } = useAuth();
   const [unlocked, setUnlocked] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem("learnkins_unlocked") || "{}";
@@ -190,6 +198,11 @@ const Flashcards = () => {
   };
 
   const generateFlashcardsWithAI = async () => {
+    if (!isAuthenticated) {
+      setShowAuthPrompt(true);
+      return;
+    }
+
     if (!aiTopic.trim()) {
       setAiError("Please enter a topic");
       return;
@@ -201,7 +214,12 @@ const Flashcards = () => {
     setStudyCards(null);
 
     try {
-      const response = await flashcardAiService.generateFlashcards(aiTopic);
+      const response = await flashcardAiService.generateFlashcards({
+        topic: aiTopic,
+        subject: aiSubject,
+        difficulty: aiDifficulty,
+        count: aiCount,
+      });
       if (response.error) {
         setAiError(response.error);
         setAiGenerating(false);
@@ -275,6 +293,51 @@ const Flashcards = () => {
     }
   };
 
+  const saveGeneratedCards = async () => {
+    if (aiPreviewCards.length === 0) return;
+
+    setAiSaving(true);
+    try {
+      const cardsToSave = aiPreviewCards.map((c) => ({
+        question: c.question,
+        answer: c.answer,
+        subject: c.subject,
+        difficulty: c.difficulty,
+        tags: c.tags,
+        isPublic: true,
+      }));
+
+      const result = await flashcardAiService.saveGeneratedFlashcards(cardsToSave);
+
+      if (result.success && result.data) {
+        const normalizedSaved = result.data.map((card: any) => ({
+          id: card._id || card.id || String(Date.now()),
+          question: card.question || "",
+          answer: card.answer || "",
+          subject: card.subject || "",
+          difficulty: card.difficulty || "Medium",
+          tags: Array.isArray(card.tags) ? card.tags : [],
+          createdBy: card.createdBy && typeof card.createdBy === "object" ? card.createdBy.name || card.createdBy._id : card.createdBy || "You",
+          isPublic: card.isPublic !== undefined ? card.isPublic : true,
+          createdAt: card.createdAt || new Date().toISOString().split("T")[0],
+          studyCount: card.studyCount || 0,
+          rating: typeof card.rating === "number" ? card.rating : 0,
+        }));
+
+        setFlashcards((prev) => [...normalizedSaved, ...prev]);
+        setAiPreviewCards([]);
+        setAiModalOpen(false);
+        setActiveTab("browse");
+      } else {
+        setAiError(result.error || "Failed to save flashcards");
+      }
+    } catch (err: any) {
+      setAiError(err?.message || "Failed to save flashcards");
+    } finally {
+      setAiSaving(false);
+    }
+  };
+
   const startStudyMode = () => {
     const cards = studyCards ?? filteredCards;
     if (cards.length === 0) return;
@@ -284,7 +347,8 @@ const Flashcards = () => {
   };
 
   const nextCard = () => {
-    if (currentCardIndex < filteredCards.length - 1) { setCurrentCardIndex(currentCardIndex + 1); setShowAnswer(false); } else { setStudyMode(false); }
+    const cards = studyCards ?? filteredCards;
+    if (currentCardIndex < cards.length - 1) { setCurrentCardIndex(currentCardIndex + 1); setShowAnswer(false); } else { setStudyMode(false); }
   };
 
   const previousCard = () => {
@@ -564,6 +628,178 @@ const Flashcards = () => {
             </div>
           )}
 
+          {/* AI Modal (always accessible) */}
+          {aiModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+              <div className="bg-white rounded-2xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-black uppercase">Generate with AI</h3>
+                  <button onClick={() => { setAiModalOpen(false); setAiPreviewCards([]); setAiError(null); }} className="p-2 hover:bg-black hover:text-white rounded-xl border-2 border-black transition-all">✕</button>
+                </div>
+                <p className="text-sm text-gray-600 font-medium mb-4">Enter a topic and AI will generate flashcards for you.</p>
+
+                {aiPreviewCards.length === 0 && (
+                  <>
+                    <input
+                      type="text"
+                      value={aiTopic}
+                      onChange={(e) => setAiTopic(e.target.value)}
+                      placeholder="e.g. Photosynthesis, Pythagorean theorem, World War II"
+                      className="w-full px-4 py-2.5 border-2 border-black rounded-xl font-medium mb-3 focus:ring-2 focus:ring-black outline-none"
+                    />
+
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wider">Subject</label>
+                        <select
+                          title="Subject for AI generation"
+                          value={aiSubject}
+                          onChange={(e) => setAiSubject(e.target.value)}
+                          className="w-full px-2 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:ring-2 focus:ring-black outline-none"
+                        >
+                          <option value="science">Science</option>
+                          <option value="mathematics">Mathematics</option>
+                          <option value="social-science">Social Science</option>
+                          <option value="english">English</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wider">Difficulty</label>
+                        <select
+                          title="Difficulty for AI generation"
+                          value={aiDifficulty}
+                          onChange={(e) => setAiDifficulty(e.target.value)}
+                          className="w-full px-2 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:ring-2 focus:ring-black outline-none"
+                        >
+                          <option value="Easy">Easy</option>
+                          <option value="Medium">Medium</option>
+                          <option value="Hard">Hard</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-black text-gray-500 mb-1 uppercase tracking-wider">Count</label>
+                        <input
+                          type="number"
+                          value={aiCount}
+                          onChange={(e) => setAiCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
+                          min="1"
+                          max="10"
+                          className="w-full px-2 py-2.5 border-2 border-black rounded-xl font-bold text-sm focus:ring-2 focus:ring-black outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {aiError && (<div className="text-sm text-red-500 mb-2 font-bold">{aiError}</div>)}
+
+                    <div className="flex justify-end space-x-2">
+                      <button onClick={() => { setAiModalOpen(false); setAiPreviewCards([]); setAiError(null); }} className="px-4 py-2.5 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all">Cancel</button>
+                      <button
+                        onClick={generateFlashcardsWithAI}
+                        disabled={aiGenerating || !aiTopic.trim()}
+                        className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold disabled:opacity-50 hover:bg-purple-500 transition-all"
+                      >
+                        {aiGenerating ? "Generating..." : "Generate"}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {aiPreviewCards.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-black uppercase tracking-wider">
+                        Generated Cards
+                      </h4>
+                      <span className="text-xs font-bold text-gray-500">
+                        {aiPreviewCards.length} cards
+                      </span>
+                    </div>
+
+                    {aiError && (<div className="text-sm text-red-500 mb-2 font-bold">{aiError}</div>)}
+
+                    <div className="space-y-3 max-h-[240px] overflow-auto pr-1">
+                      {aiPreviewCards.map((c, idx) => (
+                        <div key={c.id} className="bg-gray-50 rounded-xl border-2 border-black p-3">
+                          <div className="text-xs font-black text-gray-600 uppercase tracking-wider mb-1">
+                            {idx + 1}. {c.subject} • {c.difficulty}
+                          </div>
+                          <div className="text-sm font-black text-black mb-1">
+                            Q: {c.question}
+                          </div>
+                          <div className="text-sm text-gray-700">
+                            A: {c.answer}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+                      <button
+                        onClick={saveGeneratedCards}
+                        disabled={aiSaving}
+                        className="flex items-center justify-center px-4 py-2.5 bg-green-600 text-white rounded-xl border-2 border-green-800 font-bold disabled:opacity-50 hover:bg-green-700 transition-all active:scale-95"
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        {aiSaving ? "Saving..." : "Save All Cards"}
+                      </button>
+                      <button
+                        className="flex items-center justify-center px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold hover:bg-purple-500 transition-all active:scale-95"
+                        onClick={() => {
+                          setStudyCards(aiPreviewCards);
+                          setStudyMode(true);
+                          setCurrentCardIndex(0);
+                          setShowAnswer(false);
+                          setAiModalOpen(false);
+                        }}
+                      >
+                        <Brain className="h-4 w-4 mr-2" />
+                        Study Now
+                      </button>
+                      <button
+                        onClick={() => { setAiPreviewCards([]); setAiError(null); }}
+                        className="px-4 py-2.5 border-2 border-black text-black rounded-xl font-bold hover:bg-gray-50 transition-all"
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Auth Prompt Modal */}
+          {showAuthPrompt && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="bg-white rounded-2xl border-2 border-yellow-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full mx-4 relative">
+                <button
+                  onClick={() => setShowAuthPrompt(false)}
+                  className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold leading-none"
+                >
+                  &times;
+                </button>
+                <h3 className="text-2xl font-black text-black mb-2">Login Required</h3>
+                <p className="text-gray-600 font-medium mb-6">
+                  You need to sign in or create an account to generate flashcards with AI.
+                </p>
+                <Link
+                  to="/login"
+                  state={{ from: { pathname: location.pathname } }}
+                  className="block w-full text-center px-6 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all mb-3"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/register"
+                  state={{ from: { pathname: location.pathname } }}
+                  className="block w-full text-center px-6 py-3 bg-yellow-500 text-black rounded-xl border-2 border-yellow-500 font-black hover:bg-white hover:text-black transition-all"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Create Tab */}
           {activeTab === "create" && (
             <div>
@@ -573,75 +809,6 @@ const Flashcards = () => {
               </div>
 
               <div className="max-w-2xl mx-auto">
-                {/* AI Modal */}
-                {aiModalOpen && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-                    <div className="bg-white rounded-2xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-black uppercase">Generate with AI</h3>
-                        <button onClick={() => setAiModalOpen(false)} className="p-2 hover:bg-black hover:text-white rounded-xl border-2 border-black transition-all">✕</button>
-                      </div>
-                      <p className="text-sm text-gray-600 font-medium mb-4">Enter a topic or keyword and AI will generate a small set of flashcards for you.</p>
-                      <input type="text" value={aiTopic} onChange={(e) => setAiTopic(e.target.value)} placeholder="e.g. Photosynthesis, Pythagorean theorem, World War II" className="w-full px-4 py-2.5 border-2 border-black rounded-xl font-medium mb-3 focus:ring-2 focus:ring-black outline-none" />
-                      {aiError && (<div className="text-sm text-red-500 mb-2 font-bold">{aiError}</div>)}
-                      <div className="flex justify-end space-x-2">
-                        <button onClick={() => setAiModalOpen(false)} className="px-4 py-2.5 rounded-xl border-2 border-black font-bold hover:bg-gray-50 transition-all">Close</button>
-                        <button
-                          onClick={generateFlashcardsWithAI}
-                          disabled={aiGenerating}
-                          className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold disabled:opacity-50 hover:bg-purple-500 transition-all"
-                        >
-                          {aiGenerating ? "Generating..." : "Generate"}
-                        </button>
-                      </div>
-
-                      {aiPreviewCards.length > 0 && (
-                        <div className="mt-5 border-t-2 border-gray-100 pt-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-black uppercase tracking-wider">
-                              AI Preview (not saved)
-                            </h4>
-                            <span className="text-xs font-bold text-gray-500">
-                              {aiPreviewCards.length} cards
-                            </span>
-                          </div>
-
-                          <div className="space-y-3 max-h-[240px] overflow-auto pr-1">
-                            {aiPreviewCards.map((c, idx) => (
-                              <div key={c.id} className="bg-gray-50 rounded-xl border-2 border-black p-3">
-                                <div className="text-xs font-black text-gray-600 uppercase tracking-wider mb-1">
-                                  {idx + 1}. {c.subject} • {c.difficulty}
-                                </div>
-                                <div className="text-sm font-black text-black mb-1">
-                                  Q: {c.question}
-                                </div>
-                                <div className="text-sm text-gray-700">
-                                  A: {c.answer}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          <div className="flex justify-end space-x-2 mt-4">
-                            <button
-                              className="px-4 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold hover:bg-purple-500 transition-all"
-                              onClick={() => {
-                                setStudyCards(aiPreviewCards);
-                                setStudyMode(true);
-                                setCurrentCardIndex(0);
-                                setShowAnswer(false);
-                                setAiModalOpen(false);
-                              }}
-                            >
-                              Start Study Mode (AI)
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 <div className="bg-white rounded-2xl border-2 border-black p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   <div className="space-y-6">
                     <div>
