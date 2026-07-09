@@ -131,8 +131,7 @@ const Navbar = () => {
     <>
       {/* Main navbar - Black & White Aesthetic */}
       <nav
-        className={`sticky top-0 z-50 w-full transition-all duration-300 bg-white border-b-2 border-black ${isScrolled ? "py-2" : "py-4"
-          }`}
+        className="sticky top-0 z-50 w-full bg-white border-b-2 border-black py-3"
       >
         <Container size="2xl">
           <div className="flex justify-between items-center px-4">
@@ -420,7 +419,10 @@ const Navbar = () => {
                     return (
                       <div key={item.name} className="space-y-2">
                         <button
-                          onClick={() => setIsGamesDropdownOpen(!isGamesDropdownOpen)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsGamesDropdownOpen(!isGamesDropdownOpen);
+                          }}
                           className="w-full flex items-center justify-between px-4 py-3 text-base font-bold text-black border-2 border-black rounded-xl hover:bg-purple-50 hover:border-purple-500 active:scale-[0.99] transition-all"
                         >
                           <div className="flex items-center gap-3">

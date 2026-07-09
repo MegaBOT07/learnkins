@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import path from 'path';
 import {
   getMaterials,
   getMaterial,
@@ -7,15 +8,24 @@ import {
   updateMaterial,
   deleteMaterial,
   downloadMaterial,
-  searchMaterials
+  searchMaterials,
+  viewMaterial
 } from '../controllers/materialController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// Configure multer for file uploads — store with original extension
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
 const upload = multer({
-  dest: 'uploads/',
+  storage,
   limits: {
     fileSize: 100 * 1024 * 1024 // 100MB limit
   }
@@ -26,6 +36,7 @@ router.get('/', getMaterials);
 router.get('/search', searchMaterials);
 router.get('/:id', getMaterial);
 router.get('/:id/download', downloadMaterial);
+router.get('/:id/view', viewMaterial);
 
 // Protected routes
 router.use(protect);

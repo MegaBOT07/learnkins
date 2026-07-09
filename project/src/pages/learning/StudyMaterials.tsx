@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -8,6 +8,14 @@ import {
   Video,
   HelpCircle,
   CreditCard,
+  Upload,
+  FileUp,
+  X,
+  CheckCircle,
+  Loader2,
+  File,
+  FileImage,
+  FileText as FileTextIcon,
 } from "lucide-react";
 import { subjectAPI, materialAPI } from "../../utils/api";
 
@@ -81,6 +89,147 @@ const StudyMaterials = () => {
     { title: "Quiz & Tests", description: "Interactive quizzes and tests to assess your understanding", icon: <HelpCircle className="h-7 w-7" />, color: "border-cyan-500", iconBg: "bg-cyan-50", iconColor: "text-cyan-600", link: "/quizzes" },
   ];
 
+  const [uploadModal, setUploadModal] = useState<{ open: boolean; type: "notes" | "worksheet" }>({ open: false, type: "notes" });
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadDone, setUploadDone] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string; type: string; size: string; date: string }[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("learnkins_uploads") || "[]");
+    } catch { return []; }
+  });
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setUploadedFile(file);
+  };
+
+  const handleUpload = () => {
+    if (!uploadedFile) return;
+    setUploading(true);
+    setTimeout(() => {
+      const entry = {
+        name: uploadedFile.name,
+        type: uploadModal.type === "notes" ? "Study Note" : "Worksheet",
+        size: formatSize(uploadedFile.size),
+        date: new Date().toISOString().split("T")[0],
+      };
+      const updated = [entry, ...uploadedFiles].slice(0, 20);
+      setUploadedFiles(updated);
+      localStorage.setItem("learnkins_uploads", JSON.stringify(updated));
+      setUploading(false);
+      setUploadDone(true);
+      setTimeout(() => {
+        setUploadModal({ open: false, type: "notes" });
+        setUploadedFile(null);
+        setUploadDone(false);
+      }, 1500);
+    }, 1500);
+  };
+
+  const getFileIcon = (name: string) => {
+    const ext = name.split(".").pop()?.toLowerCase();
+    if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext || "")) return <FileImage className="h-5 w-5" />;
+    if (["pdf"].includes(ext || "")) return <FileTextIcon className="h-5 w-5" />;
+    return <File className="h-5 w-5" />;
+  };
+
+  const UploadModal = () => {
+    if (!uploadModal.open) return null;
+    const accept = uploadModal.type === "notes"
+      ? ".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp"
+      : ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp";
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { if (!uploading) setUploadModal({ open: false, type: "notes" }); }}>
+        <div className="bg-white rounded-2xl border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg mx-4 overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-xl border-2 border-black">
+                <FileUp className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black">Secure Upload</h2>
+                <p className="text-xs text-gray-500 font-medium capitalize">{uploadModal.type === "notes" ? "Study Notes" : "Worksheet"}</p>
+              </div>
+            </div>
+            <button onClick={() => { if (!uploading) setUploadModal({ open: false, type: "notes" }); }} className="p-2 hover:bg-gray-200 rounded-xl transition-colors">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {uploadDone ? (
+            <div className="p-10 flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center border-2 border-green-500">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <p className="text-lg font-black text-green-600">Upload Successful!</p>
+              <p className="text-sm text-gray-500">Your file has been uploaded securely.</p>
+            </div>
+          ) : (
+            <div className="p-6">
+              <div
+                className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${uploadedFile ? "border-purple-500 bg-purple-50" : "border-gray-300 hover:border-purple-400 hover:bg-purple-50/50"}`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input ref={fileInputRef} type="file" accept={accept} className="hidden" onChange={handleFileSelect} />
+                {uploadedFile ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-3 bg-purple-100 rounded-xl border-2 border-purple-500">
+                      {getFileIcon(uploadedFile.name)}
+                    </div>
+                    <p className="font-bold text-black">{uploadedFile.name}</p>
+                    <p className="text-xs text-gray-500">{formatSize(uploadedFile.size)}</p>
+                    <button onClick={() => { setUploadedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }} className="text-xs text-red-500 font-bold hover:underline mt-1">Remove</button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-3 bg-gray-100 rounded-xl border-2 border-gray-300">
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="font-bold text-black">Click to select a file</p>
+                    <p className="text-xs text-gray-500">
+                      {uploadModal.type === "notes" ? "PDF, DOC, DOCX, TXT, or images" : "PDF, DOC, DOCX, XLS, XLSX, or images"}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={handleUpload}
+                disabled={!uploadedFile || uploading}
+                className={`w-full mt-4 py-3 px-6 rounded-xl font-bold border-2 border-black transition-all flex items-center justify-center gap-2 ${uploadedFile && !uploading ? "bg-black text-white hover:bg-white hover:text-black active:scale-95" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+              >
+                {uploading ? <><Loader2 className="h-5 w-5 animate-spin" /> Uploading...</> : <><Upload className="h-5 w-5" /> Upload File</>}
+              </button>
+
+              {uploadedFiles.length > 0 && (
+                <div className="mt-4 pt-4 border-t-2 border-gray-100">
+                  <p className="text-xs font-bold text-gray-500 mb-2">RECENT UPLOADS</p>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {uploadedFiles.slice(0, 4).map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 text-xs">
+                        {getFileIcon(f.name)}
+                        <span className="font-medium text-gray-700 truncate flex-1">{f.name}</span>
+                        <span className="text-gray-400">{f.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -118,20 +267,30 @@ const StudyMaterials = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-            {materialTypes.map((type, index) => (
-              <div key={index} className={`bg-white p-6 rounded-2xl border-2 ${type.color} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all`}>
-                <div className={`${type.iconBg} ${type.iconColor} p-3 rounded-xl border-2 border-black inline-block mb-4`}>
-                  {type.icon}
+            {materialTypes.map((type, index) => {
+              const canUpload = index === 1 || index === 2;
+              return (
+                <div key={index}
+                  onClick={canUpload ? () => setUploadModal({ open: true, type: index === 1 ? "notes" : "worksheet" }) : undefined}
+                  className={`bg-white p-6 rounded-2xl border-2 ${type.color} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all ${canUpload ? "cursor-pointer" : ""}`}
+                >
+                  <div className={`${type.iconBg} ${type.iconColor} p-3 rounded-xl border-2 border-black inline-block mb-4`}>
+                    {type.icon}
+                  </div>
+                  <h3 className="text-lg font-black text-black mb-2">{type.title}</h3>
+                  <p className="text-gray-600 text-sm font-medium mb-3">{type.description}</p>
+                  {canUpload ? (
+                    <span className="inline-flex items-center gap-1 text-purple-600 text-sm font-bold hover:underline">
+                      <Upload className="h-4 w-4" /> Upload
+                    </span>
+                  ) : type.link ? (
+                    <Link to={type.link} className={`inline-block ${type.iconColor} text-sm font-bold hover:underline`}>
+                      Explore →
+                    </Link>
+                  ) : null}
                 </div>
-                <h3 className="text-lg font-black text-black mb-2">{type.title}</h3>
-                <p className="text-gray-600 text-sm font-medium mb-3">{type.description}</p>
-                {type.link && (
-                  <Link to={type.link} className={`inline-block ${type.iconColor} text-sm font-bold hover:underline`}>
-                    Explore →
-                  </Link>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -267,6 +426,7 @@ const StudyMaterials = () => {
           </div>
         </div>
       </section>
+      <UploadModal />
     </div>
   );
 };

@@ -961,6 +961,10 @@ export default function VirtualLab() {
       if(px<-5.5) zoneName="Chemistry Zone";
       else if(px>5.5) zoneName="Biology Zone";
       else zoneName="Physics Zone";
+      if (!labStartedRef.current && zoneName) {
+        labStartedRef.current = true;
+        trackStart();
+      }
       setCurrentZone(zoneName);
       if (!labStartedRef.current && zoneName) {
         labStartedRef.current = true;

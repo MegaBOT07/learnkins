@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useGameProgress } from "../../../hooks/useGameProgress";
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
@@ -415,6 +416,9 @@ function buildRoom(scene, fi, solved, totalLevels) {
 // ═══════════════════════════════════════════════════════════════════
 
 export default function TreasureHunt() {
+  const { startGame: trackStart, completeGame: trackComplete, completeWithTokenBonus } = useGameProgress('treasure-hunt', 'Treasure Hunt 3D');
+  const treasureTrackedRef = useRef(false);
+
   const mountRef = useRef(null);
   const gameRef  = useRef(null); // { scene, state, reload }
 
@@ -444,6 +448,13 @@ export default function TreasureHunt() {
   const [saveData, setSaveData] = useState({});
 
   useEffect(() => {
+    if (phase === "won" && !treasureTrackedRef.current) {
+      treasureTrackedRef.current = true;
+      completeWithTokenBonus(1000, 1000, 500, "Hard");
+    }
+  }, [phase]);
+
+  useEffect(() => {
     const s = localStorage.getItem("treasureHuntSave");
     if(s) setHasSave(true);
     
@@ -459,6 +470,7 @@ export default function TreasureHunt() {
   };
 
   const startChapter = useCallback((chapterId, resume=false) => {
+    trackStart(); treasureTrackedRef.current = false;
     let aq, vq, fl = 0, slvd = [];
     let gc = gameClass;
     if (resume) {
