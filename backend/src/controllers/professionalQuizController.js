@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import ProfessionalQuiz from '../models/ProfessionalQuiz.js';
 import User from '../models/User.js';
 import Progress from '../models/Progress.js';
+import TokenTransaction from '../models/TokenTransaction.js';
+import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 import fetch from 'node-fetch';
 
 // @desc    Get all professional quizzes
@@ -141,6 +143,77 @@ export const createProfessionalQuiz = async (req, res) => {
 };
 
 // Helper function to call OpenRouter AI API for generating quiz questions
+const MODELS_TO_TRY = [
+  'openrouter/free',
+  'meta-llama/llama-3.1-8b-instruct',
+  'microsoft/phi-3-mini-128k-instruct',
+];
+
+const parseJSONFromResponse = (content) => {
+  let cleaned = content;
+  // Strip markdown code fences (with optional json tag)
+  cleaned = cleaned.replace(/```(?:json)?\s*\n?/gi, '');
+  cleaned = cleaned.replace(/\n?```\s*$/g, '').trim();
+
+  // Find first [ and last ]
+  const firstBracket = cleaned.indexOf('[');
+  const lastBracket = cleaned.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    cleaned = cleaned.slice(firstBracket, lastBracket + 1);
+  }
+
+  // Attempt raw parse
+  try { return JSON.parse(cleaned); } catch {}
+
+  // Fix trailing commas
+  cleaned = cleaned.replace(/,(\s*[\]}])/g, '$1');
+  try { return JSON.parse(cleaned); } catch {}
+
+  // Remove comments (// and /* */ style)
+  cleaned = cleaned.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  try { return JSON.parse(cleaned); } catch {}
+
+  // Unescape improperly escaped quotes inside string values
+  const noBackslashQuotes = cleaned.replace(/\\(?=")/g, '');
+  try { return JSON.parse(noBackslashQuotes); } catch {}
+
+  // Fallback: extract individual objects via regex
+  const objRegex = /\{[^{}]*"question"\s*:\s*"[^"\\]*(?:\\.[^"\\]*)*"[^{}]*\}/g;
+  const matches = content.match(objRegex);
+  if (matches && matches.length > 0) {
+    const parsed = matches.map(q => { try { return JSON.parse(q); } catch { return null; } }).filter(Boolean);
+    if (parsed.length > 0) return parsed;
+  }
+
+  return null;
+};
+
+const callModel = async (model, body) => {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${body.apiKey}`,
+      'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
+      'X-Title': 'Learnkins',
+    },
+    body: JSON.stringify({
+      model,
+      messages: body.messages,
+      temperature: 0.7,
+      max_tokens: 8192,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`OpenRouter ${model} error: ${response.status} — ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return data.choices[0]?.message?.content || '';
+};
+
 const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, topic, grade = '', questionType = 'mixed') => {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
@@ -165,87 +238,35 @@ const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, 
   const prompt = `Generate ${totalQuestions} quiz questions for ${subject}${topicClause}${gradeClause}, ${difficulty} difficulty.
 ${typeInstruction}
 
-Return a JSON array. Each object format:
-- MC: {"type":"multiple-choice","question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}
-- TF: {"type":"true-false","question":"...","options":["True","False"],"correctAnswer":0,"explanation":"..."}
-- SA: {"type":"short-answer","question":"...","options":[],"correctAnswer":"word or number","explanation":"..."}
+Format: JSON array. Each object:
+- multiple-choice: {"type":"multiple-choice","question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}
+- true-false: {"type":"true-false","question":"...","options":["True","False"],"correctAnswer":0,"explanation":"..."}
+- short-answer: {"type":"short-answer","question":"...","options":[],"correctAnswer":"word or number","explanation":"..."}
 
-correctAnswer is index 0-3 for MC/TF, text string for short-answer.
-Short answers are single words or numeric values only.
-No trailing commas. Return ONLY valid JSON, no other text.`;
+Rules:
+- correctAnswer is index 0-3 for multiple-choice/true-false, text for short-answer.
+- No trailing commas. No comments. Escape quotes inside strings with \\".
+- Return ONLY the JSON array — no markdown, no backticks, no explanation.`;
 
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': process.env.FRONTEND_URL || 'http://localhost:5173',
-        'X-Title': 'Learnkins',
-      },
-      body: JSON.stringify({
-        model: 'openrouter/free',
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 8192,
-      }),
-    });
+  const body = { apiKey, messages: [{ role: 'user', content: prompt }] };
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText} — ${errorBody}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices[0]?.message?.content || '[]';
-
-    let questions = [];
+  for (const model of MODELS_TO_TRY) {
     try {
-      questions = JSON.parse(content);
-    } catch (e) {
-      let cleaned = content;
-      // Remove markdown code fences
-      cleaned = cleaned.replace(/```(?:json)?\s*/gi, '').replace(/```\s*$/g, '');
-      // Remove any text before the first [ and after the last ]
-      const firstBracket = cleaned.indexOf('[');
-      const lastBracket = cleaned.lastIndexOf(']');
-      if (firstBracket !== -1 && lastBracket !== -1) {
-        cleaned = cleaned.slice(firstBracket, lastBracket + 1);
-      }
-      try {
-        questions = JSON.parse(cleaned);
-      } catch (e2) {
-        try {
-          // Fix trailing commas (common issue with LLM output)
-          cleaned = cleaned.replace(/,(\s*[\]}])/g, '$1');
-          questions = JSON.parse(cleaned);
-        } catch (e3) {
-          // Attempt recovery from truncated response
-          const truncatedMatch = content.match(/\{[^{}]*"question"\s*:\s*"[^"]*"[^{}]*\}/g);
-          if (truncatedMatch && truncatedMatch.length > 0) {
-            console.warn(`Recovered ${truncatedMatch.length} questions from truncated response`);
-            questions = truncatedMatch.map(q => {
-              try { return JSON.parse(q); } catch { return null; }
-            }).filter(Boolean);
-          }
-          if (questions.length === 0) {
-            console.error("Raw AI response content:", content);
-            throw new Error("Failed to parse AI response as JSON");
-          }
+      const content = await callModel(model, body);
+      if (!content) continue;
+      const questions = parseJSONFromResponse(content);
+      if (questions && Array.isArray(questions) && questions.length > 0) {
+        if (model !== MODELS_TO_TRY[0]) {
+          console.log(`AI quiz: ${model} succeeded (fallback from ${MODELS_TO_TRY[0]})`);
         }
+        return questions.slice(0, totalQuestions);
       }
+    } catch (err) {
+      console.warn(`${model} failed: ${err.message}`);
     }
-
-    return questions.slice(0, totalQuestions);
-  } catch (error) {
-    console.error('OpenRouter API error:', error);
-    throw error;
   }
+
+  throw new Error('All models failed to generate valid questions');
 };
 
 // @desc    Create AI-generated professional quiz (any authenticated user)
@@ -515,17 +536,39 @@ export const submitProfessionalQuiz = async (req, res) => {
 
     await quiz.save();
 
-    // Award XP for professional quiz
+    // Award XP + tokens for professional quiz
     const user = await User.findById(userId);
     let levelUpData = null;
     if (user) {
-      // Bonus XP for passing professional quiz
       const passBonus = passed ? 50 : 0;
       const correctBonus = processedAnswers.filter(a => a.isCorrect).length * 5;
       const totalXP = passBonus + correctBonus;
 
+      // Token reward (same scale as regular quizzes)
+      const pct = Math.round(percentage);
+      const tokensEarned = pct >= 100 ? 25 : pct >= 80 ? 15 : pct >= 60 ? 10 : 5;
+
+      user.tokens = (user.tokens || 0) + tokensEarned;
+      user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
+      if (passed && pct === 100) {
+        user.perfectScores = (user.perfectScores || 0) + 1;
+      }
+
       levelUpData = user.addExperience(totalXP);
       await user.save();
+
+      // TokenTransaction audit trail
+      try {
+        await TokenTransaction.create({
+          userId,
+          type: 'award',
+          amount: tokensEarned,
+          reason: `Professional quiz completed (${pct}%)`,
+          meta: { quizId: id, percentage: pct, passed },
+        });
+      } catch (txErr) {
+        console.warn('Failed to create TokenTransaction:', txErr.message);
+      }
     }
 
     // Update user progress
@@ -551,6 +594,12 @@ export const submitProfessionalQuiz = async (req, res) => {
       console.warn('Could not update progress:', progressErr.message);
     }
 
+    // Check and award achievements
+    let newAchievements = [];
+    if (user) {
+      newAchievements = await checkAndAwardAchievements(userId);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Quiz submitted successfully',
@@ -561,8 +610,10 @@ export const submitProfessionalQuiz = async (req, res) => {
         passed,
         timeTaken,
         attemptNumber: quiz.attempts.length,
-        levelUp: levelUpData
-      }
+        levelUp: levelUpData,
+        tokensEarned: user ? Math.min(25, 5 + Math.floor((earnedPoints / totalPoints) * 100)) : 0,
+      },
+      newAchievements
     });
   } catch (error) {
     console.error('Submit professional quiz error:', error);

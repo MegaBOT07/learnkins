@@ -22,6 +22,7 @@ export const checkAndAwardAchievements = async (userId) => {
       gamesPlayed: user.totalGamesPlayed || 0,
       streakDays: user.currentStreak || 0,
       studyHours: user.totalStudyHours || 0,
+      totalFlashcardsRead: user.totalFlashcardsRead || 0,
       communityPosts: user.communityPosts || 0,
       level: user.level || 1,
     };
@@ -46,7 +47,9 @@ export const checkAndAwardAchievements = async (userId) => {
           if (achievement.requirements?.studyHours > 0) {
             unlocked = stats.studyHours >= achievement.requirements.studyHours;
           }
-          // Flashcard achievements are handled separately in flashcard controller
+          if (achievement.requirements?.totalFlashcardsRead > 0) {
+            unlocked = stats.totalFlashcardsRead >= achievement.requirements.totalFlashcardsRead;
+          }
           break;
 
         case 'quiz':

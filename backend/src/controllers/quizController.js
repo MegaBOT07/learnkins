@@ -512,7 +512,6 @@ export const submitQuiz = async (req, res) => {
     if (userId) {
       const user = await User.findById(userId);
       if (user) {
-        user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
         if (passed && percentage === 100) {
           user.perfectScores = (user.perfectScores || 0) + 1;
         }

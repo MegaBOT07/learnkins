@@ -13,6 +13,7 @@ import {
 } from '@react-three/drei';
 import * as THREE from 'three';
 import { Zap, Heart, Clock, Trophy, AlertCircle, Flame, ArrowLeft } from 'lucide-react';
+import { useGameProgress } from '../../../hooks/useGameProgress';
 import HeroSelection from './components/HeroSelection';
 import { Hero } from './types/game';
 import { MONSTERS } from './data/monsters';
@@ -195,6 +196,9 @@ const PLANETS_DATA: Record<string, Planet> = {
 };
 
 const GrammarWarrior: React.FC = () => {
+  const { startGame: trackStart, completeGame: trackComplete } = useGameProgress('grammar-warrior', 'Grammar Warrior');
+  const hasTrackedRef = useRef(false);
+
   const [gameState, setGameState] = useState<'hero-select' | 'menu' | 'playing' | 'victory' | 'defeat'>('hero-select');
   const [selectedHero, setSelectedHero] = useState<Hero | null>(null);
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
@@ -224,6 +228,7 @@ const GrammarWarrior: React.FC = () => {
   };
 
   const startGame = (planetKey: string) => {
+    trackStart(); hasTrackedRef.current = false;
     setSelectedPlanet(planetKey);
     setGameState('playing');
     setCurrentQuestion(0);
@@ -278,6 +283,13 @@ const GrammarWarrior: React.FC = () => {
       }
     }, 1500);
   };
+
+  useEffect(() => {
+    if ((gameState === 'victory' || gameState === 'defeat') && !hasTrackedRef.current) {
+      hasTrackedRef.current = true;
+      trackComplete(score, 500, monsterHealth <= 0 ? 'Hard' : 'Medium');
+    }
+  }, [gameState]);
 
   const renderHeroSelect = () => (
     <HeroSelection onSelect={handleHeroSelect} />

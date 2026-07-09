@@ -1,6 +1,7 @@
 import Flashcard from '../models/Flashcard.js';
 import Progress from '../models/Progress.js';
-import { checkFlashcardAchievements } from '../utils/achievementChecker.js';
+import User from '../models/User.js';
+import { checkFlashcardAchievements, checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get all flashcards
 // @route   GET /api/flashcards
@@ -258,6 +259,16 @@ export const studyFlashcard = async (req, res) => {
       },
       { upsert: true }
     );
+
+    // Update user study stats (~2 min per card, or use timeSpent if provided)
+    const studyHours = req.body.timeSpent
+      ? Math.round((req.body.timeSpent / 60) * 100) / 100
+      : 0.033;
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.totalStudyHours = (user.totalStudyHours || 0) + studyHours;
+      await user.save();
+    }
 
     // Check flashcard achievements
     const newAchievements = await checkFlashcardAchievements(req.user.id, 1);

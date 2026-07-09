@@ -41,9 +41,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 const defaultAchievements: FrontendAchievement[] = sharedDefaultAchievements;
 
-const calculateExperienceToNext = (level: number): number => {
-  return Math.floor(100 * Math.pow(1.5, level - 1));
-};
+const calculateExperienceToNext = (): number => 100;
 
 // Access TokenContext award function via a separate mechanism or by assuming it's available in the app tree
 // Since we can't easily useToken() inside GameProvider (sibling or parent issue), 
@@ -110,8 +108,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserProgress(prev => ({
         ...prev,
         level:              me?.level          ?? prev.level,
-        experience:         me?.experience     ?? prev.experience,
-        experienceToNext:   calculateExperienceToNext(me?.level ?? prev.level),
+        experience:         me?.experience !== undefined
+          ? (me.experience - ((me.level ?? prev.level) - 1) * 100)
+          : prev.experience,
+        experienceToNext:   calculateExperienceToNext(),
         streak:             me?.currentStreak  ?? prev.streak,
         quizzesTaken:       me?.totalQuizzesTaken ?? stats?.totalActivities  ?? prev.quizzesTaken,
         gamesPlayed:        me?.totalGamesPlayed   ?? prev.gamesPlayed,
@@ -183,22 +183,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addExperience = (amount: number) => {
     logActivity();
     setUserProgress(prev => {
-      let newExp = prev.experience + amount;
-      let newLevel = prev.level;
-      let newExpToNext = prev.experienceToNext;
-
-      // Check for level up
-      while (newExp >= newExpToNext) {
-        newExp -= newExpToNext;
-        newLevel++;
-        newExpToNext = calculateExperienceToNext(newLevel);
-      }
+      const totalCumulative = (prev.level - 1) * 100 + prev.experience + amount;
+      const newLevel = Math.floor(totalCumulative / 100) + 1;
+      const displayExp = totalCumulative % 100;
 
       return {
         ...prev,
         level: newLevel,
-        experience: newExp,
-        experienceToNext: newExpToNext
+        experience: displayExp,
+        experienceToNext: calculateExperienceToNext()
       };
     });
   };

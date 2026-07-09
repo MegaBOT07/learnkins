@@ -141,6 +141,7 @@ export const progressAPI = {
   updateProgress: (progressData) => api.put("/progress/update", progressData),
   logStudySession: (sessionData) => api.post('/progress/session', sessionData),
   logVideoProgress: (videoData) => api.post('/progress/video', videoData),
+  logGameActivity: (gameData) => api.post('/progress/game-activity', gameData),
 };
 
 // Contact API

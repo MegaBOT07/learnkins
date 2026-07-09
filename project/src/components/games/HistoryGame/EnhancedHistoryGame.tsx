@@ -24,6 +24,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useGameProgress } from "../../../hooks/useGameProgress";
 import { chapters, historicalPeriods } from "./ChapterData";
 
 // Enhanced historical periods data
@@ -1848,6 +1849,10 @@ const FppCockpit = ({
 };
 
 const EnhancedHistoryGame = () => {
+  const { startGame: trackStart, completeGame: trackComplete } = useGameProgress('history-game', 'Time Traveling History');
+  const trackStartedRef = useRef(false);
+  const trackCompletedRef = useRef(false);
+
   const [gameState, setGameState] = useState<
     | "cockpit"
     | "traveling"
@@ -2033,6 +2038,7 @@ const EnhancedHistoryGame = () => {
   };
 
   const startTimeTravel = () => {
+    trackStart(); trackStartedRef.current = true; trackCompletedRef.current = false;
     setGameState("traveling");
 
     // Filter periods based on selected chapter
@@ -2169,6 +2175,13 @@ const EnhancedHistoryGame = () => {
     setShowContinueButton(false);
   };
 
+  useEffect(() => {
+    if ((gameState === "gameOver" || gameState === "lostInTime") && !trackCompletedRef.current && trackStartedRef.current) {
+      trackCompletedRef.current = true;
+      trackComplete(score, 500, "Hard");
+    }
+  }, [gameState]);
+
   const restartGame = () => {
     setGameState("cockpit");
     setCurrentPeriod(null);
@@ -2192,6 +2205,8 @@ const EnhancedHistoryGame = () => {
     setExperiencePoints(0);
     setParticleEffects([]);
     setSpecialEvents([]);
+    trackCompletedRef.current = false;
+    trackStartedRef.current = false;
   };
 
   const toggleSound = () => {

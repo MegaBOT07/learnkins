@@ -152,7 +152,6 @@ const Quiz = () => {
         try {
           takeQuiz();
           addPoints(result.correctCount * 10);
-          addExperience(result.correctCount * 5);
         } catch (err) {
           console.warn('Failed to update game progress', err);
         }
