@@ -16,60 +16,61 @@ export const checkAndAwardAchievements = async (userId) => {
     const user = await User.findById(userId);
     if (!user) return [];
 
-    // Get user's current stats
     const stats = {
       quizzesTaken: user.totalQuizzesTaken || 0,
       gamesPlayed: user.totalGamesPlayed || 0,
       streakDays: user.currentStreak || 0,
       studyHours: user.totalStudyHours || 0,
+      totalFlashcardsRead: user.totalFlashcardsRead || 0,
       communityPosts: user.communityPosts || 0,
       level: user.level || 1,
     };
 
-    // Get all active achievements
     const allAchievements = await Achievement.find({ isActive: true });
-
-    // Get user's existing achievements
     const userAchievements = user.achievements || [];
     const newAchievements = [];
 
+    // Hoist perfect scores query — compute once, not inside the loop
+    let perfectScoresCache = null;
+    const getPerfectScores = async () => {
+      if (perfectScoresCache === null) {
+        perfectScoresCache = await getUserPerfectScores(userId);
+      }
+      return perfectScoresCache;
+    };
+
     for (const achievement of allAchievements) {
-      // Skip if user already has this achievement
       if (userAchievements.includes(achievement._id)) continue;
 
       let unlocked = false;
 
-      // Check based on category
       switch (achievement.category) {
         case 'study':
-          // Check study-related requirements (flashcards read, study hours)
           if (achievement.requirements?.studyHours > 0) {
             unlocked = stats.studyHours >= achievement.requirements.studyHours;
           }
-          // Flashcard achievements are handled separately in flashcard controller
+          if (achievement.requirements?.totalFlashcardsRead > 0) {
+            unlocked = unlocked || stats.totalFlashcardsRead >= achievement.requirements.totalFlashcardsRead;
+          }
           break;
 
         case 'quiz':
-          // Check quiz requirements
           if (achievement.requirements?.quizzesTaken > 0) {
             unlocked = stats.quizzesTaken >= achievement.requirements.quizzesTaken;
           }
-          // Check perfect score requirements
           if (achievement.requirements?.perfectScores > 0) {
-            const perfectScores = await getUserPerfectScores(userId);
-            unlocked = perfectScores >= achievement.requirements.perfectScores;
+            const perfectScores = await getPerfectScores();
+            unlocked = unlocked || perfectScores >= achievement.requirements.perfectScores;
           }
           break;
 
         case 'game':
-          // Check game requirements
           if (achievement.requirements?.gamesPlayed > 0) {
             unlocked = stats.gamesPlayed >= achievement.requirements.gamesPlayed;
           }
           break;
 
         case 'streak':
-          // Check streak requirements
           if (achievement.requirements?.streakDays > 0) {
             unlocked = stats.streakDays >= achievement.requirements.streakDays;
           }
@@ -83,23 +84,21 @@ export const checkAndAwardAchievements = async (userId) => {
             const levelMatch = achievement.name.match(/Level (\d+)/);
             if (levelMatch) {
               const targetLevel = parseInt(levelMatch[1]);
-              unlocked = stats.level >= targetLevel;
+              unlocked = unlocked || stats.level >= targetLevel;
             }
           }
           break;
 
         case 'community':
-          // Check community posts
           if (achievement.requirements?.communityPosts > 0) {
             unlocked = stats.communityPosts >= achievement.requirements.communityPosts;
           }
           break;
       }
 
-      // Award achievement if unlocked
       if (unlocked) {
         user.achievements.push(achievement._id);
-        user.points = (user.points || 0) + achievement.points;
+        user.points = (user.points || 0) + (achievement.points || 0);
         newAchievements.push(achievement);
       }
     }
@@ -126,10 +125,8 @@ export const checkFlashcardAchievements = async (userId, cardsRead = 1) => {
     const user = await User.findById(userId);
     if (!user) return [];
 
-    // Get total flashcards read (from progress or a separate counter)
     const totalCardsRead = (user.totalFlashcardsRead || 0) + cardsRead;
     user.totalFlashcardsRead = totalCardsRead;
-    await user.save();
 
     const allAchievements = await Achievement.find({
       category: 'study',
@@ -152,11 +149,12 @@ export const checkFlashcardAchievements = async (userId, cardsRead = 1) => {
 
       if (unlocked) {
         user.achievements.push(achievement._id);
-        user.points = (user.points || 0) + achievement.points;
+        user.points = (user.points || 0) + (achievement.points || 0);
         newAchievements.push(achievement);
       }
     }
 
+    // Single save after all mutations
     if (newAchievements.length > 0) {
       await user.save();
     }
@@ -182,18 +180,16 @@ const getUserPerfectScores = async (userId) => {
     // Check regular quizzes
     const quizAttempts = await Quiz.find({ 'attempts.userId': userId });
     for (const quiz of quizAttempts) {
-      const userAttempts = quiz.attempts.filter(a => a.userId.toString() === userId.toString());
-      for (const attempt of userAttempts) {
-        if (attempt.passed && attempt.percentage === 100) perfectCount++;
+      for (const attempt of quiz.attempts) {
+        if (attempt.userId?.toString() === userId.toString() && attempt.passed && attempt.percentage === 100) perfectCount++;
       }
     }
 
     // Check professional quizzes
     const profQuizzes = await ProfessionalQuiz.find({ 'attempts.userId': userId });
     for (const quiz of profQuizzes) {
-      const userAttempts = quiz.attempts.filter(a => a.userId.toString() === userId.toString());
-      for (const attempt of userAttempts) {
-        if (attempt.passed && attempt.percentage === 100) perfectCount++;
+      for (const attempt of quiz.attempts) {
+        if (attempt.userId?.toString() === userId.toString() && attempt.passed && attempt.percentage === 100) perfectCount++;
       }
     }
 

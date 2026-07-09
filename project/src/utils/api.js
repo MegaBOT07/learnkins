@@ -129,7 +129,8 @@ export const flashcardAPI = {
   deleteFlashcard: (id) => api.delete(`/flashcards/${id}`),
   markAsKnown: (id) => api.post(`/flashcards/${id}/known`),
   markAsUnknown: (id) => api.post(`/flashcards/${id}/unknown`),
-  generateAIFlashcards: (topic) => api.post('/flashcards/ai-generate', { topic }),
+  generateAIFlashcards: (params) => api.post('/flashcards/ai-generate', params),
+  batchCreateFlashcards: (flashcards) => api.post('/flashcards/batch', { flashcards }),
 };
 
 // Progress API
@@ -140,6 +141,7 @@ export const progressAPI = {
   updateProgress: (progressData) => api.put("/progress/update", progressData),
   logStudySession: (sessionData) => api.post('/progress/session', sessionData),
   logVideoProgress: (videoData) => api.post('/progress/video', videoData),
+  logGameActivity: (gameData) => api.post('/progress/game-activity', gameData),
 };
 
 // Contact API

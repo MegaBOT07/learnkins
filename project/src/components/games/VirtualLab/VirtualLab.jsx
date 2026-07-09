@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { useGameProgress } from '../../../hooks/useGameProgress';
 
 // ════════════════════════════════════════════
 // EXPERIMENT DATA
@@ -188,7 +189,6 @@ export default function VirtualLab() {
   const { startGame: trackStart, completeGame: trackComplete } = useGameProgress('virtual-lab', 'Virtual Science Lab');
   const labStartedRef = useRef(false);
   const labCompletedExps = useRef(new Set());
-
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -966,6 +966,10 @@ export default function VirtualLab() {
         trackStart();
       }
       setCurrentZone(zoneName);
+      if (!labStartedRef.current && zoneName) {
+        labStartedRef.current = true;
+        trackStart();
+      }
     }
 
     function tryInteract(){

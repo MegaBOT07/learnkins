@@ -41,9 +41,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 
 const defaultAchievements: FrontendAchievement[] = sharedDefaultAchievements;
 
-const calculateExperienceToNext = (level: number): number => {
-  return Math.floor(100 * Math.pow(1.5, level - 1));
-};
+const calculateExperienceToNext = (): number => 100;
 
 // Access TokenContext award function via a separate mechanism or by assuming it's available in the app tree
 // Since we can't easily useToken() inside GameProvider (sibling or parent issue), 
@@ -51,20 +49,26 @@ const calculateExperienceToNext = (level: number): number => {
 
 export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [userProgress, setUserProgress] = useState<UserProgress>(() => {
-    const saved = localStorage.getItem('learnkins-game-progress');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...parsed,
-        lastLogin: new Date(parsed.lastLogin),
-        achievements: parsed.achievements || defaultAchievements,
-        activityLogs: parsed.activityLogs || {}
-      };
+    try {
+      const saved = localStorage.getItem('learnkins-game-progress');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const lastLogin = new Date(parsed.lastLogin);
+        if (isNaN(lastLogin.getTime())) throw new Error('Invalid date');
+        return {
+          ...parsed,
+          lastLogin,
+          achievements: Array.isArray(parsed.achievements) ? parsed.achievements : defaultAchievements,
+          activityLogs: parsed.activityLogs || {}
+        };
+      }
+    } catch {
+      localStorage.removeItem('learnkins-game-progress');
     }
     return {
       level: 1,
       experience: 0,
-      experienceToNext: calculateExperienceToNext(1),
+      experienceToNext: calculateExperienceToNext(),
       totalPoints: 0,
       streak: 0,
       lastLogin: new Date(),
@@ -110,8 +114,10 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUserProgress(prev => ({
         ...prev,
         level:              me?.level          ?? prev.level,
-        experience:         me?.experience     ?? prev.experience,
-        experienceToNext:   calculateExperienceToNext(me?.level ?? prev.level),
+        experience:         me?.experience !== undefined
+          ? (me.experience - Math.max(0, (me.level ?? 1) - 1) * 100)
+          : prev.experience,
+        experienceToNext:   calculateExperienceToNext(),
         streak:             me?.currentStreak  ?? prev.streak,
         quizzesTaken:       me?.totalQuizzesTaken ?? stats?.totalActivities  ?? prev.quizzesTaken,
         gamesPlayed:        me?.totalGamesPlayed   ?? prev.gamesPlayed,
@@ -120,7 +126,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         achievements:       allAch.length > 0
           ? mapBackendAchievements(
               allAch,
-              new Set((me?.achievements ?? []).map((a: any) => (a._id?.toString() ?? a.toString()))),
+              new Set((me?.achievements ?? []).map((a: any) => a ? (a._id?.toString() ?? a.toString()) : '')),
               me
             )
           : prev.achievements,
@@ -134,13 +140,19 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // persist local state
   useEffect(() => {
-    localStorage.setItem('learnkins-game-progress', JSON.stringify(userProgress));
+    try {
+      localStorage.setItem('learnkins-game-progress', JSON.stringify(userProgress));
+    } catch {
+      // localStorage full or disabled — silently skip
+    }
   }, [userProgress]);
 
   // Streak logic on mount
   useEffect(() => {
+    const loginDate = new Date(userProgress.lastLogin);
+    if (isNaN(loginDate.getTime())) return;
     const today = new Date().toISOString().split('T')[0];
-    const last = new Date(userProgress.lastLogin).toISOString().split('T')[0];
+    const last = loginDate.toISOString().split('T')[0];
 
     if (today !== last) {
       const yesterday = new Date();
@@ -151,10 +163,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let newStreak = prev.streak;
         if (last === yesterdayStr) {
           newStreak += 1;
-          // Reward diamonds for milestones
           if (newStreak % 7 === 0) {
-            // Signal daily streak reward
-            localStorage.setItem('learnkins_streak_reward', 'true');
+            try { localStorage.setItem('learnkins_streak_reward', 'true'); } catch {}
           }
         } else {
           newStreak = 1;
@@ -183,22 +193,15 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addExperience = (amount: number) => {
     logActivity();
     setUserProgress(prev => {
-      let newExp = prev.experience + amount;
-      let newLevel = prev.level;
-      let newExpToNext = prev.experienceToNext;
-
-      // Check for level up
-      while (newExp >= newExpToNext) {
-        newExp -= newExpToNext;
-        newLevel++;
-        newExpToNext = calculateExperienceToNext(newLevel);
-      }
+      const totalCumulative = (prev.level - 1) * 100 + prev.experience + amount;
+      const newLevel = Math.floor(totalCumulative / 100) + 1;
+      const displayExp = totalCumulative % 100;
 
       return {
         ...prev,
         level: newLevel,
-        experience: newExp,
-        experienceToNext: newExpToNext
+        experience: displayExp,
+        experienceToNext: calculateExperienceToNext()
       };
     });
   };

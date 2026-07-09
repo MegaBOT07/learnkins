@@ -2207,6 +2207,8 @@ const EnhancedHistoryGame = () => {
     setExperiencePoints(0);
     setParticleEffects([]);
     setSpecialEvents([]);
+    trackCompletedRef.current = false;
+    trackStartedRef.current = false;
   };
 
   const toggleSound = () => {

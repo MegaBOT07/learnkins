@@ -5,7 +5,8 @@ import {
   getSubjectProgress,
   getOverallStats,
   logStudySession,
-  logVideoProgress
+  logVideoProgress,
+  logGameActivity
 } from '../controllers/progressController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -20,5 +21,6 @@ router.get('/subject/:subject', getSubjectProgress);
 router.put('/update', updateProgress);
 router.post('/session', logStudySession);
 router.post('/video', logVideoProgress);
+router.post('/game-activity', logGameActivity);
 
 export default router;
