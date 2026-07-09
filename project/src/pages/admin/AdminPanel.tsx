@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import api, { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI, contactAPI, professionalQuizAPI, subjectAPI, newsletterAPI } from "../../utils/api";
+import api, { authAPI, materialAPI, userAPI, flashcardAPI, tokenAPI, shopAPI, contactAPI, professionalQuizAPI, subjectAPI, newsletterAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
-  LayoutDashboard, BookOpen, Brain, Gamepad2, Settings,
-  ChevronRight, Search, BarChart3, Clock, Award, Activity,
-  Filter, Download, Star, History, Gem, TrendingUp, ShoppingBag,
-  Edit3, BookMarked, GraduationCap, MessageSquare, Mail, Eye, Archive, RefreshCw
+  LayoutDashboard, BookOpen, Brain, Settings,
+  ChevronRight, Search, Award, Activity,
+  Filter, Download, Gem, TrendingUp,
+  Edit3, BookMarked, GraduationCap, MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,10 +31,8 @@ const AdminPanel = () => {
   };
   // Data lists
   const [materials, setMaterials] = useState<any[]>([]);
-  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [flashcards, setFlashcards] = useState<any[]>([]);
-  const [games, setGames] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [contactMessages, setContactMessages] = useState<any[]>([]);
   const [proQuizzes, setProQuizzes] = useState<any[]>([]);
@@ -52,17 +50,13 @@ const AdminPanel = () => {
 
   // Creation / Edit Modals state
   const [showFlashcardModal, setShowFlashcardModal] = useState(false);
-  const [showGameModal, setShowGameModal] = useState(false);
   const [showMaterialModal, setShowMaterialModal] = useState(false);
-  const [showQuizModal, setShowQuizModal] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showProQuizModal, setShowProQuizModal] = useState(false);
   const [showShopItemModal, setShowShopItemModal] = useState(false);
   const [editingFlashcard, setEditingFlashcard] = useState<any>(null);
-  const [editingGame, setEditingGame] = useState<any>(null);
   const [editingMaterial, setEditingMaterial] = useState<any>(null);
   const [uploadedAdminFile, setUploadedAdminFile] = useState<File | null>(null);
-  const [editingQuiz, setEditingQuiz] = useState<any>(null);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [editingProQuiz, setEditingProQuiz] = useState<any>(null);
   const [editingShopItem, setEditingShopItem] = useState<any>(null);
@@ -80,53 +74,6 @@ const AdminPanel = () => {
     chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner"
   });
 
-  const [newGame, setNewGame] = useState({
-    title: "", description: "", category: "science", difficulty: "Medium",
-    gameType: "quiz", thumbnailUrl: "", gameUrl: "", duration: "10"
-  });
-
-  const [newQuiz, setNewQuiz] = useState({
-    title: "",
-    description: "",
-    subject: "",
-    grade: "",
-    difficulty: "Medium",
-    questions: [] as any[]
-  });
-
-  const [availableSubjects, setAvailableSubjects] = useState<any[]>([]);
-  const [loadingSubjects, setLoadingSubjects] = useState(false);
-
-  const fetchSubjectsByGrade = async (grade: string) => {
-    try {
-      setLoadingSubjects(true);
-
-      const response = await subjectAPI.getSubjects(grade);
-
-      if (response.data.success) {
-        setAvailableSubjects(response.data.data);
-      }
-    } catch (error) {
-      console.error(error);
-      setAvailableSubjects([]);
-    } finally {
-      setLoadingSubjects(false);
-    }
-  };
-
-  // Transform frontend question format → backend model format
-  const transformQuestions = (inputs: any[]) => inputs.map((q: any) => ({
-    question: q.question,
-    type: "multiple-choice",
-    options: q.options.map((opt: string, i: number) => ({
-      text: opt,
-      isCorrect: i === q.correctAnswer
-    })),
-    correctAnswer: q.correctAnswer?.toString() || "0",
-    explanation: q.explanation || "",
-    points: 1
-  }));
-
   const [newSubject, setNewSubject] = useState({
     name: "", slug: "", description: "", icon: "book", color: "#6366f1", grade: "6th"
   });
@@ -140,9 +87,6 @@ const AdminPanel = () => {
     title: "", description: "", type: "power_up", price: 10,
     icon: "🎁", subject: "all", grade: "all", stock: -1
   });
-
-  // Quiz question builder
-  const [quizQuestionInputs, setQuizQuestionInputs] = useState<any[]>([]);
 
   const [diamondAmount, setDiamondAmount] = useState<number>(0);
   const [awardReason, setAwardReason] = useState<string>("Admin Reward");
@@ -187,10 +131,8 @@ const AdminPanel = () => {
     try {
       const calls = [
         { key: "materials", fn: () => materialAPI.getMaterials('all') },
-        { key: "quizzes", fn: () => quizAPI.getQuizzes('all') },
         { key: "users", fn: () => userAPI.getUsers() },
         { key: "flashcards", fn: () => flashcardAPI.getFlashcards('all') },
-        { key: "games", fn: () => gameAPI.getGames() },
         { key: "subjects", fn: () => subjectAPI.getSubjects() },
         { key: "contact", fn: () => contactAPI.getMessages() },
         { key: "proQuizzes", fn: () => professionalQuizAPI.getQuizzes() },
@@ -206,10 +148,8 @@ const AdminPanel = () => {
       }
 
       if (results.materials) setMaterials(results.materials);
-      if (results.quizzes) setQuizzes(results.quizzes);
       if (results.users) setUsers(results.users);
       if (results.flashcards) setFlashcards(results.flashcards);
-      if (results.games) setGames(results.games);
       if (results.subjects) setSubjects(results.subjects);
       if (results.contact) setContactMessages(results.contact);
       if (results.proQuizzes) setProQuizzes(results.proQuizzes);
@@ -239,10 +179,8 @@ const AdminPanel = () => {
     localStorage.removeItem("token");
     setToken(null);
     setMaterials([]);
-    setQuizzes([]);
     setUsers([]);
     setFlashcards([]);
-    setGames([]);
   };
 
   const handleAwardDiamonds = async () => {
@@ -337,29 +275,6 @@ const AdminPanel = () => {
     }
   };
 
-  const handleCreateGame = async () => {
-    try {
-      setLoading(true);
-      await gameAPI.createGame({
-        ...newGame,
-        instructions: ["Follow the on-screen prompts"],
-        learningObjectives: ["Master the subject through play"]
-      });
-      alert("Game registered successfully!");
-      setShowGameModal(false);
-      setNewGame({
-        title: "", description: "", category: "science", difficulty: "Medium",
-        gameType: "quiz", thumbnailUrl: "", gameUrl: "", duration: "10"
-      });
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create game");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteFlashcard = async (id: string) => {
     if (!confirm("Are you sure you want to delete this flashcard?")) return;
     try {
@@ -373,37 +288,11 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDeleteGame = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this game?")) return;
-    try {
-      setLoading(true);
-      await gameAPI.deleteGame(id);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteMaterial = async (id: string) => {
     if (!confirm("Are you sure you want to delete this material?")) return;
     try {
       setLoading(true);
       await materialAPI.deleteMaterial(id);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteQuiz = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this quiz?")) return;
-    try {
-      setLoading(true);
-      await quizAPI.deleteQuiz(id);
       fetchAll();
     } catch (err) {
       console.error(err);
@@ -445,49 +334,6 @@ const AdminPanel = () => {
     } catch (err: any) {
       console.error(err);
       alert(err?.response?.data?.message || "Failed to upload material");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCreateQuiz = async () => {
-
-    if (!newQuiz.grade) {
-      alert("Please select a grade");
-      return;
-    }
-
-    if (!newQuiz.subject) {
-      alert("Please select a subject");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await quizAPI.createQuiz({
-        ...newQuiz,
-        grade: newQuiz.grade || "6th",
-        description: newQuiz.description || newQuiz.title,
-        questions: transformQuestions(quizQuestionInputs)
-      });
-      alert("Quiz built successfully!");
-      setShowQuizModal(false);
-      setNewQuiz({
-        title: "",
-        description: "",
-        subject: "",
-        grade: "",
-        difficulty: "Medium",
-        questions: []
-      });
-
-
-      setAvailableSubjects([]);
-      setQuizQuestionInputs([]);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to build quiz");
     } finally {
       setLoading(false);
     }
@@ -696,64 +542,12 @@ const AdminPanel = () => {
     }
   };
 
-  // Quiz question builder helpers
-  const addQuizQuestion = () => {
-    setQuizQuestionInputs([...quizQuestionInputs, {
-      question: "",
-      options: ["", "", "", ""],
-      correctAnswer: 0,
-      explanation: ""
-    }]);
-  };
-
-  const updateQuizQuestion = (index: number, field: string, value: any) => {
-    const updated = [...quizQuestionInputs];
-    (updated[index] as any)[field] = value;
-    setQuizQuestionInputs(updated);
-  };
-
-  const updateQuizQuestionOption = (qIndex: number, oIndex: number, value: string) => {
-    const updated = [...quizQuestionInputs];
-    updated[qIndex].options[oIndex] = value;
-    setQuizQuestionInputs(updated);
-  };
-
-  const removeQuizQuestion = (index: number) => {
-    setQuizQuestionInputs(quizQuestionInputs.filter((_, i) => i !== index));
-  };
-
-  // Edit helpers — populate modal with existing data
+  // Edit helpers
   const startEditFlashcard = (card: any) => {
     setEditingFlashcard({ ...card });
   };
-  const startEditGame = (game: any) => {
-    setEditingGame({ ...game });
-  };
   const startEditMaterial = (mat: any) => {
     setEditingMaterial({ ...mat });
-  };
-  const startEditQuiz = (quiz: any) => {
-    setEditingQuiz({ ...quiz });
-    // Backend stores questions as {options: [{text, isCorrect}], correctAnswer: String}
-    // Frontend expects {options: [strings], correctAnswer: index}
-    const qs = (quiz.questions || []).map((q: any) => {
-      const opts = Array.isArray(q.options)
-        ? q.options.map((o: any) => (typeof o === 'string' ? o : o.text || ''))
-        : ["", "", "", ""];
-      const correctIdx = typeof q.correctAnswer === 'number'
-        ? q.correctAnswer
-        : opts.findIndex((_: string, i: number) => {
-          const opt = q.options?.[i];
-          return opt?.isCorrect === true || i === parseInt(q.correctAnswer);
-        });
-      return {
-        question: q.question || "",
-        options: opts,
-        correctAnswer: correctIdx >= 0 ? correctIdx : 0,
-        explanation: q.explanation || ""
-      };
-    });
-    setQuizQuestionInputs(qs);
   };
   const startEditSubject = (subj: any) => {
     setEditingSubject({ ...subj });
@@ -781,22 +575,6 @@ const AdminPanel = () => {
     }
   };
 
-  const handleUpdateGame = async () => {
-    if (!editingGame) return;
-    try {
-      setLoading(true);
-      await gameAPI.updateGame(editingGame._id || editingGame.id, editingGame);
-      alert("Game updated!");
-      setEditingGame(null);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update game");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUpdateMaterial = async () => {
     if (!editingMaterial) return;
     try {
@@ -813,27 +591,6 @@ const AdminPanel = () => {
     }
   };
 
-  const handleUpdateQuiz = async () => {
-    if (!editingQuiz) return;
-    try {
-      setLoading(true);
-      await quizAPI.updateQuiz(editingQuiz._id || editingQuiz.id, {
-        ...editingQuiz,
-        grade: editingQuiz.grade || "6th",
-        description: editingQuiz.description || editingQuiz.title,
-        questions: transformQuestions(quizQuestionInputs)
-      });
-      alert("Quiz updated!");
-      setEditingQuiz(null);
-      setQuizQuestionInputs([]);
-      fetchAll();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to update quiz");
-    } finally {
-      setLoading(false);
-    }
-  };
   const inputClass = "w-full px-4 py-3 border-2 border-black rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all";
   const cardClass = "bg-white border-2 border-black rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all";
   const sidebarItemClass = (id: string) => `
@@ -906,7 +663,7 @@ const AdminPanel = () => {
         </div>
       )}
       {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-200 bg-white flex flex-col sticky top-0 h-screen">
+      <aside className="w-72 shrink-0 border-r border-slate-200 bg-white flex flex-col sticky top-0 h-screen">
         <div className="p-6 border-b border-slate-200 bg-white">
           <div className="flex items-center space-x-3">
             <div className="h-9 w-9 bg-indigo-600 rounded-lg flex items-center justify-center">
@@ -940,12 +697,8 @@ const AdminPanel = () => {
             <span>Subjects</span>
           </div>
           <div className={sidebarItemClass("quizzes")} onClick={() => setActiveTab("quizzes")}>
-            <FileText size={18} />
-            <span>Quizzes</span>
-          </div>
-          <div className={sidebarItemClass("pro-quizzes")} onClick={() => setActiveTab("pro-quizzes")}>
             <GraduationCap size={18} />
-            <span>Pro Quizzes</span>
+            <span>Quizzes</span>
           </div>
           <div className={sidebarItemClass("flashcards")} onClick={() => setActiveTab("flashcards")}>
             <Brain size={18} />
@@ -954,10 +707,6 @@ const AdminPanel = () => {
           <div className={sidebarItemClass("materials")} onClick={() => setActiveTab("materials")}>
             <BookOpen size={18} />
             <span>Materials</span>
-          </div>
-          <div className={sidebarItemClass("games")} onClick={() => setActiveTab("games")}>
-            <Gamepad2 size={18} />
-            <span>Games</span>
           </div>
 
           <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6 mb-2">Economy</p>
@@ -988,11 +737,9 @@ const AdminPanel = () => {
               {activeTab === 'dashboard' && 'Control Center'}
               {activeTab === 'users' && 'Student Directory'}
               {activeTab === 'subjects' && 'Subject Management'}
-              {activeTab === 'quizzes' && 'Exam Management'}
-              {activeTab === 'pro-quizzes' && 'Professional Assessments'}
-              {activeTab === 'flashcards' && 'Knowledge Base'}
-              {activeTab === 'materials' && 'Educational Assets'}
-              {activeTab === 'games' && 'Interactive Hub'}
+              {activeTab === 'quizzes' && 'Quizzes'}
+              {activeTab === 'flashcards' && 'Flashcards'}
+              {activeTab === 'materials' && 'Materials'}
               {activeTab === 'messages' && 'Contact Messages'}
               {activeTab === 'tokens' && 'Tokens & Shop'}
             </h2>
@@ -1035,24 +782,12 @@ const AdminPanel = () => {
                 <div className={theme.card}>
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <div className="p-2 bg-emerald-50 rounded-lg">
-                        <FileText className="h-5 w-5 text-emerald-600" />
-                      </div>
-                    </div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Live Quizzes</h3>
-                    <p className="text-3xl font-bold mt-1 tracking-tight">{quizzes.length}</p>
-                  </div>
-                </div>
-
-                <div className={theme.card}>
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
                       <div className="p-2 bg-amber-50 rounded-lg">
-                        <Gamepad2 className="h-5 w-5 text-amber-600" />
+                        <Brain className="h-5 w-5 text-amber-600" />
                       </div>
                     </div>
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Games</h3>
-                    <p className="text-3xl font-bold mt-1 tracking-tight">{games.length}</p>
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Flashcards</h3>
+                    <p className="text-3xl font-bold mt-1 tracking-tight">{flashcards.length}</p>
                   </div>
                 </div>
 
@@ -1092,10 +827,10 @@ const AdminPanel = () => {
                     <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
                       <div className="flex justify-between items-center mb-2">
                         <span className="font-black text-sm uppercase">Content Library</span>
-                        <span className="font-bold text-xl">{materials.length + flashcards.length + quizzes.length + games.length}</span>
+                        <span className="font-bold text-xl">{materials.length + flashcards.length}</span>
                       </div>
                       <div className="text-xs font-bold text-gray-500">
-                        {materials.length} videos · {quizzes.length} quizzes · {games.length} games
+                        {materials.length} materials · {flashcards.length} flashcards
                       </div>
                     </div>
                     <div className="p-4 bg-gray-50 border-2 border-black rounded-xl">
@@ -1126,17 +861,13 @@ const AdminPanel = () => {
                       <Plus className="h-6 w-6 mb-2 text-cyan-600" />
                       <span className="font-black text-sm uppercase">Add Subject</span>
                     </button>
-                    <button onClick={() => setShowQuizModal(true)} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-green-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
-                      <Plus className="h-6 w-6 mb-2 text-green-600" />
-                      <span className="font-black text-sm uppercase">Build Quiz</span>
-                    </button>
-                    <button onClick={() => setShowGameModal(true)} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-orange-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
-                      <Plus className="h-6 w-6 mb-2 text-orange-600" />
-                      <span className="font-black text-sm uppercase">New Game</span>
-                    </button>
                     <button onClick={() => setShowMaterialModal(true)} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-purple-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
                       <Plus className="h-6 w-6 mb-2 text-purple-600" />
                       <span className="font-black text-sm uppercase">Material</span>
+                    </button>
+                    <button onClick={() => setShowFlashcardModal(true)} className="p-4 bg-white border-2 border-black rounded-xl hover:bg-green-50 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all flex flex-col items-center text-center">
+                      <Plus className="h-6 w-6 mb-2 text-green-600" />
+                      <span className="font-black text-sm uppercase">Flashcard</span>
                     </button>
                   </div>
                 </div>
@@ -1603,7 +1334,7 @@ const AdminPanel = () => {
               <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div>
                   <h3 className="text-lg font-bold text-slate-900 tracking-tight">Flashcard Repository</h3>
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Knowledge Base Assets</p>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Showing your 10 most recent flashcards</p>
                 </div>
                 <button
                   onClick={() => setShowFlashcardModal(true)}
@@ -1615,7 +1346,7 @@ const AdminPanel = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {flashcards.map((card) => (
+                {flashcards.slice(0, 10).map((card) => (
                   <div key={card._id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                     <div>
                       <div className="flex justify-between items-start mb-4">
@@ -1648,57 +1379,8 @@ const AdminPanel = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Content Assessments</h3>
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Interactive Logic Verification</p>
-                </div>
-                <button
-                  onClick={() => setShowQuizModal(true)}
-                  className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]"
-                >
-                  <Plus size={18} />
-                  <span>Interactive Builder</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                {quizzes.map((q) => (
-                  <div key={q._id} className="bg-white border border-slate-200 rounded-xl p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group shadow-sm">
-                    <div className="flex items-center space-x-6">
-                      <div className="h-12 w-12 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center font-bold text-xs text-slate-500 shadow-inner">
-                        {q.questions?.length || 0} Q
-                      </div>
-                      <div>
-                        <h4 className="text-lg font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{q.title}</h4>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md uppercase tracking-wider">{q.subject}</span>
-                          <div className="h-1 w-1 bg-slate-200 rounded-full" />
-                          <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md uppercase tracking-wider">{q.difficulty}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <button onClick={() => startEditQuiz(q)} className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg hover:border-indigo-300 hover:text-indigo-600 font-bold text-[11px] uppercase tracking-wider transition-all shadow-sm">
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteQuiz(q._id || q.id)}
-                        className="p-2.5 bg-white border border-slate-200 text-slate-300 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 rounded-lg transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "pro-quizzes" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Professional Assessments</h3>
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Advanced certification quizzes</p>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">All Quizzes</h3>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Manage all quizzes on the platform</p>
                 </div>
                 <button onClick={() => setShowProQuizModal(true)} className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]">
                   <Plus size={18} /><span>New Assessment</span>
@@ -1742,71 +1424,12 @@ const AdminPanel = () => {
             </div>
           )}
 
-          {activeTab === "games" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Interactive Modules</h3>
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Gamified Learning Assets</p>
-                </div>
-                <button
-                  onClick={() => setShowGameModal(true)}
-                  className="flex items-center space-x-2 px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100 active:scale-[0.98]"
-                >
-                  <Plus size={18} />
-                  <span>Interactive Deploy</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {games.map((game) => (
-                  <div key={game._id} className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
-                    <div className="aspect-video bg-slate-900 flex items-center justify-center relative overflow-hidden">
-                      {game.thumbnailUrl ? (
-                        <img src={game.thumbnailUrl} alt={game.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <Gamepad2 className="h-10 w-10 text-indigo-400 opacity-40 group-hover:scale-110 transition-transform duration-500" />
-                      )}
-                      <div className="absolute top-3 left-3 px-2 py-0.5 bg-indigo-600/90 text-white rounded text-[9px] font-bold uppercase tracking-widest backdrop-blur-sm">
-                        {game.category || 'Simulation'}
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-slate-800 tracking-tight">{game.title}</h4>
-                        <div className="flex items-center space-x-1 text-amber-400">
-                          <Star size={10} fill="currentColor" />
-                          <span className="text-[10px] font-bold text-slate-500">4.8</span>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-medium mb-4 line-clamp-2 leading-relaxed">{game.description || `High-engagement ${game.subject} module designed for complex retention.`}</p>
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{game.subject}</span>
-                        <div className="flex space-x-2">
-                          <button onClick={() => startEditGame(game)} className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors">
-                            <Edit3 size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteGame(game._id || game.id)}
-                            className="p-1.5 text-slate-300 hover:text-rose-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {activeTab === "materials" && (
             <div className="space-y-6">
               <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Educational Library</h3>
-                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Static High-Resolution Assets</p>
+                  <h3 className="text-lg font-bold text-slate-900 tracking-tight">Materials</h3>
+                  <p className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mt-0.5">Showing your 10 most recent uploads</p>
                 </div>
                 <button
                   onClick={() => setShowMaterialModal(true)}
@@ -1818,7 +1441,7 @@ const AdminPanel = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {materials.map((m) => (
+                {materials.slice(0, 10).map((m) => (
                   <div key={m._id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                     <div className="mb-4">
                       <div className="flex items-center space-x-2 mb-3">
@@ -2076,311 +1699,7 @@ const AdminPanel = () => {
           </motion.div>
         )}
 
-        {showGameModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Deploy Module</h3>
-                <button onClick={() => setShowGameModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
-              </div>
-              <div className="p-6 grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Game Title</label>
-                  <input className={theme.input} value={newGame.title} onChange={(e) => setNewGame({ ...newGame, title: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                  <select className={theme.input} value={newGame.category} onChange={(e) => setNewGame({ ...newGame, category: e.target.value })}>
-                    <option value="mathematics">Mathematics</option>
-                    <option value="science">Science</option>
-                    <option value="english">English</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
-                  <select className={theme.input} value={newGame.gameType} onChange={(e) => setNewGame({ ...newGame, gameType: e.target.value })}>
-                    <option value="simulation">Simulation</option>
-                    <option value="quiz">Interactive Quiz</option>
-                    <option value="puzzle">Logic Puzzle</option>
-                  </select>
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Game Endpoint/URL</label>
-                  <input className={theme.input} value={newGame.gameUrl} onChange={(e) => setNewGame({ ...newGame, gameUrl: e.target.value })} placeholder="/games/example" />
-                </div>
-              </div>
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setShowGameModal(false)} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleCreateGame} className={theme.buttonPrimary}>Deploy Module</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {showMaterialModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                    {newMaterial.type === "video" ? "Upload Learning Video" : newMaterial.type === "notes" ? "Upload Study Notes" : newMaterial.type === "worksheet" ? "Upload Worksheet" : "Upload Presentation"}
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {newMaterial.type === "video" ? "Add YouTube videos or other materials for students" : "Upload files securely from your device"}
-                  </p>
-                </div>
-                <button onClick={() => { setShowMaterialModal(false); setUploadedAdminFile(null); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title *</label>
-                  <input className={theme.input} placeholder="e.g. Introduction to Cells" value={newMaterial.title} onChange={(e) => setNewMaterial({ ...newMaterial, title: e.target.value })} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject *</label>
-                    <select className={theme.input} value={newMaterial.subject} onChange={(e) => setNewMaterial({ ...newMaterial, subject: e.target.value })}>
-                      <option value="science">Science</option>
-                      <option value="mathematics">Mathematics</option>
-                      <option value="english">English</option>
-                      <option value="social-science">Social Science</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade *</label>
-                    <select className={theme.input} value={newMaterial.grade} onChange={(e) => setNewMaterial({ ...newMaterial, grade: e.target.value })}>
-                      <option value="6th">Grade 6</option>
-                      <option value="7th">Grade 7</option>
-                      <option value="8th">Grade 8</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
-                    <select className={theme.input} value={newMaterial.type} onChange={(e) => {
-                      setNewMaterial({ ...newMaterial, type: e.target.value, fileUrl: "" });
-                      setUploadedAdminFile(null);
-                    }}>
-                      <option value="video">Video Lesson</option>
-                      <option value="notes">Study Notes</option>
-                      <option value="worksheet">Worksheet</option>
-                      <option value="presentation">Presentation</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={newMaterial.difficulty} onChange={(e) => setNewMaterial({ ...newMaterial, difficulty: e.target.value })}>
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Advanced">Advanced</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chapter / Topic</label>
-                  <input className={theme.input} placeholder="e.g. Cell Biology, Algebra, Photosynthesis" value={newMaterial.chapter} onChange={(e) => setNewMaterial({ ...newMaterial, chapter: e.target.value })} />
-                </div>
-
-                {newMaterial.type === "video" ? (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                      Video URL * <span className="text-slate-300 font-normal">(YouTube embed or direct video link)</span>
-                    </label>
-                    <input
-                      className={theme.input}
-                      placeholder="https://www.youtube.com/embed/VIDEO_ID"
-                      value={newMaterial.fileUrl}
-                      onChange={(e) => setNewMaterial({ ...newMaterial, fileUrl: e.target.value })}
-                    />
-                    <p className="text-xs text-slate-400 mt-1">Tip: For YouTube, use the embed URL format: youtube.com/embed/VIDEO_ID</p>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">File Upload *</label>
-                    <div
-                      onClick={() => document.getElementById("admin-file-upload")?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${uploadedAdminFile ? "border-indigo-500 bg-indigo-50" : "border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50"}`}
-                    >
-                      <input
-                        id="admin-file-upload"
-                        type="file"
-                        accept={newMaterial.type === "notes" ? ".pdf,.doc,.docx,.txt" : newMaterial.type === "worksheet" ? ".pdf,.doc,.docx,.xls,.xlsx" : ".pdf,.pptx,.ppt,.doc,.docx"}
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setUploadedAdminFile(file);
-                          }
-                        }}
-                      />
-                      {uploadedAdminFile ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="p-3 bg-indigo-100 rounded-xl border-2 border-indigo-500">
-                            <FileText size={24} className="text-indigo-600" />
-                          </div>
-                          <p className="font-bold text-slate-800 text-sm">{uploadedAdminFile.name}</p>
-                          <p className="text-xs text-slate-500">{(uploadedAdminFile.size / 1024).toFixed(1)} KB</p>
-                          <button onClick={(e) => { e.stopPropagation(); setUploadedAdminFile(null); setNewMaterial({ ...newMaterial, fileUrl: "" }); }} className="text-xs text-rose-500 font-bold hover:underline">Remove</button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="p-3 bg-slate-100 rounded-xl border-2 border-slate-300">
-                            <Upload size={24} className="text-slate-400" />
-                          </div>
-                          <p className="font-bold text-slate-700">Click to select a file</p>
-                          <p className="text-xs text-slate-400">
-                            {newMaterial.type === "notes" ? "PDF, DOC, DOCX, TXT" : newMaterial.type === "worksheet" ? "PDF, DOC, DOCX, XLS, XLSX" : "PDF, PPT, PPTX, DOC, DOCX"}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                  <textarea className={theme.input} rows={2} placeholder="Brief description of what students will learn..." value={newMaterial.description} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} />
-                </div>
-              </div>
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => { setShowMaterialModal(false); setUploadedAdminFile(null); }} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleCreateMaterial} className={theme.buttonPrimary}>
-                  {newMaterial.type === "video" ? "Upload Material" : "Upload File"}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {showQuizModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
-          >
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 max-h-[90vh] flex flex-col">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">{editingQuiz ? 'Edit Assessment' : 'Initialize Assessment'}</h3>
-                <button onClick={() => { setShowQuizModal(false); setEditingQuiz(null); setQuizQuestionInputs([]); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
-              </div>
-              <div className="p-6 space-y-4 overflow-y-auto flex-grow">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Assessment Title</label>
-                    <input className={theme.input} value={editingQuiz ? editingQuiz.title : newQuiz.title} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, title: e.target.value }) : setNewQuiz({ ...newQuiz, title: e.target.value })} />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
-                    <textarea className={theme.input} rows={2} value={editingQuiz ? (editingQuiz.description || '') : newQuiz.description} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, description: e.target.value }) : setNewQuiz({ ...newQuiz, description: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, grade: e.target.value }) : setNewQuiz({ ...newQuiz, grade: e.target.value })}>
-                      <option value="6th">6th</option>
-                      <option value="7th">7th</option>
-                      <option value="8th">8th</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={editingQuiz ? editingQuiz.subject : newQuiz.subject}
-                      disabled={
-                        !(editingQuiz ? editingQuiz.grade : newQuiz.grade)
-                      }
-
-                      onChange={(e) => {
-                        const grade = e.target.value;
-                        if (editingQuiz) {
-                          setEditingQuiz({
-                            ...editingQuiz,
-                            grade,
-                            subject: "",
-                          });
-                        } else {
-                          setNewQuiz({
-                            ...newQuiz,
-                            grade,
-                            subject: "",
-                          });
-                        }
-
-                        fetchSubjectsByGrade(grade);
-                      }}>
-                      <option value="">
-                        {loadingSubjects
-                          ? "Loading Subjects..."
-                          : "Select Subject"}
-                      </option>
-
-                      {availableSubjects.map((subject: any) => (
-                        <option
-                          key={subject._id}
-                          value={subject.slug}
-                        >
-                          {subject.name}
-                        </option>
-                      ))}
-
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
-                    <select className={theme.input} value={editingQuiz ? editingQuiz.difficulty : newQuiz.difficulty} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, difficulty: e.target.value }) : setNewQuiz({ ...newQuiz, difficulty: e.target.value })}>
-                      <option value="Easy">Easy</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Hard">Hard</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Question Builder */}
-                <div className="border-t border-slate-100 pt-4 mt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Questions ({quizQuestionInputs.length})</label>
-                    <button type="button" onClick={addQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12} /> Add Question</button>
-                  </div>
-                  {quizQuestionInputs.map((q, qi) => (
-                    <div key={qi} className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-500 uppercase">Q{qi + 1}</span>
-                        <button type="button" onClick={() => removeQuizQuestion(qi)} className="text-rose-400 hover:text-rose-600 transition-colors"><X size={14} /></button>
-                      </div>
-                      <input className={theme.input + " mb-2"} placeholder="Question text" value={q.question} onChange={(e) => updateQuizQuestion(qi, 'question', e.target.value)} />
-                      {[0, 1, 2, 3].map((oi) => (
-                        <div key={oi} className="flex items-center gap-2 mb-1">
-                          <input type="radio" checked={q.correctAnswer === oi} onChange={() => updateQuizQuestion(qi, 'correctAnswer', oi)} className="accent-indigo-600" />
-                          <input className={theme.input + " text-sm"} placeholder={`Option ${String.fromCharCode(65 + oi)}`} value={q.options[oi]} onChange={(e) => updateQuizQuestionOption(qi, oi, e.target.value)} />
-                        </div>
-                      ))}
-                      <input className={theme.input + " mt-2 text-sm"} placeholder="Explanation (optional)" value={q.explanation} onChange={(e) => updateQuizQuestion(qi, 'explanation', e.target.value)} />
-                    </div>
-                  ))}
-                  {quizQuestionInputs.length === 0 && (
-                    <p className="text-sm text-slate-400 italic text-center py-4">Click "Add Question" to start building your quiz.</p>
-                  )}
-                </div>
-              </div>
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3 shrink-0">
-                <button onClick={() => { setShowQuizModal(false); setEditingQuiz(null); setQuizQuestionInputs([]); }} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={editingQuiz ? handleUpdateQuiz : handleCreateQuiz} className={theme.buttonPrimary}>{editingQuiz ? 'Update Quiz' : 'Create Quiz'}</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Subject Modal */}
+{/* Subject Modal */}
         {showSubjectModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
@@ -2720,40 +2039,6 @@ const AdminPanel = () => {
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
                 <button onClick={() => setEditingFlashcard(null)} className={theme.buttonSecondary}>Cancel</button>
                 <button onClick={handleUpdateFlashcard} className={theme.buttonPrimary}>Update Flashcard</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Game Edit Modal */}
-        {editingGame && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
-              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Module</h3>
-                <button onClick={() => setEditingGame(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
-              </div>
-              <div className="p-6 grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
-                  <input className={theme.input} value={editingGame.title || ''} onChange={(e) => setEditingGame({ ...editingGame, title: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                  <select className={theme.input} value={editingGame.category || 'mathematics'} onChange={(e) => setEditingGame({ ...editingGame, category: e.target.value })}>
-                    <option value="mathematics">Mathematics</option>
-                    <option value="science">Science</option>
-                    <option value="english">English</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Game URL</label>
-                  <input className={theme.input} value={editingGame.gameUrl || ''} onChange={(e) => setEditingGame({ ...editingGame, gameUrl: e.target.value })} />
-                </div>
-              </div>
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setEditingGame(null)} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleUpdateGame} className={theme.buttonPrimary}>Update Module</button>
               </div>
             </div>
           </motion.div>
