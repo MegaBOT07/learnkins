@@ -347,7 +347,8 @@ const Flashcards = () => {
   };
 
   const nextCard = () => {
-    if (currentCardIndex < filteredCards.length - 1) { setCurrentCardIndex(currentCardIndex + 1); setShowAnswer(false); } else { setStudyMode(false); }
+    const cards = studyCards ?? filteredCards;
+    if (currentCardIndex < cards.length - 1) { setCurrentCardIndex(currentCardIndex + 1); setShowAnswer(false); } else { setStudyMode(false); }
   };
 
   const previousCard = () => {

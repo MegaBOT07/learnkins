@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { quizAPI, progressAPI } from "../../utils/api";
 import { storeNewAchievements } from "../../utils/achievements";
@@ -55,6 +55,7 @@ const Quiz = () => {
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [incorrectAnswers, setIncorrectAnswers] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const timerDoneRef = useRef(false);
   const { award } = useTokens();
   const { takeQuiz, addPoints, addExperience } = useGame();
 
@@ -134,8 +135,9 @@ const Quiz = () => {
         timeTaken
       );
 
-      if (response.data.success) {
+      if (response.data?.success) {
         const result = response.data.data;
+        if (!result) throw new Error('Missing result data');
 
         setScore(result.percentage);
         setCorrectAnswers(result.correctCount);
@@ -170,23 +172,26 @@ const Quiz = () => {
   useEffect(() => {
     if (isQuizStarted && !isQuizCompleted) {
       const timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            handleQuizComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
+        setTimeLeft((prev) => prev - 1);
       }, 1000);
 
       return () => clearInterval(timer);
     }
   }, [isQuizStarted, isQuizCompleted]);
 
+  useEffect(() => {
+    if (isQuizStarted && !isQuizCompleted && timeLeft <= 0 && !timerDoneRef.current) {
+      timerDoneRef.current = true;
+      handleQuizComplete();
+    }
+  }, [timeLeft, isQuizStarted, isQuizCompleted]);
+
   const startQuiz = () => {
     if (!quizData) return;
-
+    if (!quizData.questions || quizData.questions.length === 0) {
+      setError('This quiz has no questions.');
+      return;
+    }
     setIsQuizStarted(true);
     setTimeLeft(quizData.timeLimit * 60);
   };

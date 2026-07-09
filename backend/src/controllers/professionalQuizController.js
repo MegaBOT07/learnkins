@@ -468,7 +468,11 @@ export const submitProfessionalQuiz = async (req, res) => {
   try {
     const { id } = req.params;
     const { answers, timeTaken } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+    if (!Array.isArray(answers)) {
+      return res.status(400).json({ success: false, message: 'Answers array is required' });
+    }
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
@@ -494,10 +498,13 @@ export const submitProfessionalQuiz = async (req, res) => {
       const selectedAnswer = answers[index];
       let isCorrect = false;
 
-      if (question.type === 'short-answer') {
-        isCorrect = String(selectedAnswer).trim().toLowerCase() === String(question.correctAnswer).trim().toLowerCase();
-      } else {
-        isCorrect = selectedAnswer === question.correctAnswer;
+      if (selectedAnswer != null) {
+        if (question.type === 'short-answer') {
+          isCorrect = String(selectedAnswer).trim().toLowerCase() === String(question.correctAnswer).trim().toLowerCase();
+        } else {
+          const correctOption = Array.isArray(question.options) ? question.options[question.correctAnswer] : undefined;
+          isCorrect = correctOption !== undefined && String(selectedAnswer).trim().toLowerCase() === String(correctOption).trim().toLowerCase();
+        }
       }
 
       const pointsEarned = isCorrect ? (question.points || 1) : 0;
@@ -629,7 +636,8 @@ export const submitProfessionalQuiz = async (req, res) => {
 // @access  Private
 export const getAllUserAttempts = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
 
     const quizzes = await ProfessionalQuiz.find(
       { 'attempts.userId': userId },
@@ -679,7 +687,8 @@ export const getAllUserAttempts = async (req, res) => {
 export const getUserAttempts = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({

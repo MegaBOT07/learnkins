@@ -167,7 +167,9 @@ export const updateFlashcard = async (req, res) => {
     flashcard.isPublic = isPublic !== undefined ? isPublic : flashcard.isPublic;
     
     if (tags) {
-      flashcard.tags = tags.split(',').map(tag => tag.trim().toLowerCase());
+      flashcard.tags = Array.isArray(tags)
+        ? tags.map(t => typeof t === 'string' ? t.trim().toLowerCase() : t)
+        : tags.split(',').map(tag => tag.trim().toLowerCase());
     }
 
     await flashcard.save();
@@ -277,7 +279,7 @@ export const studyFlashcard = async (req, res) => {
       success: true,
       message: 'Study session recorded',
       data: {
-        studyCount: flashcard.studyCount + 1
+        studyCount: flashcard.studyCount
       },
       newAchievements
     });

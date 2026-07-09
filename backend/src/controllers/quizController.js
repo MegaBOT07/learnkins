@@ -498,6 +498,7 @@ export const submitQuiz = async (req, res) => {
     };
 
     quiz.attempts.push(attempt);
+    if (!quiz.statistics) quiz.statistics = { totalAttempts: 0, totalPassed: 0, averageScore: 0 };
     quiz.statistics.totalAttempts = (quiz.statistics.totalAttempts || 0) + 1;
     if (passed) {
       quiz.statistics.totalPassed = (quiz.statistics.totalPassed || 0) + 1;
