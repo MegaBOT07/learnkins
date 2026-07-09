@@ -326,25 +326,30 @@ export const rateFlashcard = async (req, res) => {
 // @access  Private
 export const generateAIFlashcards = async (req, res) => {
   try {
-    const { topic } = req.body;
+    const { topic, subject = 'science', difficulty = 'Medium', count = 5 } = req.body;
     if (!topic || !topic.trim()) {
       return res.status(400).json({ success: false, message: 'Topic is required' });
     }
+
+    const allowedSubjects = ['science', 'mathematics', 'social-science', 'english'];
+    const finalSubject = allowedSubjects.includes(subject) ? subject : 'science';
+    const finalDifficulty = ['Easy', 'Medium', 'Hard'].includes(difficulty) ? difficulty : 'Medium';
+    const finalCount = Math.max(1, Math.min(10, parseInt(count) || 5));
 
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ success: false, message: 'AI service not configured' });
     }
 
-    const prompt = `Generate exactly 5 unique and educational flashcards about "${topic.trim()}".
+    const prompt = `Generate exactly ${finalCount} unique and educational flashcards about "${topic.trim()}" for subject "${finalSubject}" at "${finalDifficulty}" difficulty.
 
 Return ONLY a valid JSON array with NO markdown code blocks, NO extra text, just the array itself:
 [
   {
     "question": "Clear, concise question",
     "answer": "Detailed, educational answer",
-    "difficulty": "Easy",
-    "subject": "science"
+    "difficulty": "${finalDifficulty}",
+    "subject": "${finalSubject}"
   }
 ]
 
@@ -397,6 +402,73 @@ Valid difficulties: Easy, Medium, Hard`;
     res.status(500).json({
       success: false,
       message: error?.message || 'Failed to generate flashcards',
+    });
+  }
+};
+
+// @desc    Batch create flashcards (for saving AI-generated cards)
+// @route   POST /api/flashcards/batch
+// @access  Private
+export const batchCreateFlashcards = async (req, res) => {
+  try {
+    const { flashcards } = req.body;
+
+    if (!Array.isArray(flashcards) || flashcards.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Flashcards array is required and must not be empty'
+      });
+    }
+
+    if (flashcards.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 50 flashcards per batch'
+      });
+    }
+
+    const validSubjects = ['science', 'mathematics', 'social-science', 'english'];
+    const validDifficulties = ['Easy', 'Medium', 'Hard'];
+
+    const cardsToCreate = flashcards.map((card, idx) => {
+      const question = String(card.question || '').trim();
+      const answer = String(card.answer || '').trim();
+
+      if (!question || !answer) {
+        throw new Error(`Card at index ${idx} requires question and answer`);
+      }
+
+      const subject = validSubjects.includes(card.subject) ? card.subject : 'science';
+      const difficulty = validDifficulties.includes(card.difficulty) ? card.difficulty : 'Medium';
+
+      return {
+        question,
+        answer,
+        subject,
+        difficulty,
+        chapter: card.chapter || '',
+        tags: Array.isArray(card.tags)
+          ? card.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean)
+          : ['ai-generated'],
+        isPublic: card.isPublic !== undefined ? card.isPublic : true,
+        createdBy: req.user.id
+      };
+    });
+
+    const created = await Flashcard.insertMany(cardsToCreate);
+    await Flashcard.populate(created, { path: 'createdBy', select: 'name' });
+
+    res.status(201).json({
+      success: true,
+      message: `${created.length} flashcards created successfully`,
+      count: created.length,
+      data: created
+    });
+  } catch (error) {
+    console.error('Batch create flashcards error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error'
     });
   }
 };

@@ -11,7 +11,8 @@ import {
   getPopularFlashcards,
   getRecentFlashcards,
   searchFlashcards,
-  generateAIFlashcards
+  generateAIFlashcards,
+  batchCreateFlashcards
 } from '../controllers/flashcardController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -29,6 +30,9 @@ router.use(protect);
 
 // AI flashcard generation
 router.post('/ai-generate', generateAIFlashcards);
+
+// Batch create flashcards (for saving AI-generated cards)
+router.post('/batch', batchCreateFlashcards);
 
 // User flashcards
 router.get('/my/flashcards', getMyFlashcards);

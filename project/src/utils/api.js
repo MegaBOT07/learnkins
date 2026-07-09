@@ -129,7 +129,8 @@ export const flashcardAPI = {
   deleteFlashcard: (id) => api.delete(`/flashcards/${id}`),
   markAsKnown: (id) => api.post(`/flashcards/${id}/known`),
   markAsUnknown: (id) => api.post(`/flashcards/${id}/unknown`),
-  generateAIFlashcards: (topic) => api.post('/flashcards/ai-generate', { topic }),
+  generateAIFlashcards: (params) => api.post('/flashcards/ai-generate', params),
+  batchCreateFlashcards: (flashcards) => api.post('/flashcards/batch', { flashcards }),
 };
 
 // Progress API
