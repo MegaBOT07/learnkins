@@ -25,9 +25,9 @@ router.use(protect);
 router.post('/:id/play', playGame);
 router.post('/:id/score', submitScore);
 
-// Teacher/Admin routes
-router.post('/', authorize('admin', 'teacher'), createGame);
-router.put('/:id', authorize('admin', 'teacher'), updateGame);
-router.delete('/:id', authorize('admin', 'teacher'), deleteGame);
+// Admin routes
+router.post('/', authorize('admin'), createGame);
+router.put('/:id', authorize('admin'), updateGame);
+router.delete('/:id', authorize('admin'), deleteGame);
 
 export default router;

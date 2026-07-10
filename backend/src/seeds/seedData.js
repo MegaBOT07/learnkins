@@ -942,15 +942,7 @@ const gradeUsers = [
     grade: "8th",
     parentId: null,
   },
-  {
-    name: "Sarah Teacher",
-    email: "teacher@example.com",
-    password: "password123",
-    role: "teacher",
-    grade: null,
-    parentId: null,
-  },
-];
+  ];
 
 const connectDB = async () => {
   try {
@@ -1002,12 +994,7 @@ const seedData = async () => {
     }
     console.log(`Created ${students.length} students`);
 
-    // Create teacher
-    const teacherData = gradeUsers.find((user) => user.role === "teacher");
-    const teacher = await User.create(teacherData);
-    console.log("Created teacher user");
-
-    const createdUsers = [parent, ...students, teacher];
+    const createdUsers = [parent, ...students];
 
     console.log("Set up parent-child relationships");
 
@@ -1037,7 +1024,7 @@ const seedData = async () => {
             materialData.title.toLowerCase().replace(/\s+/g, "-"),
           type: materialData.type,
           duration: materialData.duration.toString(),
-          uploadedBy: teacher._id,
+          uploadedBy: students[0]._id,
         });
       }
     }
@@ -1240,7 +1227,7 @@ const seedData = async () => {
     console.log("👨‍🎓 6th Grade: alex@example.com / password123");
     console.log("👩‍🎓 7th Grade: emma@example.com / password123");
     console.log("👨‍🎓 8th Grade: mike@example.com / password123");
-    console.log("👩‍🏫 Teacher: teacher@example.com / password123");
+    
   } catch (error) {
     console.error("Error seeding data:", error);
   } finally {

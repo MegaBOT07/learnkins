@@ -33,7 +33,7 @@ export const getProfessionalQuizzes = async (req, res) => {
     if (subject) filter.subject = subject;
     if (difficulty) filter.difficulty = difficulty;
     if (type === 'ai') filter.isAIGenerated = true;
-    if (type === 'teacher') filter.isAIGenerated = false;
+    if (type === 'admin') filter.isAIGenerated = false;
 
     const quizzes = await ProfessionalQuiz.find(filter)
       .select('-questions') // Don't send full questions in list

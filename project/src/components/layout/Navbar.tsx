@@ -279,12 +279,10 @@ const Navbar = () => {
                             <div className="flex items-center gap-2 mt-2">
                               <span className={`text-xs px-2 py-1 rounded-md font-bold uppercase tracking-wider border-2 ${user?.role === 'admin' ? 'bg-red-600 text-white border-red-600' :
                                   user?.role === 'parent' ? 'bg-orange-500 text-white border-orange-500' :
-                                    user?.role === 'teacher' ? 'bg-green-600 text-white border-green-600' :
                                       'bg-indigo-600 text-white border-indigo-600'
                                 }`}>
                                 {user?.role === 'admin' ? '🛡️ Admin' :
                                   user?.role === 'parent' ? '👨‍👩‍👧 Parent' :
-                                    user?.role === 'teacher' ? '🎓 Teacher' :
                                       '📚 Student'}
                               </span>
                             </div>
@@ -346,7 +344,7 @@ const Navbar = () => {
                               <Shield className="h-4 w-4 text-red-600" strokeWidth={2.5} />
                               Admin Panel
                             </Link>
-                          ) : user?.role === 'student' || user?.role === 'teacher' ? (
+                          ) : user?.role === 'student' ? (
                             <Link
                               to="/progress"
                               className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-green-500 hover:bg-green-50 transition-all"

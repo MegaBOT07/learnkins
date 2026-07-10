@@ -37,10 +37,10 @@ router.post('/batch', batchCreateFlashcards);
 // User flashcards
 router.get('/my/flashcards', getMyFlashcards);
 
-// CRUD operations (admin/teacher only)
-router.post('/', authorize('admin', 'teacher'), createFlashcard);
-router.put('/:id', authorize('admin', 'teacher'), updateFlashcard);
-router.delete('/:id', authorize('admin', 'teacher'), deleteFlashcard);
+// CRUD operations (admin only)
+router.post('/', authorize('admin'), createFlashcard);
+router.put('/:id', authorize('admin'), updateFlashcard);
+router.delete('/:id', authorize('admin'), deleteFlashcard);
 
 // Study and rating
 router.post('/:id/study', studyFlashcard);

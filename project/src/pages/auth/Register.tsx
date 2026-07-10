@@ -117,8 +117,7 @@ const Register: React.FC = () => {
         return 'Access learning materials, take quizzes, and track progress';
       case 'parent':
         return "Monitor your child's progress and set parental controls";
-      case 'teacher':
-        return 'Create content, manage students, and view analytics';
+      
       default:
         return '';
     }
@@ -246,7 +245,6 @@ const Register: React.FC = () => {
               >
                 <option value="student">Student</option>
                 <option value="parent">Parent</option>
-                <option value="teacher">Teacher</option>
               </select>
               <p className="mt-1 text-sm text-gray-500 font-medium">
                 {getRoleDescription(formData.role)}
