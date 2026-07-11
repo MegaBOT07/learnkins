@@ -15,9 +15,12 @@ import {
   Filter,
   Star,
   Save,
+  Trash2,
+  Lock,
 } from "lucide-react";
 import { flashcardAPI } from "../../utils/api";
 import { flashcardAiService } from "../../services/flashcardAiService";
+import { useToast } from "../../components/Toast";
 
 interface Flashcard {
   id: string;
@@ -27,6 +30,7 @@ interface Flashcard {
   difficulty: "Easy" | "Medium" | "Hard";
   tags: string[];
   createdBy: string;
+  createdById?: string;
   isPublic: boolean;
   createdAt: string;
   studyCount: number;
@@ -34,6 +38,7 @@ interface Flashcard {
 }
 
 const Flashcards = () => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState("browse");
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [filteredCards, setFilteredCards] = useState<Flashcard[]>([]);
@@ -49,7 +54,7 @@ const Flashcards = () => {
     subject: "science",
     difficulty: "Medium" as "Easy" | "Medium" | "Hard",
     tags: "",
-    isPublic: true,
+    isPublic: false,
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +70,7 @@ const Flashcards = () => {
   const [aiSaving, setAiSaving] = useState(false);
   const [studyCards, setStudyCards] = useState<Flashcard[] | null>(null);
   const { redeem, canRedeem } = useTokens();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [unlocked, setUnlocked] = useState<Record<string, boolean>>(() => {
     try {
       const raw = localStorage.getItem("learnkins_unlocked") || "{}";
@@ -85,14 +90,14 @@ const Flashcards = () => {
   const unlockCard = async (cardId: string) => {
     const cost = 5;
     if (!canRedeem(cost)) {
-      alert("Not enough tokens to unlock this flashcard.");
+      showToast("Not enough tokens to unlock this flashcard.", "error");
       return;
     }
     const ok = await redeem(cost, `unlock:flashcard:${cardId}`);
     if (ok) {
       persistUnlocked({ ...unlocked, [cardId]: true });
     } else {
-      alert("Failed to redeem tokens.");
+      showToast("Failed to redeem tokens.", "error");
     }
   };
 
@@ -122,10 +127,11 @@ const Flashcards = () => {
             difficulty: card.difficulty || "Medium",
             tags: Array.isArray(card.tags) ? card.tags : typeof card.tags === "string" ? card.tags.split(",").map((t: string) => t.trim()) : [],
             createdBy: card.createdBy && typeof card.createdBy === "object" ? card.createdBy.name || card.createdBy._id : card.createdBy || "Unknown",
-            isPublic: card.isPublic !== undefined ? card.isPublic : true,
+            isPublic: card.isPublic !== undefined ? card.isPublic : false,
             createdAt: card.createdAt || new Date().toISOString(),
             studyCount: card.studyCount || 0,
             rating: typeof card.rating === "number" ? card.rating : card.rating && card.rating.average !== undefined ? card.rating.average : 0,
+            createdById: typeof card.createdBy === "object" && card.createdBy ? card.createdBy._id : undefined,
           }));
           setFlashcards(normalized);
           setFilteredCards(normalized);
@@ -192,7 +198,7 @@ const Flashcards = () => {
       setFlashcards([optimisticCard, ...flashcards]);
       setFilteredCards([optimisticCard, ...filteredCards]);
     } finally {
-      setNewCard({ question: "", answer: "", subject: "science", difficulty: "Medium", tags: "", isPublic: true });
+      setNewCard({ question: "", answer: "", subject: "science", difficulty: "Medium", tags: "", isPublic: false });
       setActiveTab("browse");
     }
   };
@@ -268,7 +274,7 @@ const Flashcards = () => {
             difficulty: safeDifficulty,
             tags,
             createdBy: "AI",
-            isPublic: true,
+            isPublic: false,
             createdAt: new Date().toISOString().split("T")[0],
             studyCount: 0,
             rating: 0,
@@ -304,7 +310,7 @@ const Flashcards = () => {
         subject: c.subject,
         difficulty: c.difficulty,
         tags: c.tags,
-        isPublic: true,
+        isPublic: false,
       }));
 
       const result = await flashcardAiService.saveGeneratedFlashcards(cardsToSave);
@@ -336,6 +342,22 @@ const Flashcards = () => {
     } finally {
       setAiSaving(false);
     }
+  };
+
+  const handleDeleteCard = async (cardId: string) => {
+    if (!window.confirm("Are you sure you want to delete this flashcard? This cannot be undone.")) return;
+
+    try {
+      await flashcardAPI.deleteFlashcard(cardId);
+      setFlashcards((prev) => prev.filter((c) => c.id !== cardId));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || err?.message || "Failed to delete flashcard");
+    }
+  };
+
+  const isOwner = (card: Flashcard) => {
+    if (!user) return false;
+    return card.createdById === user.id || card.createdBy === user.name || card.createdBy === user.id;
   };
 
   const startStudyMode = () => {
@@ -578,9 +600,16 @@ const Flashcards = () => {
               {/* Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCards.map((card) => (
-                  <div key={card.id} className={`bg-white rounded-2xl border-2 ${getSubjectBorder(card.subject)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all p-6`}>
+                  <div key={card.id} className={`bg-white rounded-2xl border-2 ${getSubjectBorder(card.subject)} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all p-6 relative group`}>
                     <div className="flex items-center justify-between mb-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-black border-2 ${getDifficultyColor(card.difficulty)}`}>{card.difficulty}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black border-2 ${getDifficultyColor(card.difficulty)}`}>{card.difficulty}</span>
+                        {!card.isPublic && (
+                          <span className="flex items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-black border-2 border-gray-300 text-gray-500 bg-gray-50">
+                            <Lock className="h-3 w-3" />Private
+                          </span>
+                        )}
+                      </span>
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 text-yellow-500 fill-current" />
                         <span className="text-sm text-gray-600 font-bold">{card.rating}</span>
@@ -589,7 +618,7 @@ const Flashcards = () => {
 
                     <h3 className="text-lg font-black text-black mb-2 line-clamp-2">{card.question}</h3>
 
-                    {unlocked[card.id] ? (
+                    {unlocked[card.id] || isOwner(card) ? (
                       <p className="text-gray-600 text-sm font-medium mb-4">{card.answer}</p>
                     ) : (
                       <div className="text-gray-600 text-sm mb-4">
@@ -611,7 +640,18 @@ const Flashcards = () => {
 
                     <div className="flex items-center justify-between text-xs text-gray-500 font-bold uppercase tracking-wider">
                       <span>By {card.createdBy}</span>
-                      <span>{card.studyCount} studies</span>
+                      <span className="flex items-center gap-2">
+                        {card.studyCount} studies
+                        {isOwner(card) && (
+                          <button
+                            onClick={() => handleDeleteCard(card.id)}
+                            className="p-1 text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                            title="Delete flashcard"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </span>
                     </div>
                   </div>
                 ))}

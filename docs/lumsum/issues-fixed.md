@@ -3,6 +3,11 @@
 ## Backend
 
 ### Professional Quiz Controller
+- **AI quizzes made private** — public listing now excludes AI-generated quizzes (`isAIGenerated: { $ne: true }`)
+- **Added `getMyAIQuizzes`** — returns only the authenticated user's own AI quizzes
+- **Added `deleteMyAIQuiz`** — soft-deletes (`isActive = false`) AI quiz; preserves attempts, progress, tokens, and achievements
+- **Question count limit** — `totalQuestions` validated on both backend (3–50) and frontend; prevents abuse via direct API calls
+- **Route ordering fixed** — `/my-ai` and `/my-attempts` placed before `/:id` to prevent Express param matching
 - **Added pagination** (`page`, `limit`) to `getProfessionalQuizzes` — prevents loading all quizzes at once
 - **Fixed grade filtering** — now reads student's grade from `x-user-info` header; removed query-based grade param
 - **Added `total` count** in response for frontend pagination
@@ -42,6 +47,9 @@
 - **Better error handling** — shows "Quiz not found" when data is missing
 - **Auth check** — shows login/register modal if user is not authenticated before starting quiz
 - **Removed duplicate XP award** — `addExperience` was called client-side but XP is awarded server-side
+
+### AdminPanel.tsx
+- **Pro Quiz question builder** — create and edit modals now include a full question builder (add/remove questions, set options + correct answer); previously submitted quizzes with zero questions
 
 ### ProfessionalQuizzes.tsx
 - **Pagination** — "Load More" button instead of loading all quizzes at once

@@ -16,7 +16,7 @@ export const getProfessionalQuizzes = async (req, res) => {
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
 
-    let filter = { isActive: true };
+    let filter = { isActive: true, isAIGenerated: { $ne: true } };
 
     const userInfo = req.headers['x-user-info'];
     if (userInfo) {
@@ -32,8 +32,6 @@ export const getProfessionalQuizzes = async (req, res) => {
 
     if (subject) filter.subject = subject;
     if (difficulty) filter.difficulty = difficulty;
-    if (type === 'ai') filter.isAIGenerated = true;
-    if (type === 'teacher') filter.isAIGenerated = false;
 
     const quizzes = await ProfessionalQuiz.find(filter)
       .select('-questions') // Don't send full questions in list
@@ -275,6 +273,15 @@ Rules:
 export const createAIQuiz = async (req, res) => {
   try {
     const { difficulty = 'Easy', subject = 'science', grade = 'all', title, totalQuestions = 10, questionType = 'mixed' } = req.body;
+    const MIN_QUESTIONS = 3;
+    const MAX_QUESTIONS = 50;
+
+    if (totalQuestions < MIN_QUESTIONS || totalQuestions > MAX_QUESTIONS) {
+      return res.status(400).json({
+        message: `Number of questions must be between ${MIN_QUESTIONS} and ${MAX_QUESTIONS}`
+      });
+    }
+
     const userId = req.user?.id;
 
     const allowedSubjects = ['science', 'mathematics', 'social-science', 'english'];
@@ -718,6 +725,80 @@ export const getUserAttempts = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error while fetching user attempts'
+    });
+  }
+};
+
+// @desc    Get current user's AI-generated quizzes
+// @route   GET /api/professional-quizzes/my-ai
+// @access  Private
+export const getMyAIQuizzes = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const quizzes = await ProfessionalQuiz.find({
+      isAIGenerated: true,
+      createdBy: userId,
+      isActive: true,
+    })
+      .select('-questions')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: quizzes.length,
+      data: quizzes,
+    });
+  } catch (error) {
+    console.error('Get my AI quizzes error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching your AI quizzes',
+    });
+  }
+};
+
+// @desc    Delete user's own AI-generated quiz (soft delete)
+// @route   DELETE /api/professional-quizzes/my-ai/:id
+// @access  Private
+export const deleteMyAIQuiz = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid quiz ID format',
+      });
+    }
+
+    const quiz = await ProfessionalQuiz.findOne({
+      _id: id,
+      isAIGenerated: true,
+      createdBy: userId,
+    });
+
+    if (!quiz) {
+      return res.status(404).json({
+        success: false,
+        message: 'AI quiz not found or not authorized',
+      });
+    }
+
+    // Soft delete — keeps attempts & stats intact for history
+    quiz.isActive = false;
+    await quiz.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'AI quiz deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete AI quiz error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while deleting AI quiz',
     });
   }
 };

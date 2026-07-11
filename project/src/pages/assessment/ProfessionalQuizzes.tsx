@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { ArrowRight, Trophy, Clock, Users, Search, Star } from "lucide-react";
+import { ArrowRight, Trophy, Clock, Users, Search, Star, Trash2 } from "lucide-react";
 import { professionalQuizAPI, subjectAPI } from "../../utils/api";
+import { useToast } from "../../components/Toast";
+import { useConfirm } from "../../components/ConfirmDialog";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 
@@ -50,8 +52,13 @@ const ProfessionalQuizzes = () => {
   const [newAISubject, setNewAISubject] = useState("science");
   const [questionType, setQuestionType] = useState("mixed");
   const [attemptsMap, setAttemptsMap] = useState<Record<string, any>>({});
+  const [myAIQuizzes, setMyAIQuizzes] = useState<ProfessionalQuiz[]>([]);
+  const [loadingAIQuizzes, setLoadingAIQuizzes] = useState(false);
+  const [deletingAIQuizId, setDeletingAIQuizId] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -74,6 +81,22 @@ const ProfessionalQuizzes = () => {
     };
     fetchSubjects();
   }, [userGrade, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const fetchMyAIQuizzes = async () => {
+      try {
+        setLoadingAIQuizzes(true);
+        const res = await professionalQuizAPI.getMyAIQuizzes();
+        setMyAIQuizzes(res.data?.data || []);
+      } catch {
+        // non-critical
+      } finally {
+        setLoadingAIQuizzes(false);
+      }
+    };
+    fetchMyAIQuizzes();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -132,6 +155,21 @@ const ProfessionalQuizzes = () => {
     const nextPage = page + 1;
     await fetchQuizzes(undefined, nextPage, true);
     setPage(nextPage);
+  };
+
+  const handleDeleteAIQuiz = async (quizId: string) => {
+    const confirmed = await confirm('Delete this AI-generated quiz? This action cannot be undone.');
+    if (!confirmed) return;
+    try {
+      setDeletingAIQuizId(quizId);
+      await professionalQuizAPI.deleteMyAIQuiz(quizId);
+      setMyAIQuizzes(prev => prev.filter(q => q._id !== quizId));
+    } catch (err: any) {
+      console.error('Failed to delete AI quiz:', err);
+      showToast(err?.response?.data?.message || 'Failed to delete AI quiz', 'error');
+    } finally {
+      setDeletingAIQuizId(null);
+    }
   };
 
   useEffect(() => {
@@ -405,6 +443,10 @@ const ProfessionalQuizzes = () => {
                         return;
                       }
                       try {
+                        if (aiTotalQuestions < 3 || aiTotalQuestions > 50) {
+                          setError('Number of questions must be between 3 and 50');
+                          return;
+                        }
                         setAILoading(true);
                         const resp = await professionalQuizAPI.createAIQuiz({
                           difficulty: newAIDifficulty,
@@ -584,6 +626,87 @@ const ProfessionalQuizzes = () => {
           )}
         </div>
       </section>
+
+      {/* ── My AI Generated Quizzes ── */}
+      {isAuthenticated && (
+        <section className="py-12 bg-gray-50 border-t-2 border-black">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-black tracking-tight mb-2">
+                My AI Generated Quizzes
+              </h2>
+              <p className="text-gray-600">
+                Quizzes you created with the AI generator
+              </p>
+            </div>
+
+            {loadingAIQuizzes ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-black border-t-transparent mx-auto"></div>
+              </div>
+            ) : myAIQuizzes.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 font-bold">No AI quizzes yet. Generate one using the form above!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myAIQuizzes.map((quiz) => (
+                  <div
+                    key={quiz._id}
+                    className="bg-white rounded-2xl border-2 border-yellow-400 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-all overflow-hidden"
+                  >
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-yellow-100 text-yellow-900 border-yellow-400">
+                          AI Generated
+                        </span>
+                        <button
+                          onClick={() => handleDeleteAIQuiz(quiz._id)}
+                          disabled={deletingAIQuizId === quiz._id}
+                          className="p-1.5 rounded-lg border-2 border-red-400 text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+                          title="Delete this AI quiz"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <h3 className="text-lg font-black text-black mb-2 line-clamp-2">
+                        {quiz.title}
+                      </h3>
+
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {quiz.description}
+                      </p>
+
+                      <div className="grid grid-cols-3 gap-3 mb-5 py-4 border-t-2 border-b-2 border-black">
+                        <div className="text-center">
+                          <div className="text-lg font-black text-cyan-600">{quiz.totalQuestions}</div>
+                          <div className="text-xs text-gray-600 font-bold">Questions</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-green-600">{quiz.timeLimit}m</div>
+                          <div className="text-xs text-gray-600 font-bold">Time</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-orange-600">{quiz.passingScore}%</div>
+                          <div className="text-xs text-gray-600 font-bold">Pass Score</div>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => navigate(`/professional-quiz/${quiz._id}`)}
+                        className="w-full bg-black text-white py-2.5 px-4 rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
+                      >
+                        {attemptsMap[quiz._id] ? 'Review Quiz' : 'Start Quiz'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── Auth Prompt Modal ── */}
       {showAuthPrompt && (

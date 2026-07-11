@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { professionalQuizAPI, progressAPI } from "../../utils/api";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
+import { useToast } from "../../components/Toast";
 // @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 import { Clock, ArrowLeft, Trophy } from "lucide-react";
@@ -43,6 +44,7 @@ const ProfessionalQuiz = () => {
   const { isAuthenticated } = useAuth();
   const { award } = useTokens();
   const { takeQuiz, addPoints, addExperience } = useGame();
+  const { showToast } = useToast();
 
   const [quiz, setQuiz] = useState<ProfessionalQuizData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -207,7 +209,7 @@ const ProfessionalQuiz = () => {
       }
     } catch (err: any) {
       console.error('Error submitting quiz:', err);
-      alert('Failed to submit quiz. Please try again.');
+      showToast('Failed to submit quiz. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }

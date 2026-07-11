@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { communityAPI } from "../../utils/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import type { StudyGroup, GroupMessage, GroupPost, Reply } from "../../types/community";
 import {
   ArrowLeft,
@@ -43,6 +44,7 @@ const StudyGroupDetail = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const meId = String(user?._id || user?.id || "");
+  const { confirm: confirmDelete } = useConfirm();
 
   const [group, setGroup] = useState<StudyGroup | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,7 +189,7 @@ const StudyGroupDetail = () => {
 
   const handleLeaveGroup = async () => {
     if (!id || !group?.isMember) return;
-    if (!window.confirm("Leave this study group?")) return;
+    if (!(await confirmDelete("Leave this study group?"))) return;
     setLoadingAction("leave");
     try {
       await communityAPI.leaveStudyGroup(id);
@@ -201,7 +203,7 @@ const StudyGroupDetail = () => {
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (!id || !window.confirm("Remove this member?")) return;
+    if (!id || !(await confirmDelete("Remove this member?"))) return;
     setLoadingAction(`remove-${userId}`);
     try {
       await communityAPI.removeGroupMember(id, userId);
@@ -247,7 +249,7 @@ const StudyGroupDetail = () => {
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!id || !window.confirm("Delete this post?")) return;
+    if (!id || !(await confirmDelete("Delete this post?"))) return;
     try {
       await communityAPI.deleteGroupPost(id, postId);
       setPosts((prev) => prev.filter((p) => p.id !== postId));

@@ -30,6 +30,32 @@
 - **Save All Cards** — green button in the preview section that persists generated cards to the database via the batch endpoint. On success, merges saved cards into the flashcard list and switches to Browse tab.
 - **Study Now** — starts study mode with AI-generated cards (preview only, not saved).
 - **Auth gate** — if user is not authenticated, clicking "Generate" shows a login/register modal instead of making the API call. Prevents 401 errors and improves UX.
+- **Private cards** — user's own private flashcards (`isPublic: false`) are now visible in Browse alongside public cards. Each private card shows a **Lock badge**.
+- **Delete button** — each card shows a trash icon (visible on hover) that hard-deletes the card with a confirmation prompt. Only the card's creator (or admin) can delete it.
+
+## Backend — Private Cards & Delete
+
+### Auth Middleware (`backend/src/middleware/auth.js`)
+
+- **Added `optionalAuth`** — like `protect` but doesn't return 401 if no token is present. Used by `GET /api/flashcards` so private cards show for their owner while unauthenticated users still see public cards.
+
+### Flashcard Controller (`backend/src/controllers/flashcardController.js`)
+
+- **`getFlashcards` filter changed** — now uses `$or: [{ isPublic: true }, { createdBy: req.user.id }]` so authenticated users see their own private cards alongside public ones.
+- **`deleteFlashcard` changed to hard delete** — uses `flashcard.deleteOne()` instead of `isActive = false` soft delete. Adds a confirmation prompt on the frontend.
+
+### Flashcard Routes (`backend/src/routes/flashcards.js`)
+
+- **`GET /` now uses `optionalAuth`** — allows the controller to know who's requesting without blocking unauthenticated visitors.
+- **`DELETE /:id` changed** — no longer requires `admin/teacher`. Any authenticated user can delete, with ownership checked in the controller.
+
+## Frontend
+
+### Flashcards Page (`project/src/pages/learning/Flashcards.tsx`)
+
+- **Private badge** — cards with `isPublic: false` show a `Lock` icon + "Private" label next to the difficulty badge.
+- **Delete button** — a `Trash2` icon appears on hover at the bottom-right of each card. Clicking triggers `window.confirm()` then calls `DELETE /api/flashcards/:id`. On success the card is removed from local state immediately.
+- **Ownership check** — `isOwner(card)` compares `card.createdById` (the raw ObjectId from the populated `createdBy` field) against `user.id` from `useAuth()`, with fallbacks to name/id string comparison.
 
 ## Flow
 

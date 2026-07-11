@@ -39,7 +39,7 @@ const flashcardSchema = new mongoose.Schema({
   },
   isPublic: {
     type: Boolean,
-    default: true
+    default: false
   },
   studyCount: {
     type: Number,

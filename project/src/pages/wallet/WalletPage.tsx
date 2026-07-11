@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useTokens } from "../../context/TokenContext";
 import { paymentAPI } from "../../utils/api";
+import { useToast } from "../../components/Toast";
 
 type FilterType = "all" | "earned" | "spent";
 
@@ -52,6 +53,7 @@ declare global {
 
 const WalletPage: React.FC = () => {
   const { balance, transactions, claimDailyReward, canClaimDaily, fetchBalance } = useTokens();
+  const { showToast } = useToast();
   const [filter, setFilter] = useState<FilterType>("all");
   const [showGuide, setShowGuide] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -121,10 +123,10 @@ const WalletPage: React.FC = () => {
             });
             if (verifyRes.data.success) {
               fetchBalance();
-              alert(`✅ Payment successful! ${plan.tokens.toLocaleString()} tokens added to your wallet.`);
+              showToast(`Payment successful! ${plan.tokens.toLocaleString()} tokens added to your wallet.`, "success");
             }
           } catch {
-            alert("Payment verification failed. Please contact support if tokens were not credited.");
+            showToast("Payment verification failed. Please contact support if tokens were not credited.", "error");
           }
         },
         modal: {
@@ -140,12 +142,12 @@ const WalletPage: React.FC = () => {
 
       const rzp = new window.Razorpay(options);
       rzp.on("payment.failed", (resp: any) => {
-        alert(`Payment failed: ${resp.error.description || "Please try again."}`);
+        showToast(`Payment failed: ${resp.error.description || "Please try again."}`, "error");
         setBuying(false);
       });
       rzp.open();
     } catch (err: any) {
-      alert(err?.message || "Failed to initiate payment. Please try again.");
+      showToast(err?.message || "Failed to initiate payment. Please try again.", "error");
       setBuying(false);
     }
   }, [fetchBalance]);

@@ -8,12 +8,16 @@ import {
   Edit3, BookMarked, GraduationCap, MessageSquare, Mail, Eye, Archive, RefreshCw
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../../components/Toast";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 const AdminPanel = () => {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
+  const { showToast } = useToast();
+  const { confirm: confirmDelete } = useConfirm();
 
   // Professional Theme Constants
   const theme = {
@@ -38,6 +42,7 @@ const AdminPanel = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [contactMessages, setContactMessages] = useState<any[]>([]);
   const [proQuizzes, setProQuizzes] = useState<any[]>([]);
+  const [proQuizQuestionInputs, setProQuizQuestionInputs] = useState<any[]>([]);
   const [shopItems, setShopItems] = useState<any[]>([]);
 
   // Token analytics state
@@ -99,8 +104,8 @@ const AdminPanel = () => {
   const fetchSubjectsByGrade = async (grade: string) => {
     try {
       setLoadingSubjects(true);
-
-      const response = await subjectAPI.getSubjects(grade);
+      const params = grade && grade !== 'all' ? grade : undefined;
+      const response = await subjectAPI.getSubjects(params);
 
       if (response.data.success) {
         setAvailableSubjects(response.data.data);
@@ -200,12 +205,12 @@ const AdminPanel = () => {
     try {
       const res = await authAPI.login(loginForm);
       const tokenValue = res.data?.token || (res.data as any)?.accessToken;
-      if (!tokenValue) return alert("Login failed: no token returned");
+      if (!tokenValue) return showToast("Login failed: no token returned", "error");
       localStorage.setItem("token", tokenValue);
       setToken(tokenValue);
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Login failed");
+      showToast(err?.response?.data?.message || "Login failed", "error");
     }
   };
 
@@ -225,7 +230,7 @@ const AdminPanel = () => {
       setLoading(true);
       // Using tokenAPI to award diamonds to target user
       await tokenAPI.awardUser(selectedUser._id || selectedUser.id, diamondAmount, awardReason);
-      alert(`Successfully awarded ${diamondAmount} diamonds to ${selectedUser.name}`);
+      showToast(`Successfully awarded ${diamondAmount} diamonds to ${selectedUser.name}`, "success");
       setDiamondAmount(0);
       setAwardReason("Admin Reward");
       fetchAll();
@@ -233,25 +238,25 @@ const AdminPanel = () => {
       fetchUserTransactions(selectedUser._id || selectedUser.id);
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Failed to award diamonds");
+      showToast(err?.response?.data?.message || "Failed to award diamonds", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCleanupStudents = async () => {
-    if (!window.confirm('Are you absolutely sure you want to remove ALL students and their associated data (progress, transactions)? This action cannot be undone.')) {
+    if (!(await confirmDelete('Are you absolutely sure you want to remove ALL students and their associated data (progress, transactions)? This action cannot be undone.'))) {
       return;
     }
 
     try {
       setLoading(true);
       await userAPI.cleanupStudents();
-      alert('Student records have been successfully cleared.');
+      showToast('Student records have been successfully cleared.', "success");
       fetchAll();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || 'Failed to cleanup students');
+      showToast(err?.response?.data?.message || 'Failed to cleanup students', "error");
     } finally {
       setLoading(false);
     }
@@ -299,13 +304,13 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await flashcardAPI.createFlashcard(newFlashcard);
-      alert("Flashcard created successfully!");
+      showToast("Flashcard created successfully!", "success");
       setShowFlashcardModal(false);
       setNewFlashcard({ question: "", answer: "", subject: "science", chapter: "", difficulty: "Medium" });
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to create flashcard");
+      showToast("Failed to create flashcard", "error");
     } finally {
       setLoading(false);
     }
@@ -319,7 +324,7 @@ const AdminPanel = () => {
         instructions: ["Follow the on-screen prompts"],
         learningObjectives: ["Master the subject through play"]
       });
-      alert("Game registered successfully!");
+      showToast("Game registered successfully!", "success");
       setShowGameModal(false);
       setNewGame({
         title: "", description: "", category: "science", difficulty: "Medium",
@@ -328,14 +333,14 @@ const AdminPanel = () => {
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to create game");
+      showToast("Failed to create game", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteFlashcard = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this flashcard?")) return;
+    if (!(await confirmDelete("Are you sure you want to delete this flashcard?"))) return;
     try {
       setLoading(true);
       await flashcardAPI.deleteFlashcard(id);
@@ -348,7 +353,7 @@ const AdminPanel = () => {
   };
 
   const handleDeleteGame = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this game?")) return;
+    if (!(await confirmDelete("Are you sure you want to delete this game?"))) return;
     try {
       setLoading(true);
       await gameAPI.deleteGame(id);
@@ -361,7 +366,7 @@ const AdminPanel = () => {
   };
 
   const handleDeleteMaterial = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this material?")) return;
+    if (!(await confirmDelete("Are you sure you want to delete this material?"))) return;
     try {
       setLoading(true);
       await materialAPI.deleteMaterial(id);
@@ -374,7 +379,7 @@ const AdminPanel = () => {
   };
 
   const handleDeleteQuiz = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this quiz?")) return;
+    if (!(await confirmDelete("Are you sure you want to delete this quiz?"))) return;
     try {
       setLoading(true);
       await quizAPI.deleteQuiz(id);
@@ -390,17 +395,17 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       if (!newMaterial.title || !newMaterial.subject || !newMaterial.fileUrl) {
-        alert("Please fill in title, subject, and video/file URL.");
+        showToast("Please fill in title, subject, and video/file URL.", "error");
         return;
       }
       await materialAPI.createMaterial(newMaterial);
-      alert("Material uploaded successfully!");
+      showToast("Material uploaded successfully!", "success");
       setShowMaterialModal(false);
       setNewMaterial({ title: "", description: "", subject: "science", type: "video", chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner" });
       fetchAll();
     } catch (err: any) {
       console.error(err);
-      alert(err?.response?.data?.message || "Failed to upload material");
+      showToast(err?.response?.data?.message || "Failed to upload material", "error");
     } finally {
       setLoading(false);
     }
@@ -409,12 +414,12 @@ const AdminPanel = () => {
   const handleCreateQuiz = async () => {
 
     if (!newQuiz.grade) {
-      alert("Please select a grade");
+      showToast("Please select a grade", "error");
       return;
     }
 
     if (!newQuiz.subject) {
-      alert("Please select a subject");
+      showToast("Please select a subject", "error");
       return;
     }
 
@@ -426,7 +431,7 @@ const AdminPanel = () => {
         description: newQuiz.description || newQuiz.title,
         questions: transformQuestions(quizQuestionInputs)
       });
-      alert("Quiz built successfully!");
+      showToast("Quiz built successfully!", "success");
       setShowQuizModal(false);
       setNewQuiz({
         title: "",
@@ -443,7 +448,7 @@ const AdminPanel = () => {
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to build quiz");
+      showToast("Failed to build quiz", "error");
     } finally {
       setLoading(false);
     }
@@ -453,11 +458,11 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await userAPI.updateUser(userId, { role: newRole });
-      alert(`User identity updated to ${newRole}`);
+      showToast(`User identity updated to ${newRole}`, "success");
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update user permissions");
+      showToast("Failed to update user permissions", "error");
     } finally {
       setLoading(false);
     }
@@ -488,14 +493,14 @@ const AdminPanel = () => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to delete "${userName}"? This action cannot be undone.`)) return;
+    if (!(await confirmDelete(`Are you sure you want to delete "${userName}"? This action cannot be undone.`))) return;
     try {
       setLoading(true);
       await userAPI.deleteUser(userId);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete user");
+      showToast("Failed to delete user", "error");
     } finally {
       setLoading(false);
     }
@@ -506,13 +511,13 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await subjectAPI.createSubject(newSubject);
-      alert("Subject created successfully!");
+      showToast("Subject created successfully!", "success");
       setShowSubjectModal(false);
       setNewSubject({ name: "", slug: "", description: "", icon: "book", color: "#6366f1", grade: "6th" });
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to create subject");
+      showToast("Failed to create subject", "error");
     } finally {
       setLoading(false);
     }
@@ -523,19 +528,19 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await subjectAPI.updateSubject(editingSubject._id || editingSubject.id, editingSubject);
-      alert("Subject updated!");
+      showToast("Subject updated!", "success");
       setEditingSubject(null);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update subject");
+      showToast("Failed to update subject", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteSubject = async (id: string) => {
-    if (!confirm("Delete this subject?")) return;
+    if (!(await confirmDelete("Delete this subject?"))) return;
     try {
       setLoading(true);
       await subjectAPI.deleteSubject(id);
@@ -559,19 +564,24 @@ const AdminPanel = () => {
 
   // Professional Quiz CRUD
   const handleCreateProQuiz = async () => {
+    if (proQuizQuestionInputs.length === 0) {
+      showToast("Please add at least one question", "error");
+      return;
+    }
     try {
       setLoading(true);
       await professionalQuizAPI.createQuiz({
         ...newProQuiz,
-        questions: newProQuiz.questions,
+        questions: transformProQuizQuestions(proQuizQuestionInputs),
       });
-      alert("Professional quiz created!");
+      showToast("Professional quiz created!", "success");
       setShowProQuizModal(false);
+      setProQuizQuestionInputs([]);
       setNewProQuiz({ title: "", description: "", subject: "science", grade: "all", difficulty: "Medium", timeLimit: 15, passingScore: 50, questions: [] });
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to create professional quiz");
+      showToast("Failed to create professional quiz", "error");
     } finally {
       setLoading(false);
     }
@@ -579,22 +589,30 @@ const AdminPanel = () => {
 
   const handleUpdateProQuiz = async () => {
     if (!editingProQuiz) return;
+    if (proQuizQuestionInputs.length === 0) {
+      showToast("Please add at least one question", "error");
+      return;
+    }
     try {
       setLoading(true);
-      await professionalQuizAPI.updateQuiz(editingProQuiz._id || editingProQuiz.id, editingProQuiz);
-      alert("Professional quiz updated!");
+      await professionalQuizAPI.updateQuiz(editingProQuiz._id || editingProQuiz.id, {
+        ...editingProQuiz,
+        questions: transformProQuizQuestions(proQuizQuestionInputs),
+      });
+      showToast("Professional quiz updated!", "success");
       setEditingProQuiz(null);
+      setProQuizQuestionInputs([]);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update professional quiz");
+      showToast("Failed to update professional quiz", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteProQuiz = async (id: string) => {
-    if (!confirm("Delete this professional quiz?")) return;
+    if (!(await confirmDelete("Delete this professional quiz?"))) return;
     try {
       setLoading(true);
       await professionalQuizAPI.deleteQuiz(id);
@@ -611,13 +629,13 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await shopAPI.createItem(newShopItem);
-      alert("Shop item created!");
+      showToast("Shop item created!", "success");
       setShowShopItemModal(false);
       setNewShopItem({ title: "", description: "", type: "power_up", price: 10, icon: "🎁", subject: "all", grade: "all", stock: -1 });
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to create shop item");
+      showToast("Failed to create shop item", "error");
     } finally {
       setLoading(false);
     }
@@ -628,19 +646,19 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await shopAPI.updateItem(editingShopItem._id || editingShopItem.id, editingShopItem);
-      alert("Shop item updated!");
+      showToast("Shop item updated!", "success");
       setEditingShopItem(null);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update shop item");
+      showToast("Failed to update shop item", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteShopItem = async (id: string) => {
-    if (!confirm("Delete this shop item?")) return;
+    if (!(await confirmDelete("Delete this shop item?"))) return;
     try {
       setLoading(true);
       await shopAPI.deleteItem(id);
@@ -677,6 +695,55 @@ const AdminPanel = () => {
   const removeQuizQuestion = (index: number) => {
     setQuizQuestionInputs(quizQuestionInputs.filter((_, i) => i !== index));
   };
+
+  // Pro Quiz question builder helpers
+  const addProQuizQuestion = () => {
+    setProQuizQuestionInputs([...proQuizQuestionInputs, {
+      question: "",
+      type: "multiple-choice",
+      options: ["", "", "", ""],
+      correctAnswer: "",
+      explanation: ""
+    }]);
+  };
+
+  const updateProQuizQuestion = (index: number, field: string, value: any) => {
+    const updated = [...proQuizQuestionInputs];
+    (updated[index] as any)[field] = value;
+    if (field === 'type') {
+      if (value === 'true-false') {
+        updated[index].options = ['True', 'False'];
+        updated[index].correctAnswer = '';
+      } else if (value === 'short-answer') {
+        updated[index].options = [];
+        updated[index].correctAnswer = '';
+      } else {
+        updated[index].options = ["", "", "", ""];
+        updated[index].correctAnswer = '';
+      }
+    }
+    setProQuizQuestionInputs(updated);
+  };
+
+  const updateProQuizQuestionOption = (qIndex: number, oIndex: number, value: string) => {
+    const updated = [...proQuizQuestionInputs];
+    updated[qIndex].options[oIndex] = value;
+    setProQuizQuestionInputs(updated);
+  };
+
+  const removeProQuizQuestion = (index: number) => {
+    setProQuizQuestionInputs(proQuizQuestionInputs.filter((_, i) => i !== index));
+  };
+
+  const transformProQuizQuestions = (inputs: any[]) => inputs.map((q, i) => ({
+    id: `q_${i + 1}_${Date.now()}`,
+    question: q.question,
+    type: q.type || 'multiple-choice',
+    options: q.options,
+    correctAnswer: q.type === 'short-answer' ? q.correctAnswer : Number(q.correctAnswer),
+    explanation: q.explanation || "",
+    points: 1
+  }));
 
   // Edit helpers — populate modal with existing data
   const startEditFlashcard = (card: any) => {
@@ -716,6 +783,22 @@ const AdminPanel = () => {
   };
   const startEditProQuiz = (pq: any) => {
     setEditingProQuiz({ ...pq });
+    if (pq.grade) fetchSubjectsByGrade(pq.grade);
+    const qs = (pq.questions || []).map((q: any) => {
+      const qType = q.type || 'multiple-choice';
+      const opts = Array.isArray(q.options) ? q.options : ["", "", "", ""];
+      const correctAnswer = qType === 'short-answer'
+        ? (typeof q.correctAnswer === 'string' ? q.correctAnswer : String(q.correctAnswer || ''))
+        : (typeof q.correctAnswer === 'number' ? q.correctAnswer : opts.indexOf(q.correctAnswer));
+      return {
+        question: q.question || "",
+        type: qType,
+        options: opts,
+        correctAnswer: correctAnswer >= 0 ? correctAnswer : '',
+        explanation: q.explanation || ""
+      };
+    });
+    setProQuizQuestionInputs(qs);
   };
   const startEditShopItem = (item: any) => {
     setEditingShopItem({ ...item });
@@ -726,12 +809,12 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await flashcardAPI.updateFlashcard(editingFlashcard._id || editingFlashcard.id, editingFlashcard);
-      alert("Flashcard updated!");
+      showToast("Flashcard updated!", "success");
       setEditingFlashcard(null);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update flashcard");
+      showToast("Failed to update flashcard", "error");
     } finally {
       setLoading(false);
     }
@@ -742,12 +825,12 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await gameAPI.updateGame(editingGame._id || editingGame.id, editingGame);
-      alert("Game updated!");
+      showToast("Game updated!", "success");
       setEditingGame(null);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update game");
+      showToast("Failed to update game", "error");
     } finally {
       setLoading(false);
     }
@@ -758,12 +841,12 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       await materialAPI.updateMaterial(editingMaterial._id || editingMaterial.id, editingMaterial);
-      alert("Material updated!");
+      showToast("Material updated!", "success");
       setEditingMaterial(null);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update material");
+      showToast("Failed to update material", "error");
     } finally {
       setLoading(false);
     }
@@ -779,13 +862,13 @@ const AdminPanel = () => {
         description: editingQuiz.description || editingQuiz.title,
         questions: transformQuestions(quizQuestionInputs)
       });
-      alert("Quiz updated!");
+      showToast("Quiz updated!", "success");
       setEditingQuiz(null);
       setQuizQuestionInputs([]);
       fetchAll();
     } catch (err) {
       console.error(err);
-      alert("Failed to update quiz");
+      showToast("Failed to update quiz", "error");
     } finally {
       setLoading(false);
     }
@@ -2189,7 +2272,15 @@ const AdminPanel = () => {
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, grade: e.target.value }) : setNewQuiz({ ...newQuiz, grade: e.target.value })}>
+                    <select className={theme.input} value={editingQuiz ? (editingQuiz.grade || '6th') : newQuiz.grade} onChange={(e) => {
+                      const grade = e.target.value;
+                      if (editingQuiz) {
+                        setEditingQuiz({ ...editingQuiz, grade, subject: "" });
+                      } else {
+                        setNewQuiz({ ...newQuiz, grade, subject: "" });
+                      }
+                      fetchSubjectsByGrade(grade);
+                    }}>
                       <option value="6th">6th</option>
                       <option value="7th">7th</option>
                       <option value="8th">8th</option>
@@ -2203,22 +2294,18 @@ const AdminPanel = () => {
                       }
 
                       onChange={(e) => {
-                        const grade = e.target.value;
+                        const subject = e.target.value;
                         if (editingQuiz) {
                           setEditingQuiz({
                             ...editingQuiz,
-                            grade,
-                            subject: "",
+                            subject,
                           });
                         } else {
                           setNewQuiz({
                             ...newQuiz,
-                            grade,
-                            subject: "",
+                            subject,
                           });
                         }
-
-                        fetchSubjectsByGrade(grade);
                       }}>
                       <option value="">
                         {loadingSubjects
@@ -2388,7 +2475,7 @@ const AdminPanel = () => {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <h3 className="text-xl font-bold text-slate-900 tracking-tight">New Professional Assessment</h3>
-                <button onClick={() => setShowProQuizModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+                <button onClick={() => { setShowProQuizModal(false); setProQuizQuestionInputs([]); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <div>
@@ -2401,14 +2488,33 @@ const AdminPanel = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
-                    <select className={theme.input} value={newProQuiz.subject} onChange={(e) => setNewProQuiz({ ...newProQuiz, subject: e.target.value })}>
-                      <option value="science">Science</option>
-                      <option value="mathematics">Mathematics</option>
-                      <option value="english">English</option>
-                      <option value="social-science">Social Science</option>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={newProQuiz.grade} onChange={(e) => {
+                      const grade = e.target.value;
+                      setNewProQuiz({ ...newProQuiz, grade, subject: "" });
+                      fetchSubjectsByGrade(grade);
+                    }}>
+                      <option value="all">All</option>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={newProQuiz.subject}
+                      disabled={!newProQuiz.grade}
+                      onChange={(e) => setNewProQuiz({ ...newProQuiz, subject: e.target.value })}>
+                      <option value="">
+                        {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
+                      </option>
+                      {availableSubjects.map((subject: any) => (
+                        <option key={subject._id} value={subject.slug}>{subject.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
                     <select className={theme.input} value={newProQuiz.difficulty} onChange={(e) => setNewProQuiz({ ...newProQuiz, difficulty: e.target.value })}>
@@ -2417,29 +2523,62 @@ const AdminPanel = () => {
                       <option value="Hard">Hard</option>
                     </select>
                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (min)</label>
-                    <input type="number" className={theme.input} value={newProQuiz.timeLimit} onChange={(e) => setNewProQuiz({ ...newProQuiz, timeLimit: parseInt(e.target.value) || 15 })} />
-                  </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Pass Score (%)</label>
                     <input type="number" className={theme.input} value={newProQuiz.passingScore} onChange={(e) => setNewProQuiz({ ...newProQuiz, passingScore: parseInt(e.target.value) || 50 })} />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
-                    <select className={theme.input} value={newProQuiz.grade} onChange={(e) => setNewProQuiz({ ...newProQuiz, grade: e.target.value })}>
-                      <option value="all">All</option>
-                      <option value="6th">6th</option>
-                      <option value="7th">7th</option>
-                      <option value="8th">8th</option>
-                    </select>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (min)</label>
+                    <input type="number" className={theme.input} value={newProQuiz.timeLimit} onChange={(e) => setNewProQuiz({ ...newProQuiz, timeLimit: parseInt(e.target.value) || 15 })} />
                   </div>
+                </div>
+
+                {/* Question Builder */}
+                <div className="border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Questions ({proQuizQuestionInputs.length})</label>
+                    <button type="button" onClick={addProQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12} /> Add Question</button>
+                  </div>
+                  {proQuizQuestionInputs.map((q, qi) => (
+                    <div key={qi} className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Q{qi + 1}</span>
+                        <button type="button" onClick={() => removeProQuizQuestion(qi)} className="text-rose-400 hover:text-rose-600 transition-colors"><X size={14} /></button>
+                      </div>
+                      <input className={theme.input + " mb-2"} placeholder="Question text" value={q.question} onChange={(e) => updateProQuizQuestion(qi, 'question', e.target.value)} />
+                      <select className={theme.input + " mb-2 text-sm"} value={q.type || 'multiple-choice'} onChange={(e) => updateProQuizQuestion(qi, 'type', e.target.value)}>
+                        <option value="multiple-choice">Multiple Choice</option>
+                        <option value="true-false">True / False</option>
+                        <option value="short-answer">Short Answer</option>
+                      </select>
+                      {q.type === 'short-answer' ? (
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Correct Answer</label>
+                          <input className={theme.input + " text-sm"} placeholder="Correct answer" value={q.correctAnswer} onChange={(e) => updateProQuizQuestion(qi, 'correctAnswer', e.target.value)} />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Options — select correct answer via radio</label>
+                          {q.options.map((opt: string, oi: number) => (
+                            <div key={oi} className="flex items-center gap-2 mb-1">
+                              <input type="radio" checked={q.correctAnswer === oi} onChange={() => updateProQuizQuestion(qi, 'correctAnswer', oi)} className="accent-indigo-600" />
+                              <input className={theme.input + " text-sm"} placeholder={`Option ${String.fromCharCode(65 + oi)}`} value={opt} onChange={(e) => updateProQuizQuestionOption(qi, oi, e.target.value)} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <input className={theme.input + " mt-2 text-sm"} placeholder="Explanation (optional)" value={q.explanation} onChange={(e) => updateProQuizQuestion(qi, 'explanation', e.target.value)} />
+                    </div>
+                  ))}
+                  {proQuizQuestionInputs.length === 0 && (
+                    <p className="text-sm text-slate-400 italic text-center py-4">Click "Add Question" to start building your assessment.</p>
+                  )}
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setShowProQuizModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={() => { setShowProQuizModal(false); setProQuizQuestionInputs([]); }} className={theme.buttonSecondary}>Cancel</button>
                 <button onClick={handleCreateProQuiz} className={theme.buttonPrimary}>Create Assessment</button>
               </div>
             </div>
@@ -2452,7 +2591,7 @@ const AdminPanel = () => {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                 <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Professional Assessment</h3>
-                <button onClick={() => setEditingProQuiz(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+                <button onClick={() => { setEditingProQuiz(null); setProQuizQuestionInputs([]); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <div>
@@ -2462,6 +2601,34 @@ const AdminPanel = () => {
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
                   <textarea className={theme.input} rows={2} value={editingProQuiz.description || ''} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, description: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingProQuiz.grade || 'all'} onChange={(e) => {
+                      const grade = e.target.value;
+                      setEditingProQuiz({ ...editingProQuiz, grade, subject: "" });
+                      fetchSubjectsByGrade(grade);
+                    }}>
+                      <option value="all">All</option>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={editingProQuiz.subject || ''}
+                      disabled={!editingProQuiz.grade}
+                      onChange={(e) => setEditingProQuiz({ ...editingProQuiz, subject: e.target.value })}>
+                      <option value="">
+                        {loadingSubjects ? "Loading Subjects..." : "Select Subject"}
+                      </option>
+                      {availableSubjects.map((subject: any) => (
+                        <option key={subject._id} value={subject.slug}>{subject.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -2477,9 +2644,57 @@ const AdminPanel = () => {
                     <input type="number" className={theme.input} value={editingProQuiz.passingScore || 50} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, passingScore: parseInt(e.target.value) || 50 })} />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (min)</label>
+                    <input type="number" className={theme.input} value={editingProQuiz.timeLimit || 30} onChange={(e) => setEditingProQuiz({ ...editingProQuiz, timeLimit: parseInt(e.target.value) || 30 })} />
+                  </div>
+                </div>
+
+                {/* Question Builder */}
+                <div className="border-t border-slate-100 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Questions ({proQuizQuestionInputs.length})</label>
+                    <button type="button" onClick={addProQuizQuestion} className="flex items-center gap-1 text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-all"><Plus size={12} /> Add Question</button>
+                  </div>
+                  {proQuizQuestionInputs.map((q, qi) => (
+                    <div key={qi} className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Q{qi + 1}</span>
+                        <button type="button" onClick={() => removeProQuizQuestion(qi)} className="text-rose-400 hover:text-rose-600 transition-colors"><X size={14} /></button>
+                      </div>
+                      <input className={theme.input + " mb-2"} placeholder="Question text" value={q.question} onChange={(e) => updateProQuizQuestion(qi, 'question', e.target.value)} />
+                      <select className={theme.input + " mb-2 text-sm"} value={q.type || 'multiple-choice'} onChange={(e) => updateProQuizQuestion(qi, 'type', e.target.value)}>
+                        <option value="multiple-choice">Multiple Choice</option>
+                        <option value="true-false">True / False</option>
+                        <option value="short-answer">Short Answer</option>
+                      </select>
+                      {q.type === 'short-answer' ? (
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Correct Answer</label>
+                          <input className={theme.input + " text-sm"} placeholder="Correct answer" value={q.correctAnswer} onChange={(e) => updateProQuizQuestion(qi, 'correctAnswer', e.target.value)} />
+                        </div>
+                      ) : (
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Options — select correct answer via radio</label>
+                          {q.options.map((opt: string, oi: number) => (
+                            <div key={oi} className="flex items-center gap-2 mb-1">
+                              <input type="radio" checked={q.correctAnswer === oi} onChange={() => updateProQuizQuestion(qi, 'correctAnswer', oi)} className="accent-indigo-600" />
+                              <input className={theme.input + " text-sm"} placeholder={`Option ${String.fromCharCode(65 + oi)}`} value={opt} onChange={(e) => updateProQuizQuestionOption(qi, oi, e.target.value)} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <input className={theme.input + " mt-2 text-sm"} placeholder="Explanation (optional)" value={q.explanation} onChange={(e) => updateProQuizQuestion(qi, 'explanation', e.target.value)} />
+                    </div>
+                  ))}
+                  {proQuizQuestionInputs.length === 0 && (
+                    <p className="text-sm text-slate-400 italic text-center py-4">Click "Add Question" to start building your assessment.</p>
+                  )}
+                </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setEditingProQuiz(null)} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={() => { setEditingProQuiz(null); setProQuizQuestionInputs([]); }} className={theme.buttonSecondary}>Cancel</button>
                 <button onClick={handleUpdateProQuiz} className={theme.buttonPrimary}>Update Assessment</button>
               </div>
             </div>
