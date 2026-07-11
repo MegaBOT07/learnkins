@@ -4,6 +4,7 @@ import { quizAPI, progressAPI } from "../../utils/api";
 import { storeNewAchievements } from "../../utils/achievements";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
+import { useToast } from "../../components/Toast";
 import {
   Clock,
   CheckCircle,
@@ -58,6 +59,7 @@ const Quiz = () => {
   const timerDoneRef = useRef(false);
   const { award } = useTokens();
   const { takeQuiz, addPoints, addExperience } = useGame();
+  const { showToast } = useToast();
 
 
   const normalizeQuiz = (quiz: any) => {
@@ -163,7 +165,7 @@ const Quiz = () => {
 
     } catch (err: any) {
       console.error("Error submitting quiz:", err);
-      alert("Failed to submit quiz. Please try again.");
+      showToast("Failed to submit quiz. Please try again.", "error");
     } finally {
       setSubmitting(false);
     }

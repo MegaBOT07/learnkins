@@ -491,6 +491,8 @@ export interface ProfessionalQuizAPI {
   deleteQuiz: (id: string) => Promise<AxiosResponse<any>>;
   submitQuiz: (id: string, answers: any[], timeTaken: number) => Promise<AxiosResponse<any>>;
   getUserAttempts: (id: string) => Promise<AxiosResponse<any>>;
+  getMyAIQuizzes: () => Promise<AxiosResponse<any>>;
+  deleteMyAIQuiz: (id: string) => Promise<AxiosResponse<any>>;
 }
 
 export interface TokenAPI {

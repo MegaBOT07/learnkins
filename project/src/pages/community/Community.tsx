@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import type { Achievement, Discussion, Reply, StudyGroup } from "../../types/community";
 import { communityAPI } from "../../utils/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import {
   Users,
   Trophy,
@@ -153,6 +154,7 @@ const Community = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const meId = String(user?._id || user?.id || "");
+  const { confirm: confirmDelete } = useConfirm();
 
   const [activeTab, setActiveTab] = useState<TabId>("discussions");
   const [loading, setLoading] = useState(true);
@@ -422,7 +424,7 @@ const Community = () => {
   };
 
   const handleDeleteDiscussion = async (discussionId: string) => {
-    if (!window.confirm("Delete this discussion?")) return;
+    if (!(await confirmDelete("Delete this discussion?"))) return;
     setError(null);
     try {
       await communityAPI.deleteDiscussion(discussionId);
@@ -565,7 +567,7 @@ const Community = () => {
   };
 
   const handleDeleteReply = async (discussionId: string, replyId: string) => {
-    if (!window.confirm("Delete this comment?")) return;
+    if (!(await confirmDelete("Delete this comment?"))) return;
     setError(null);
     try {
       const response = await communityAPI.deleteDiscussionReply(discussionId, replyId);
@@ -661,7 +663,7 @@ const Community = () => {
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    if (!window.confirm("Delete this study group?")) return;
+    if (!(await confirmDelete("Delete this study group?"))) return;
     setError(null);
     try {
       await communityAPI.deleteStudyGroup(groupId);

@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { GameProvider } from "./context/GameContext";
 import { TokenProvider } from "./context/TokenContext";
 import Navbar from "./components/layout/Navbar";
+import { ToastProvider } from "./components/Toast";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 import Home from "./pages/home/Home";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register.tsx";
@@ -201,16 +203,20 @@ function App() {
   // }
 
   return (
-    <AuthProvider>
-      <TokenProvider>
-        <GameProvider>
-          <Router future={{ v7_relativeSplatPath: true }}>
-            <ScrollToTop />
-            <AppLayout />
-          </Router>
-        </GameProvider>
-      </TokenProvider>
-    </AuthProvider>
+      <AuthProvider>
+        <TokenProvider>
+          <GameProvider>
+            <ToastProvider>
+              <ConfirmProvider>
+                <Router future={{ v7_relativeSplatPath: true }}>
+                  <ScrollToTop />
+                  <AppLayout />
+                </Router>
+              </ConfirmProvider>
+            </ToastProvider>
+          </GameProvider>
+        </TokenProvider>
+      </AuthProvider>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { parentalAPI } from "../../utils/api";
+import { useToast } from "../../components/Toast";
 import {
   ArrowRight,
   Shield,
@@ -75,6 +76,7 @@ interface DeviceControl {
 }
 
 const ParentalControl = () => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
@@ -292,10 +294,10 @@ const ParentalControl = () => {
         bedtimeRestriction: timeControls.bedtimeRestriction,
         weekendBonus: timeControls.weekendBonus, // backend multiplies by 60
       });
-      alert("Time controls saved successfully!");
+      showToast("Time controls saved successfully!", "success");
     } catch (err: any) {
       console.error("Error saving time controls:", err);
-      alert("Failed to save time controls");
+      showToast("Failed to save time controls", "error");
     } finally {
       setSaving(false);
     }
@@ -312,10 +314,10 @@ const ParentalControl = () => {
         communityAccess: contentFilters.communityAccess,
         gamingTime: contentFilters.gamingTime, // backend multiplies by 60
       });
-      alert("Content filters saved successfully!");
+      showToast("Content filters saved successfully!", "success");
     } catch (err: any) {
       console.error("Error saving content filters:", err);
-      alert("Failed to save content filters");
+      showToast("Failed to save content filters", "error");
     } finally {
       setSaving(false);
     }

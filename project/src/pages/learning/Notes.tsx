@@ -23,6 +23,7 @@ import {
   Printer,
 } from "lucide-react";
 import { progressAPI } from "../../utils/api";
+import { useToast } from "../../components/Toast";
 
 interface Note {
   id: string;
@@ -49,6 +50,7 @@ interface WordFile {
 }
 
 const Notes = () => {
+  const { showToast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -72,7 +74,7 @@ const Notes = () => {
 
   const unlockNote = async (noteId: string, note: Note) => {
     const cost = 10;
-    if (!canRedeem(cost)) { alert('Not enough tokens to unlock this note.'); return; }
+    if (!canRedeem(cost)) { showToast('Not enough tokens to unlock this note.', "error"); return; }
     const ok = await redeem(cost, `unlock:note:${noteId}`);
     if (ok) {
       persistUnlockedNotes({ ...unlockedNotes, [noteId]: true });
@@ -87,7 +89,7 @@ const Notes = () => {
         });
       } catch (e) { }
     } else {
-      alert('Failed to redeem tokens.');
+      showToast('Failed to redeem tokens.', "error");
     }
   };
 

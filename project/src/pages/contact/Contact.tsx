@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { contactAPI } from "../../utils/api";
+import { useToast } from "../../components/Toast";
 import {
   ArrowRight,
   Mail,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 const Contact = () => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -59,7 +61,7 @@ const Contact = () => {
       // Backend will send SMTP email + create admin message
       await contactAPI.sendMessage(payload);
 
-      alert("Thank you for your message! We'll get back to you soon.");
+      showToast("Thank you for your message! We'll get back to you soon.", "success");
       setFormData({
         name: "",
         email: "",

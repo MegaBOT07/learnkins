@@ -5,7 +5,7 @@ import { checkFlashcardAchievements, checkAndAwardAchievements } from '../utils/
 
 // @desc    Get all flashcards
 // @route   GET /api/flashcards
-// @access  Public
+// @access  Public (private cards included for their owner)
 export const getFlashcards = async (req, res) => {
   try {
     const { 
@@ -17,7 +17,14 @@ export const getFlashcards = async (req, res) => {
       sortBy = 'recent' 
     } = req.query;
     
-    let filter = { isPublic: true, isActive: true };
+    // Show public cards + the authenticated user's own private cards
+    const filter = {
+      isActive: true,
+      $or: [
+        { isPublic: true },
+        ...(req.user ? [{ createdBy: req.user.id }] : []),
+      ],
+    };
     
     // Treat literal 'undefined' or 'null' query values as absent (frontend sometimes sends them)
     if (subject && subject !== 'all' && subject !== 'undefined' && subject !== 'null') {
@@ -115,7 +122,7 @@ export const createFlashcard = async (req, res) => {
       chapter,
       difficulty,
       tags: Array.isArray(tags) ? tags.map(t => typeof t === 'string' ? t.trim().toLowerCase() : t) : (tags ? tags.split(',').map(tag => tag.trim().toLowerCase()) : []),
-      isPublic: isPublic !== undefined ? isPublic : true,
+      isPublic: (req.user.role === 'admin' || req.user.role === 'teacher') ? true : (isPublic !== undefined ? isPublic : false),
       createdBy: req.user.id
     });
 
@@ -211,9 +218,8 @@ export const deleteFlashcard = async (req, res) => {
       });
     }
 
-    // Soft delete
-    flashcard.isActive = false;
-    await flashcard.save();
+    // Hard delete
+    await flashcard.deleteOne();
 
     res.status(200).json({
       success: true,
@@ -463,7 +469,7 @@ export const batchCreateFlashcards = async (req, res) => {
         tags: Array.isArray(card.tags)
           ? card.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean)
           : ['ai-generated'],
-        isPublic: card.isPublic !== undefined ? card.isPublic : true,
+        isPublic: (req.user.role === 'admin' || req.user.role === 'teacher') ? true : (card.isPublic !== undefined ? card.isPublic : false),
         createdBy: req.user.id
       };
     });
