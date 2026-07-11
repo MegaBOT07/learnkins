@@ -29,7 +29,6 @@ import User from "./models/User.js";
 import ShopItem from "./models/ShopItem.js";
 import Material from "./models/Material.js";
 import Subject from "./models/Subject.js";
-import { seedAchievements } from "./seeds/seedAchievements.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -141,7 +140,6 @@ const connectDb = async () => {
         await seedSubjects();
         await seedShopItems();
         await seedContent();
-        await seedAchievements();
         return;
       } catch (e) {
         console.warn('❌ mongodb-memory-server failed to start, falling back to MONGODB_URI', e.message);
@@ -178,7 +176,7 @@ const connectDb = async () => {
     await seedSubjects();
     await seedShopItems();
     await seedContent();
-    await seedAchievements();
+
   } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
     // do not exit here — allow server to run but many features will fail
@@ -234,18 +232,22 @@ const seedTestUsers = async () => {
     }
 
     // Create/update Admin
-    const admin = await User.findOne({ email: 'admin@learnkins.com' });
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@learnkins.com';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminName = process.env.ADMIN_NAME || 'System Administrator';
+
+    const admin = await User.findOne({ email: adminEmail });
     if (admin) {
-      admin.password = 'admin123';
+      admin.password = adminPassword;
       admin.isActive = true;
-      admin.name = 'System Administrator';
+      admin.name = adminName;
       admin.role = 'admin';
       await admin.save();
       console.log('✓ Admin user updated');
     } else {
       await User.create({
-        name: 'System Administrator', email: 'admin@learnkins.com',
-        password: 'admin123', role: 'admin', isActive: true
+        name: adminName, email: adminEmail,
+        password: adminPassword, role: 'admin', isActive: true
       });
       console.log('✓ Admin user created');
     }
