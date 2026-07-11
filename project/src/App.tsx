@@ -198,9 +198,9 @@ function App() {
     localStorage.setItem("hasSeenStartupAnimation", "true");
   };
 
-  // if (showStartupAnimation) {
-  //   return <StartupAnimation onComplete={handleAnimationComplete} />;
-  // }
+  if (showStartupAnimation) {
+    return <StartupAnimation onComplete={handleAnimationComplete} />;
+  }
 
   return (
       <AuthProvider>

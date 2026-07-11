@@ -122,7 +122,7 @@ export const createFlashcard = async (req, res) => {
       chapter,
       difficulty,
       tags: Array.isArray(tags) ? tags.map(t => typeof t === 'string' ? t.trim().toLowerCase() : t) : (tags ? tags.split(',').map(tag => tag.trim().toLowerCase()) : []),
-      isPublic: (req.user.role === 'admin' || req.user.role === 'teacher') ? true : (isPublic !== undefined ? isPublic : false),
+      isPublic: req.user.role === 'admin' ? true : (isPublic !== undefined ? isPublic : false),
       createdBy: req.user.id
     });
 

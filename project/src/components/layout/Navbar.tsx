@@ -453,21 +453,12 @@ const Navbar = () => {
                                 <span>Interactive Games</span>
                               </button>
                               <Link
-                                to="/games-quiz"
+                                to="/quizzes"
                                 className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black hover:bg-orange-50 hover:text-orange-600 rounded-xl transition-colors"
                                 onClick={() => setIsOpen(false)}
                               >
                                 <Target size={18} strokeWidth={2.5} />
-                                <span>Subject Quizzes</span>
-                              </Link>
-
-                              <Link
-                                to="/quizzes"
-                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors"
-                                onClick={() => setIsOpen(false)}
-                              >
-                                <GraduationCap size={18} strokeWidth={2.5} />
-                                <span>Professional Quizzes</span>
+                                <span>Quizzes</span>
                               </Link>
                             </motion.div>
                           )}

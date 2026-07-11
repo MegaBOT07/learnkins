@@ -37,9 +37,9 @@ router.post('/batch', batchCreateFlashcards);
 // User flashcards
 router.get('/my/flashcards', getMyFlashcards);
 
-// CRUD operations (admin/teacher only)
-router.post('/', authorize('admin', 'teacher'), createFlashcard);
-router.put('/:id', authorize('admin', 'teacher'), updateFlashcard);
+// CRUD operations (admin only)
+router.post('/', authorize('admin'), createFlashcard);
+router.put('/:id', authorize('admin'), updateFlashcard);
 
 // Delete — any authenticated user can delete their own cards (controller checks ownership)
 router.delete('/:id', deleteFlashcard);

@@ -13,6 +13,7 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
+
 import {
   X, ChevronRight, ChevronLeft,
   Send, Volume2, VolumeX, MessageSquare, Map,
@@ -28,7 +29,6 @@ const STEPS = [
   { path:"/",           vw:50,vh:42, color:"#a855f7", grad:["#7c3aed","#ec4899"] as [string,string], emoji:"👋", title:"Hey! I'm Maya!",       message:"Welcome to LearnKins! I'm your AI guide bot. I'll fly across the site and show you around. Let's begin the tour!" },
   { path:"/subjects",   vw:28,vh:38, color:"#3b82f6", grad:["#2563eb","#06b6d4"] as [string,string], emoji:"📚", title:"Subjects",             message:"Explore Maths, Science, Social Science and English. Each subject has chapters, notes, video lessons and quizzes to help you master every topic." },
   { path:"/flashcards", vw:68,vh:48, color:"#f59e0b", grad:["#d97706","#f97316"] as [string,string], emoji:"🃏", title:"Flashcards",           message:"Create your own flashcard decks or use ready-made ones. Flip cards, test your memory and lock in what you learn for good." },
-  { path:"/games-quiz", vw:32,vh:55, color:"#ef4444", grad:["#dc2626","#f97316"] as [string,string], emoji:"🎮", title:"Games & Quizzes",      message:"Play subject-based quizzes and fun learning games. Every correct answer and win earns you tokens to spend in the Diamond Store!" },
   { path:"/games",      vw:70,vh:30, color:"#8b5cf6", grad:["#7c3aed","#6366f1"] as [string,string], emoji:"🕹️", title:"Interactive Games",    message:"Dive into our interactive games — History Game, Grammar Warrior, Word Builder, Treasure Hunt and more! Learning through play is the best way to master concepts." },
   { path:"/quizzes",    vw:28,vh:58, color:"#ec4899", grad:["#db2777","#f43f5e"] as [string,string], emoji:"🎯", title:"Professional Quizzes", message:"Challenge yourself with comprehensive professional quizzes across all subjects. Track your scores, see rankings, and earn recognition!" },
   { path:"/community",  vw:70,vh:42, color:"#10b981", grad:["#059669","#0d9488"] as [string,string], emoji:"👥", title:"Community",            message:"Connect with fellow learners, join study groups, share resources and collaborate. Learning together makes everything more fun." },
@@ -482,7 +482,9 @@ const MayaCompanion: React.FC = () => {
   useEffect(()=>{
     if (mode !== "touring") return;
     const target = STEPS[step].path;
-    if (location.pathname !== target) navigate(target);
+    if (location.pathname !== target) {
+      navigate(target);
+    }
     window.scrollTo({top:0, behavior:"smooth"});
     // speak after short delay so voices list is loaded
     const voiced = STEPS[step].message;
@@ -517,10 +519,13 @@ const MayaCompanion: React.FC = () => {
     const np = resolvePos(STEPS[next]);
     setFlipX(np.x < targetPos.x);
     setMode("flying");
-    const needsNav = STEPS[next].path !== location.pathname;
-    if (needsNav) { navigate(STEPS[next].path); window.scrollTo({top:0,behavior:"smooth"}); }
     setTargetPos(np);
-    setTimeout(()=>{ setStep(next); setFlipX(false); setMode("touring"); flyingRef.current=false; }, needsNav?700:500);
+    const targetPath = STEPS[next].path;
+    if (targetPath !== location.pathname) {
+      navigate(targetPath);
+      window.scrollTo({top:0,behavior:"smooth"});
+    }
+    setTimeout(()=>{ setStep(next); setFlipX(false); setMode("touring"); flyingRef.current=false; }, targetPath !== location.pathname ? 700 : 500);
   },[targetPos, location.pathname, navigate, resolvePos]);
 
   const completeTour = useCallback(()=>{
