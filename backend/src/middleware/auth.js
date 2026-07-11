@@ -17,7 +17,6 @@ export const optionalAuth = async (req, res, next) => {
 
 export const protect = async (req, res, next) => {
   let token;
-  console.log("token : ",token)
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];

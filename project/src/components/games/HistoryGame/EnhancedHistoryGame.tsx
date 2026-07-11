@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Sparkles as DreiSparkles, Float } from "@react-three/drei";
 import { EffectComposer, Bloom, ChromaticAberration, Vignette } from "@react-three/postprocessing";
@@ -2202,6 +2202,8 @@ const EnhancedHistoryGame = () => {
     setPerfectRounds(0);
     setCurrentRoundAnswers([]);
     setGameLevel(1);
+    trackCompletedRef.current = false;
+    trackStartedRef.current = false;
     setExperiencePoints(0);
     setParticleEffects([]);
     setSpecialEvents([]);

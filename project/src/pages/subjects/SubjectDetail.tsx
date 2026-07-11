@@ -25,6 +25,8 @@ const iconMap: Record<string, string> = {
   "book-text": "📖",
 };
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const isDirectVideoFile = (url: string = "") => {
   return /\.(mp4|webm|ogg)(\?|#|$)/i.test(url);
 };
@@ -301,7 +303,7 @@ const SubjectDetail = () => {
                           <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-center p-4 bg-slate-900 text-white">
                             <p className="text-sm font-bold">Preview not available for this link</p>
                             <a
-                              href={v.fileUrl}
+                              href={`${API_BASE}/materials/${v._id}/view`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-4 py-2 bg-white text-black rounded-lg text-sm font-bold border-2 border-white hover:bg-transparent hover:text-white transition-all"
@@ -412,7 +414,7 @@ const SubjectDetail = () => {
                         <div className="ml-6 flex flex-col space-y-2">
                           {note.fileUrl && (
                             <a
-                              href={note.fileUrl}
+                              href={`${API_BASE}/materials/${note._id}/view`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="flex items-center space-x-2 px-5 py-2.5 bg-black text-white rounded-xl font-bold border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95"

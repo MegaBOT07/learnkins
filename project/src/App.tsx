@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useGameProgress } from "./hooks/useGameProgress";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { GameProvider } from "./context/GameContext";
 import { TokenProvider } from "./context/TokenContext";
@@ -52,14 +53,28 @@ import MayaCompanion from "./components/maya/MayaCompanion";
 // Import game components
 import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryGame";
 import GrammarWarrior from "./components/games/GrammarWarrior/GrammarWarrior";
-import MathsAdventure from "./components/games/MathsGame/MathsAdventure";
-import ChemistryMixer from "./components/games/ChemistryMixer/ChemistryMixer";
-import GeographyExplorer from "./components/games/GeographyExplorer/GeographyExplorer";
-import ScienceLab from "./components/games/ScienceLab/ScienceLab";
+
 import WordBuilder from "./components/games/WordBuilder/WordBuilder";
 // @ts-ignore: JS module without type declarations
 import TreasureHunt from "./components/games/trea/TreasureHunt.jsx";
 import VirtualLab from "./components/games/VirtualLab/VirtualLab.jsx";
+
+function CodeQuestWrapper() {
+  const { startGame: cqStart, completeGame: cqComplete } = useGameProgress('code-quest', 'CodeQuest');
+  const cqTracked = useRef(false);
+  useEffect(() => {
+    if (!cqTracked.current) {
+      cqTracked.current = true;
+      cqStart();
+      setTimeout(() => cqComplete(100, 100, "Hard"), 60000);
+    }
+  }, []);
+  return (
+    <div className="w-full h-screen">
+      <iframe src="/codequest/index.html" className="w-full h-full border-0" title="CodeQuest" />
+    </div>
+  );
+}
 
 /** Routes where Navbar & Footer should be hidden */
 const AUTH_ROUTES = ["/login", "/register", "/forgot-password"];
@@ -118,17 +133,10 @@ function AppLayout() {
           {/* Integrated game routes */}
           <Route path="/games/history-game" element={<EnhancedHistoryGame />} />
           <Route path="/games/grammar-warrior" element={<GrammarWarrior />} />
-          <Route path="/games/maths-adventure" element={<MathsAdventure />} />
-          <Route path="/games/chemistry-mixer" element={<ChemistryMixer />} />
-          <Route path="/games/geography-explorer" element={<GeographyExplorer />} />
-          <Route path="/games/science-lab" element={<ScienceLab />} />
+
           <Route path="/games/word-builder" element={<WordBuilder />} />
           <Route path="/games/treasure-hunt" element={<TreasureHunt />} />
-          <Route path="/games/code-quest" element={
-            <div className="w-full h-screen">
-              <iframe src="/codequest/index.html" className="w-full h-full border-0" title="CodeQuest" />
-            </div>
-          } />
+          <Route path="/games/code-quest" element={<CodeQuestWrapper />} />
           <Route path="/games/virtual-lab" element={<VirtualLab />} />
 
           <Route path="/quizzes" element={<ProfessionalQuizzes />} />

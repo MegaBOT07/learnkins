@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI, contactAPI, professionalQuizAPI, subjectAPI, newsletterAPI } from "../../utils/api";
+import api, { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, gameAPI, tokenAPI, shopAPI, contactAPI, professionalQuizAPI, subjectAPI, newsletterAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Gamepad2, Settings,
@@ -66,6 +66,7 @@ const AdminPanel = () => {
   const [editingFlashcard, setEditingFlashcard] = useState<any>(null);
   const [editingGame, setEditingGame] = useState<any>(null);
   const [editingMaterial, setEditingMaterial] = useState<any>(null);
+  const [uploadedAdminFile, setUploadedAdminFile] = useState<File | null>(null);
   const [editingQuiz, setEditingQuiz] = useState<any>(null);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [editingProQuiz, setEditingProQuiz] = useState<any>(null);
@@ -168,32 +169,57 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchWithRetry = async (fn: () => Promise<any>, retries = 3): Promise<any> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        if (err?.response?.status === 429 && i < retries - 1) {
+          await new Promise(r => setTimeout(r, (i + 1) * 1500));
+          continue;
+        }
+        console.warn("Fetch failed:", err?.message || err);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [mRes, qRes, uRes, fRes, gRes, sRes, cRes, pRes, siRes, nRes] = await Promise.allSettled([
-        materialAPI.getMaterials('all'),
-        quizAPI.getQuizzes('all'),
-        userAPI.getUsers(),
-        flashcardAPI.getFlashcards('all'),
-        gameAPI.getGames(),
-        subjectAPI.getSubjects(),
-        contactAPI.getMessages(),
-        professionalQuizAPI.getQuizzes(),
-        shopAPI.getItems({}),
-        newsletterAPI.getSubscribers(),
-      ]);
+      const calls = [
+        { key: "materials", fn: () => materialAPI.getMaterials('all') },
+        { key: "quizzes", fn: () => quizAPI.getQuizzes('all') },
+        { key: "users", fn: () => userAPI.getUsers() },
+        { key: "flashcards", fn: () => flashcardAPI.getFlashcards('all') },
+        { key: "games", fn: () => gameAPI.getGames() },
+        { key: "subjects", fn: () => subjectAPI.getSubjects() },
+        { key: "contact", fn: () => contactAPI.getMessages() },
+        { key: "proQuizzes", fn: () => professionalQuizAPI.getQuizzes() },
+        { key: "shop", fn: () => shopAPI.getItems({}) },
+        { key: "newsletter", fn: () => newsletterAPI.getSubscribers() },
+      ];
 
-      if (mRes.status === 'fulfilled') setMaterials(mRes.value.data?.data || mRes.value.data || []);
-      if (qRes.status === 'fulfilled') setQuizzes(qRes.value.data?.data || qRes.value.data || []);
-      if (uRes.status === 'fulfilled') setUsers(uRes.value.data?.data || uRes.value.data || []);
-      if (fRes.status === 'fulfilled') setFlashcards(fRes.value.data?.data || fRes.value.data || []);
-      if (gRes.status === 'fulfilled') setGames(gRes.value.data?.data || gRes.value.data || []);
-      if (sRes.status === 'fulfilled') setSubjects(sRes.value.data?.data || sRes.value.data || []);
-      if (cRes.status === 'fulfilled') setContactMessages(cRes.value.data?.data || cRes.value.data || []);
-      if (pRes.status === 'fulfilled') setProQuizzes(pRes.value.data?.data || pRes.value.data || []);
-      if (siRes.status === 'fulfilled') setShopItems(siRes.value.data?.data || siRes.value.data || []);
-      if (nRes.status === 'fulfilled') setNewsletterSubscribers(nRes.value.data?.data || nRes.value.data || []);
+      const results: Record<string, any> = {};
+      for (const call of calls) {
+        const res = await fetchWithRetry(call.fn);
+        if (res) results[call.key] = res.data?.data || res.data || [];
+        await delay(300);
+      }
+
+      if (results.materials) setMaterials(results.materials);
+      if (results.quizzes) setQuizzes(results.quizzes);
+      if (results.users) setUsers(results.users);
+      if (results.flashcards) setFlashcards(results.flashcards);
+      if (results.games) setGames(results.games);
+      if (results.subjects) setSubjects(results.subjects);
+      if (results.contact) setContactMessages(results.contact);
+      if (results.proQuizzes) setProQuizzes(results.proQuizzes);
+      if (results.shop) setShopItems(results.shop);
+      if (results.newsletter) setNewsletterSubscribers(results.newsletter);
     } catch (err) {
       console.error("Fetch admin data failed", err);
     } finally {
@@ -394,13 +420,40 @@ const AdminPanel = () => {
   const handleCreateMaterial = async () => {
     try {
       setLoading(true);
+<<<<<<< HEAD
       if (!newMaterial.title || !newMaterial.subject || !newMaterial.fileUrl) {
         showToast("Please fill in title, subject, and video/file URL.", "error");
         return;
       }
       await materialAPI.createMaterial(newMaterial);
       showToast("Material uploaded successfully!", "success");
+=======
+      const isFileUpload = newMaterial.type !== "video";
+      if (!newMaterial.title || !newMaterial.subject || (isFileUpload ? !uploadedAdminFile : !newMaterial.fileUrl)) {
+        alert(isFileUpload ? "Please fill in title, subject, and select a file." : "Please fill in title, subject, and video URL.");
+        return;
+      }
+      const desc = newMaterial.description || `${newMaterial.type === "video" ? "Video lesson" : newMaterial.type === "notes" ? "Study notes" : newMaterial.type === "worksheet" ? "Worksheet" : "Presentation"} for ${newMaterial.subject} - ${newMaterial.grade} grade`;
+      if (isFileUpload && uploadedAdminFile) {
+        const formData = new FormData();
+        formData.append("file", uploadedAdminFile);
+        formData.append("title", newMaterial.title);
+        formData.append("subject", newMaterial.subject);
+        formData.append("grade", newMaterial.grade);
+        formData.append("type", newMaterial.type);
+        formData.append("chapter", newMaterial.chapter);
+        formData.append("difficulty", newMaterial.difficulty);
+        formData.append("description", desc);
+        await api.post("/materials", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+      } else {
+        await materialAPI.createMaterial({ ...newMaterial, description: desc });
+      }
+      alert("Material uploaded successfully!");
+>>>>>>> 4ded9f6c762a3c0b276c743568985a74e06f3fb5
       setShowMaterialModal(false);
+      setUploadedAdminFile(null);
       setNewMaterial({ title: "", description: "", subject: "science", type: "video", chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner" });
       fetchAll();
     } catch (err: any) {
@@ -2171,10 +2224,14 @@ const AdminPanel = () => {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto">
               <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center sticky top-0 bg-white z-10">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">Upload Learning Video</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Add YouTube videos or other materials for students</p>
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                    {newMaterial.type === "video" ? "Upload Learning Video" : newMaterial.type === "notes" ? "Upload Study Notes" : newMaterial.type === "worksheet" ? "Upload Worksheet" : "Upload Presentation"}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {newMaterial.type === "video" ? "Add YouTube videos or other materials for students" : "Upload files securely from your device"}
+                  </p>
                 </div>
-                <button onClick={() => setShowMaterialModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+                <button onClick={() => { setShowMaterialModal(false); setUploadedAdminFile(null); }} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                 <div>
@@ -2203,7 +2260,10 @@ const AdminPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
-                    <select className={theme.input} value={newMaterial.type} onChange={(e) => setNewMaterial({ ...newMaterial, type: e.target.value })}>
+                    <select className={theme.input} value={newMaterial.type} onChange={(e) => {
+                      setNewMaterial({ ...newMaterial, type: e.target.value, fileUrl: "" });
+                      setUploadedAdminFile(null);
+                    }}>
                       <option value="video">Video Lesson</option>
                       <option value="notes">Study Notes</option>
                       <option value="worksheet">Worksheet</option>
@@ -2223,26 +2283,73 @@ const AdminPanel = () => {
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chapter / Topic</label>
                   <input className={theme.input} placeholder="e.g. Cell Biology, Algebra, Photosynthesis" value={newMaterial.chapter} onChange={(e) => setNewMaterial({ ...newMaterial, chapter: e.target.value })} />
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Video URL * <span className="text-slate-300 font-normal">(YouTube embed or direct video link)</span>
-                  </label>
-                  <input
-                    className={theme.input}
-                    placeholder="https://www.youtube.com/embed/VIDEO_ID"
-                    value={newMaterial.fileUrl}
-                    onChange={(e) => setNewMaterial({ ...newMaterial, fileUrl: e.target.value })}
-                  />
-                  <p className="text-xs text-slate-400 mt-1">Tip: For YouTube, use the embed URL format: youtube.com/embed/VIDEO_ID</p>
-                </div>
+
+                {newMaterial.type === "video" ? (
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Video URL * <span className="text-slate-300 font-normal">(YouTube embed or direct video link)</span>
+                    </label>
+                    <input
+                      className={theme.input}
+                      placeholder="https://www.youtube.com/embed/VIDEO_ID"
+                      value={newMaterial.fileUrl}
+                      onChange={(e) => setNewMaterial({ ...newMaterial, fileUrl: e.target.value })}
+                    />
+                    <p className="text-xs text-slate-400 mt-1">Tip: For YouTube, use the embed URL format: youtube.com/embed/VIDEO_ID</p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">File Upload *</label>
+                    <div
+                      onClick={() => document.getElementById("admin-file-upload")?.click()}
+                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${uploadedAdminFile ? "border-indigo-500 bg-indigo-50" : "border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50"}`}
+                    >
+                      <input
+                        id="admin-file-upload"
+                        type="file"
+                        accept={newMaterial.type === "notes" ? ".pdf,.doc,.docx,.txt" : newMaterial.type === "worksheet" ? ".pdf,.doc,.docx,.xls,.xlsx" : ".pdf,.pptx,.ppt,.doc,.docx"}
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setUploadedAdminFile(file);
+                          }
+                        }}
+                      />
+                      {uploadedAdminFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 bg-indigo-100 rounded-xl border-2 border-indigo-500">
+                            <FileText size={24} className="text-indigo-600" />
+                          </div>
+                          <p className="font-bold text-slate-800 text-sm">{uploadedAdminFile.name}</p>
+                          <p className="text-xs text-slate-500">{(uploadedAdminFile.size / 1024).toFixed(1)} KB</p>
+                          <button onClick={(e) => { e.stopPropagation(); setUploadedAdminFile(null); setNewMaterial({ ...newMaterial, fileUrl: "" }); }} className="text-xs text-rose-500 font-bold hover:underline">Remove</button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 bg-slate-100 rounded-xl border-2 border-slate-300">
+                            <Upload size={24} className="text-slate-400" />
+                          </div>
+                          <p className="font-bold text-slate-700">Click to select a file</p>
+                          <p className="text-xs text-slate-400">
+                            {newMaterial.type === "notes" ? "PDF, DOC, DOCX, TXT" : newMaterial.type === "worksheet" ? "PDF, DOC, DOCX, XLS, XLSX" : "PDF, PPT, PPTX, DOC, DOCX"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Description</label>
                   <textarea className={theme.input} rows={2} placeholder="Brief description of what students will learn..." value={newMaterial.description} onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })} />
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
-                <button onClick={() => setShowMaterialModal(false)} className={theme.buttonSecondary}>Cancel</button>
-                <button onClick={handleCreateMaterial} className={theme.buttonPrimary}>Upload Material</button>
+                <button onClick={() => { setShowMaterialModal(false); setUploadedAdminFile(null); }} className={theme.buttonSecondary}>Cancel</button>
+                <button onClick={handleCreateMaterial} className={theme.buttonPrimary}>
+                  {newMaterial.type === "video" ? "Upload Material" : "Upload File"}
+                </button>
               </div>
             </div>
           </motion.div>
