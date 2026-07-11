@@ -24,14 +24,12 @@ import { useTokens } from "../../context/TokenContext";
 const ROLE_COLORS: Record<string, string> = {
   student: "from-blue-500 to-cyan-500",
   parent: "from-green-500 to-teal-500",
-  teacher: "from-purple-500 to-pink-500",
   admin: "from-red-500 to-orange-500",
 };
 
 const ROLE_ICONS: Record<string, string> = {
   student: "🎓",
   parent: "👨‍👩‍👧",
-  teacher: "👨‍🏫",
   admin: "⚡",
 };
 

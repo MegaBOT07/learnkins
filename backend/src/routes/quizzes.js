@@ -30,10 +30,10 @@ router.post('/:id/submit', submitQuiz);
 router.get('/:id/results', getQuizResults);
 router.get('/:id', getQuiz);
 
-// Teacher/Admin routes
-router.post('/', authorize('admin', 'teacher'), createQuiz);
-router.put('/:id', authorize('admin', 'teacher'), updateQuiz);
-router.delete('/:id', authorize('admin', 'teacher'), deleteQuiz);
-router.get('/:id/statistics', authorize('admin', 'teacher'), getQuizStatistics);
+// Admin routes
+router.post('/', authorize('admin'), createQuiz);
+router.put('/:id', authorize('admin'), updateQuiz);
+router.delete('/:id', authorize('admin'), deleteQuiz);
+router.get('/:id/statistics', authorize('admin'), getQuizStatistics);
 
 export default router;

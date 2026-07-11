@@ -356,7 +356,7 @@ const ProfessionalQuizzes = () => {
                 >
                   <option value="all">All Quiz</option>
                   <option value="ai">AI Generated</option>
-                  <option value="teacher">By Teachers</option>
+                  <option value="admin">By Admin</option>
                 </select>
               </div>
             </div>

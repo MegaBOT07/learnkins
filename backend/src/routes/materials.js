@@ -41,8 +41,8 @@ router.get('/:id/view', viewMaterial);
 // Protected routes
 router.use(protect);
 
-router.post('/', authorize('admin', 'teacher'), upload.single('file'), createMaterial);
-router.put('/:id', authorize('admin', 'teacher'), updateMaterial);
-router.delete('/:id', authorize('admin', 'teacher'), deleteMaterial);
+router.post('/', authorize('admin'), upload.single('file'), createMaterial);
+router.put('/:id', authorize('admin'), updateMaterial);
+router.delete('/:id', authorize('admin'), deleteMaterial);
 
 export default router;
