@@ -420,14 +420,6 @@ const AdminPanel = () => {
   const handleCreateMaterial = async () => {
     try {
       setLoading(true);
-<<<<<<< HEAD
-      if (!newMaterial.title || !newMaterial.subject || !newMaterial.fileUrl) {
-        showToast("Please fill in title, subject, and video/file URL.", "error");
-        return;
-      }
-      await materialAPI.createMaterial(newMaterial);
-      showToast("Material uploaded successfully!", "success");
-=======
       const isFileUpload = newMaterial.type !== "video";
       if (!newMaterial.title || !newMaterial.subject || (isFileUpload ? !uploadedAdminFile : !newMaterial.fileUrl)) {
         alert(isFileUpload ? "Please fill in title, subject, and select a file." : "Please fill in title, subject, and video URL.");
@@ -451,7 +443,6 @@ const AdminPanel = () => {
         await materialAPI.createMaterial({ ...newMaterial, description: desc });
       }
       alert("Material uploaded successfully!");
->>>>>>> 4ded9f6c762a3c0b276c743568985a74e06f3fb5
       setShowMaterialModal(false);
       setUploadedAdminFile(null);
       setNewMaterial({ title: "", description: "", subject: "science", type: "video", chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner" });
