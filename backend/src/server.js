@@ -24,6 +24,8 @@ import professionalQuizRoutes from "./routes/professionalQuizzes.js";
 import shopRoutes from './routes/shop.js';
 import paymentRoutes from './routes/payments.js';
 import newsletterRoutes from './routes/newsletter.js';
+import verificationRoutes from './routes/verificationRoutes.js';
+import certificateRoutes from './routes/certificateRoutes.js';
 // Import models for seeding
 import User from "./models/User.js";
 import ShopItem from "./models/ShopItem.js";
@@ -109,6 +111,36 @@ app.use("/api/", limiter);
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Auto-generation fallback middleware for certificate PDFs
+import fs from 'fs';
+import path from 'path';
+import CertificateModel from './models/Certificate.js';
+import { generateCertificatePDF } from './controllers/certificateController.js';
+
+app.use('/uploads/pdfs', async (req, res, next) => {
+  try {
+    const filename = req.path.replace('/', '');
+    if (!filename.endsWith('.pdf')) return next();
+    
+    const certId = filename.replace('.pdf', '');
+    const UPLOADS_DIR = path.resolve(process.cwd(), "uploads", "pdfs");
+    const filePath = path.join(UPLOADS_DIR, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      // Regenerate on the fly
+      const cert = await CertificateModel.findOne({ certificateId: certId });
+      if (cert) {
+        if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+        await generateCertificatePDF(cert);
+      }
+    }
+    next();
+  } catch (error) {
+    console.error('Fallback generation error:', error);
+    next();
+  }
+});
 
 // Serve uploaded files statically
 app.use('/uploads', express.static('uploads'));
@@ -401,6 +433,8 @@ app.use("/api/professional-quizzes", professionalQuizRoutes);
 app.use("/api/shop", shopRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/newsletter", newsletterRoutes);
+app.use("/api/verify", verificationRoutes);
+app.use("/api/certificates", certificateRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

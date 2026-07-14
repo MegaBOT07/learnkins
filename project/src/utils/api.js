@@ -160,6 +160,13 @@ export const newsletterAPI = {
   unsubscribe: (email) => api.put("/newsletter/unsubscribe", { email }),
 };
 
+export const certificateAPI = {
+  createCertificate: (data) => api.post('/certificates', data),
+  getCertificates: () => api.get('/certificates'),
+  deleteCertificate: (id) => api.delete(`/certificates/${id}`),
+  bulkCreateCertificates: (formData) => api.post('/certificates/bulk', formData, { responseType: 'blob' }),
+};
+
 // Parental Control API
 export const parentalAPI = {
   getChildren: () => api.get("/parental/children"),

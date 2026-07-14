@@ -49,6 +49,7 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import ShopPage from "./pages/shop/ShopPage";
 import ParentReportPage from "./pages/parent/ParentReportPage";
 import MayaCompanion from "./components/maya/MayaCompanion";
+import PublicVerify from "./pages/verify/PublicVerify";
 
 // Import game components
 import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryGame";
@@ -148,6 +149,9 @@ function AppLayout() {
           <Route path="/professional-quiz/:id" element={<ProfessionalQuiz />} />
           <Route path="/professional-quiz/:id/attempt/:attemptId" element={<QuizAttemptReview />} />
           <Route path="/my-attempts" element={<MyQuizAttempts />} />
+
+          {/* Hidden Verification Route */}
+          <Route path="/verify/internship/:certificateId" element={<PublicVerify />} />
 
           <Route path="/community" element={<Community />} />
           <Route path="/community/groups/:id" element={<StudyGroupDetail />} />

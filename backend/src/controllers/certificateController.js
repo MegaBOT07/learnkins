@@ -1,0 +1,176 @@
+import Certificate from "../models/Certificate.js";
+import QRCode from "qrcode";
+import puppeteer from "puppeteer";
+import xlsx from "xlsx";
+import AdmZip from "adm-zip";
+import fs from "fs";
+import path from "path";
+import { getCertificateHTML } from "../templates/certificateTemplate.js";
+
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads", "pdfs");
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+// Helper to generate the PDF
+export const generateCertificatePDF = async (certData) => {
+  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify/internship/${certData.certificateId}`;
+  const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
+  
+  const htmlContent = getCertificateHTML(certData, qrCodeDataUrl);
+  
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const page = await browser.newPage();
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+  
+  const pdfPath = path.join(UPLOADS_DIR, `${certData.certificateId}.pdf`);
+  await page.pdf({
+    path: pdfPath,
+    format: 'A4',
+    landscape: true,
+    printBackground: true,
+  });
+  
+  await browser.close();
+  return pdfPath;
+};
+
+// @desc    Create a new certificate
+// @route   POST /api/certificates
+// @access  Admin
+export const createCertificate = async (req, res, next) => {
+  try {
+    const {
+      studentName,
+      email,
+      phoneNumber,
+      college,
+      university,
+      internshipDomain,
+      internshipTitle,
+      duration,
+      startDate,
+      endDate,
+    } = req.body;
+
+    const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const certificateId = `LK-${new Date().getFullYear()}-INT-${randomId}`;
+
+    const certificate = await Certificate.create({
+      studentName,
+      email,
+      phoneNumber,
+      college,
+      university,
+      internshipDomain,
+      internshipTitle,
+      duration,
+      startDate,
+      endDate,
+      certificateId,
+    });
+
+    await generateCertificatePDF(certificate);
+
+    res.status(201).json({
+      success: true,
+      data: certificate,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Bulk create certificates via CSV/Excel
+// @route   POST /api/certificates/bulk
+// @access  Admin
+export const bulkCreateCertificates = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Please upload an Excel or CSV file" });
+    }
+
+    const filePath = req.file.path;
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if (data.length === 0) {
+      return res.status(400).json({ success: false, message: "No data found in file" });
+    }
+
+    const zip = new AdmZip();
+    const generatedCertificates = [];
+
+    for (const row of data) {
+      const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const certificateId = `LK-${new Date().getFullYear()}-INT-${randomId}`;
+
+      const certificate = await Certificate.create({
+        studentName: row.studentName || row.Name,
+        email: row.email || row.Email,
+        phoneNumber: row.phoneNumber || row.Phone,
+        college: row.college || row.College,
+        university: row.university || row.University,
+        internshipDomain: row.internshipDomain || row.Domain,
+        internshipTitle: row.internshipTitle || row.Title,
+        duration: row.duration || row.Duration,
+        startDate: row.startDate || row.StartDate,
+        endDate: row.endDate || row.EndDate,
+        certificateId,
+      });
+
+      const pdfPath = await generateCertificatePDF(certificate);
+      zip.addLocalFile(pdfPath);
+      generatedCertificates.push(certificate);
+    }
+
+    fs.unlinkSync(filePath); // Clean up uploaded file
+
+    const zipBuffer = zip.toBuffer();
+    res.set('Content-Type', 'application/zip');
+    res.set('Content-Disposition', 'attachment; filename="certificates.zip"');
+    res.send(zipBuffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all certificates
+// @route   GET /api/certificates
+// @access  Admin
+export const getCertificates = async (req, res, next) => {
+  try {
+    const certificates = await Certificate.find().sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      count: certificates.length,
+      data: certificates,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete certificate
+// @route   DELETE /api/certificates/:id
+// @access  Admin
+export const deleteCertificate = async (req, res, next) => {
+  try {
+    const certificate = await Certificate.findById(req.params.id);
+    if (!certificate) {
+      return res.status(404).json({ success: false, message: 'Certificate not found' });
+    }
+    
+    // Optional: Delete the PDF file if exists
+    const pdfPath = path.join(UPLOADS_DIR, `${certificate.certificateId}.pdf`);
+    if (fs.existsSync(pdfPath)) {
+      fs.unlinkSync(pdfPath);
+    }
+
+    await certificate.deleteOne();
+    res.status(200).json({ success: true, data: {} });
+  } catch (error) {
+    next(error);
+  }
+};

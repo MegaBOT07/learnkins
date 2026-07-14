@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import api, { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, tokenAPI, shopAPI, contactAPI, subjectAPI, newsletterAPI } from "../../utils/api";
+import api, { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, tokenAPI, shopAPI, contactAPI, subjectAPI, newsletterAPI, certificateAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Settings,
   ChevronRight, Search, BarChart3, Clock, Award, Activity,
   Filter, Download, Star, History, Gem, TrendingUp, ShoppingBag,
-  Edit3, BookMarked, MessageSquare, Mail, Eye, Archive, RefreshCw
+  Edit3, BookMarked, MessageSquare, Mail, Eye, Archive, RefreshCw, FileBadge
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../../components/Toast";
@@ -41,6 +41,7 @@ const AdminPanel = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [contactMessages, setContactMessages] = useState<any[]>([]);
   const [shopItems, setShopItems] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<any[]>([]);
 
   // Token analytics state
   const [tokenStats, setTokenStats] = useState<any>(null);
@@ -58,6 +59,9 @@ const AdminPanel = () => {
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showShopItemModal, setShowShopItemModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [certificateTab, setCertificateTab] = useState("single");
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [editingFlashcard, setEditingFlashcard] = useState<any>(null);
   const [editingMaterial, setEditingMaterial] = useState<any>(null);
   const [uploadedAdminFile, setUploadedAdminFile] = useState<File | null>(null);
@@ -76,6 +80,11 @@ const AdminPanel = () => {
   const [newMaterial, setNewMaterial] = useState({
     title: "", description: "", subject: "science", type: "video",
     chapter: "", grade: "6th", fileUrl: "", tags: "", difficulty: "Beginner"
+  });
+
+  const [newCertificate, setNewCertificate] = useState({
+    studentName: "", email: "", phoneNumber: "", college: "", university: "",
+    internshipDomain: "", internshipTitle: "", duration: "", startDate: "", endDate: ""
   });
 
   const [newQuiz, setNewQuiz] = useState({
@@ -182,6 +191,7 @@ const AdminPanel = () => {
         { key: "contact", fn: () => contactAPI.getMessages() },
         { key: "shop", fn: () => shopAPI.getItems({}) },
         { key: "newsletter", fn: () => newsletterAPI.getSubscribers() },
+        { key: "certificates", fn: () => certificateAPI.getCertificates() },
       ];
 
       const results: Record<string, any> = {};
@@ -199,6 +209,7 @@ const AdminPanel = () => {
       if (results.contact) setContactMessages(results.contact);
       if (results.shop) setShopItems(results.shop);
       if (results.newsletter) setNewsletterSubscribers(results.newsletter);
+      if (results.certificates) setCertificates(results.certificates);
     } catch (err) {
       console.error("Fetch admin data failed", err);
     } finally {
@@ -594,6 +605,69 @@ const AdminPanel = () => {
     }
   };
 
+  const handleCreateCertificate = async () => {
+    try {
+      setLoading(true);
+      await certificateAPI.createCertificate(newCertificate);
+      showToast("Certificate generated successfully!", "success");
+      setShowCertificateModal(false);
+      setNewCertificate({
+        studentName: "", email: "", phoneNumber: "", college: "", university: "",
+        internshipDomain: "", internshipTitle: "", duration: "", startDate: "", endDate: ""
+      });
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to generate certificate", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile) return showToast("Please select a file first", "error");
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', bulkFile);
+      
+      const response = await certificateAPI.bulkCreateCertificates(formData);
+      
+      // Download the zip file
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'certificates.zip');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      showToast("Bulk generated successfully!", "success");
+      setShowCertificateModal(false);
+      setBulkFile(null);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+
+      showToast("Failed to generate certificate", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteCertificate = async (id: string) => {
+    if (!(await confirmDelete("Delete this certificate?"))) return;
+    try {
+      setLoading(true);
+      await certificateAPI.deleteCertificate(id);
+      fetchAll();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Quiz question builder helpers
   const addQuizQuestion = () => {
     setQuizQuestionInputs([...quizQuestionInputs, {
@@ -804,6 +878,10 @@ const AdminPanel = () => {
           <div className={sidebarItemClass("users")} onClick={() => setActiveTab("users")}>
             <Users size={18} />
             <span>Students</span>
+          </div>
+          <div className={sidebarItemClass("certificates")} onClick={() => setActiveTab("certificates")}>
+            <FileBadge size={18} />
+            <span>Certificates</span>
           </div>
           <div className={sidebarItemClass("messages")} onClick={() => setActiveTab("messages")}>
             <MessageSquare size={18} />
@@ -1336,6 +1414,71 @@ const AdminPanel = () => {
                     <p className="font-medium text-slate-400 text-sm italic">No subjects yet. Create your first subject.</p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "certificates" && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                  Showing {certificates.length} certificates
+                </div>
+                <button onClick={() => setShowCertificateModal(true)} className={theme.buttonPrimary + " flex items-center gap-2"}>
+                  <Plus size={16} /> Generate Certificate
+                </button>
+              </div>
+              <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest border-b border-slate-200">
+                      <th className="px-6 py-4 font-bold">Internship / Student</th>
+                      <th className="px-6 py-4 font-bold">Duration</th>
+                      <th className="px-6 py-4 font-bold">Status</th>
+                      <th className="px-6 py-4 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {certificates.map((cert) => (
+                      <tr key={cert._id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="font-bold text-slate-900 text-sm">{cert.internshipTitle}</div>
+                          <div className="text-[11px] font-medium text-slate-500">{cert.studentName}</div>
+                          <div className="text-[10px] font-medium text-slate-400">{cert.certificateId}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-xs text-slate-600">{cert.duration}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${cert.status === 'Valid' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                            {cert.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <a href={`/verify/internship/${cert.certificateId}`} target="_blank" rel="noreferrer" className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-all" title="View Verification">
+                              <Eye size={14} />
+                            </a>
+                            <button
+                              onClick={() => handleDeleteCertificate(cert._id)}
+                              className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 rounded-lg transition-all"
+                              title="Delete Certificate"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {certificates.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="py-12 text-center text-slate-400 font-medium italic">
+                          No certificates have been generated yet.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -2176,6 +2319,123 @@ const AdminPanel = () => {
                 <button onClick={() => setEditingSubject(null)} className={theme.buttonSecondary}>Cancel</button>
                 <button onClick={handleUpdateSubject} className={theme.buttonPrimary}>Update Subject</button>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Certificate Modal */}
+        {showCertificateModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Generate Certificate</h3>
+                <button onClick={() => setShowCertificateModal(false)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
+              </div>
+              
+              <div className="flex border-b border-slate-200">
+                <button onClick={() => setCertificateTab('single')} className={`flex-1 py-3 text-sm font-bold transition-all ${certificateTab === 'single' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:bg-slate-50'}`}>Single Entry</button>
+                <button onClick={() => setCertificateTab('bulk')} className={`flex-1 py-3 text-sm font-bold transition-all ${certificateTab === 'bulk' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:bg-slate-50'}`}>Bulk Upload (Excel/CSV)</button>
+              </div>
+
+              {certificateTab === 'single' ? (
+                <>
+                  <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Student Name *</label>
+                        <input className={theme.input} value={newCertificate.studentName} onChange={(e) => setNewCertificate({ ...newCertificate, studentName: e.target.value })} required />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email *</label>
+                        <input type="email" className={theme.input} value={newCertificate.email} onChange={(e) => setNewCertificate({ ...newCertificate, email: e.target.value })} required />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Phone Number</label>
+                        <input className={theme.input} value={newCertificate.phoneNumber} onChange={(e) => setNewCertificate({ ...newCertificate, phoneNumber: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">University / College</label>
+                        <input className={theme.input} value={newCertificate.university} onChange={(e) => setNewCertificate({ ...newCertificate, university: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Internship Domain *</label>
+                        <input className={theme.input} value={newCertificate.internshipDomain} onChange={(e) => setNewCertificate({ ...newCertificate, internshipDomain: e.target.value })} placeholder="e.g. Web Development" required />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Internship Title *</label>
+                        <input className={theme.input} value={newCertificate.internshipTitle} onChange={(e) => setNewCertificate({ ...newCertificate, internshipTitle: e.target.value })} placeholder="e.g. Full Stack Engineer Intern" required />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Start Date *</label>
+                        <input type="date" className={theme.input} value={newCertificate.startDate} onChange={(e) => setNewCertificate({ ...newCertificate, startDate: e.target.value })} required />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">End Date *</label>
+                        <input type="date" className={theme.input} value={newCertificate.endDate} onChange={(e) => setNewCertificate({ ...newCertificate, endDate: e.target.value })} required />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Duration *</label>
+                        <input className={theme.input} value={newCertificate.duration} onChange={(e) => setNewCertificate({ ...newCertificate, duration: e.target.value })} placeholder="e.g. 3 Months" required />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                    <button onClick={() => setShowCertificateModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                    <button onClick={handleCreateCertificate} className={theme.buttonPrimary}>Generate Certificate</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="p-6 max-h-[60vh] overflow-y-auto">
+                    <div className="mb-6 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm flex items-start gap-3">
+                      <div className="mt-0.5">ℹ️</div>
+                      <div>
+                        <p className="font-bold mb-1">Bulk Generation Template</p>
+                        <p className="mb-2">Download our sample template and fill it out to generate multiple certificates at once. Required headers: <strong>Name, Email, Phone, College, University, Domain, Title, StartDate, EndDate, Duration</strong>.</p>
+                        <a href="data:text/csv;charset=utf-8,Name,Email,Phone,College,University,Domain,Title,StartDate,EndDate,Duration%0AJohn Doe,john@example.com,1234567890,MIT,MIT,Web Development,Full Stack Intern,2023-01-01,2023-03-01,2 Months" download="template.csv" className="text-blue-600 font-bold hover:underline">Download Template</a>
+                      </div>
+                    </div>
+
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Upload File</label>
+                    <div 
+                      onClick={() => document.getElementById("bulk-file-upload")?.click()}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${bulkFile ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300 hover:border-indigo-400 hover:bg-indigo-50/50'}`}
+                    >
+                      <input 
+                        id="bulk-file-upload"
+                        type="file" 
+                        accept=".csv,.xlsx,.xls" 
+                        className="hidden" 
+                        onChange={(e) => setBulkFile(e.target.files?.[0] || null)}
+                      />
+                      {bulkFile ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 bg-indigo-100 rounded-xl border-2 border-indigo-500 text-indigo-600">
+                            <FileText size={24} />
+                          </div>
+                          <p className="font-bold text-slate-800">{bulkFile.name}</p>
+                          <p className="text-xs text-slate-500">{(bulkFile.size / 1024).toFixed(1)} KB</p>
+                          <button onClick={(e) => { e.stopPropagation(); setBulkFile(null); }} className="text-xs text-rose-500 font-bold hover:underline mt-2">Remove</button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="p-3 bg-slate-100 rounded-xl border-2 border-slate-300 text-slate-400">
+                            <Upload size={24} />
+                          </div>
+                          <p className="font-bold text-slate-700">Click to select an Excel or CSV file</p>
+                          <p className="text-xs text-slate-400">.xlsx, .xls, .csv</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                    <button onClick={() => setShowCertificateModal(false)} className={theme.buttonSecondary}>Cancel</button>
+                    <button onClick={handleBulkUpload} className={theme.buttonPrimary} disabled={!bulkFile}>
+                      {loading ? 'Processing...' : 'Upload & Generate Zip'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         )}
