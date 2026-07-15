@@ -106,17 +106,26 @@ export const bulkCreateCertificates = async (req, res, next) => {
       const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
       const certificateId = `LK-${new Date().getFullYear()}-INT-${randomId}`;
 
+      // Normalize keys: lowercase and remove spaces
+      const normalizedRow = {};
+      for (const key in row) {
+        if (Object.prototype.hasOwnProperty.call(row, key)) {
+          const normalizedKey = key.toString().toLowerCase().replace(/\s+/g, '');
+          normalizedRow[normalizedKey] = row[key];
+        }
+      }
+
       const certificate = await Certificate.create({
-        studentName: row.studentName || row.Name,
-        email: row.email || row.Email,
-        phoneNumber: row.phoneNumber || row.Phone,
-        college: row.college || row.College,
-        university: row.university || row.University,
-        internshipDomain: row.internshipDomain || row.Domain,
-        internshipTitle: row.internshipTitle || row.Title,
-        duration: row.duration || row.Duration,
-        startDate: row.startDate || row.StartDate,
-        endDate: row.endDate || row.EndDate,
+        studentName: normalizedRow.studentname || normalizedRow.name,
+        email: normalizedRow.email,
+        phoneNumber: normalizedRow.phonenumber || normalizedRow.phone,
+        college: normalizedRow.college,
+        university: normalizedRow.university,
+        internshipDomain: normalizedRow.internshipdomain || normalizedRow.domain,
+        internshipTitle: normalizedRow.internshiptitle || normalizedRow.title,
+        duration: normalizedRow.duration,
+        startDate: normalizedRow.startdate,
+        endDate: normalizedRow.enddate,
         certificateId,
       });
 
