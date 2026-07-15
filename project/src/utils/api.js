@@ -164,7 +164,7 @@ export const certificateAPI = {
   createCertificate: (data) => api.post('/certificates', data),
   getCertificates: () => api.get('/certificates'),
   deleteCertificate: (id) => api.delete(`/certificates/${id}`),
-  bulkCreateCertificates: (formData) => api.post('/certificates/bulk', formData, { responseType: 'blob', headers: { 'Content-Type': 'multipart/form-data' } }),
+  bulkCreateCertificates: (formData) => api.post('/certificates/bulk', formData, { responseType: 'blob', headers: { 'Content-Type': undefined } }),
 };
 
 // Parental Control API

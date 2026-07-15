@@ -646,10 +646,20 @@ const AdminPanel = () => {
       setShowCertificateModal(false);
       setBulkFile(null);
       fetchAll();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-
-      showToast("Failed to generate certificate", "error");
+      let errorMessage = "Failed to generate certificate";
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          errorMessage = JSON.parse(text).message || errorMessage;
+        } catch (e) {
+          // ignore
+        }
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      showToast(errorMessage, "error");
     } finally {
       setLoading(false);
     }
