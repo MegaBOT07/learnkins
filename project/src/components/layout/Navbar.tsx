@@ -288,15 +288,6 @@ const Navbar = () => {
                             </div>
                           </div>
 
-                          <Link
-                            to="/profile"
-                            className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-blue-500 hover:bg-blue-50 transition-all"
-                            onClick={() => setIsUserDropdownOpen(false)}
-                          >
-                            <User className="h-4 w-4" strokeWidth={2.5} />
-                            Profile
-                          </Link>
-
                           {/* Parent-specific links */}
                           {user?.role === 'parent' && (
                             <Link
@@ -309,30 +300,19 @@ const Navbar = () => {
                             </Link>
                           )}
 
-                          {/* Student / Teacher / Admin only - wallet & shop */}
+                          {/* Wallet & Store (non-parents) */}
                           {user?.role !== 'parent' && (
-                            <>
-                              <Link
-                                to="/tokens"
-                                className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-purple-500 hover:bg-purple-50 transition-all"
-                                onClick={() => setIsUserDropdownOpen(false)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <span className="text-base">💎</span>
-                                  My Wallet
-                                </div>
-                                <span className="text-xs font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-md">{balance.toLocaleString()}</span>
-                              </Link>
-
-                              <Link
-                                to="/shop"
-                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-indigo-500 hover:bg-indigo-50 transition-all"
-                                onClick={() => setIsUserDropdownOpen(false)}
-                              >
-                                <span className="text-base">🛒</span>
-                                Diamond Store
-                              </Link>
-                            </>
+                            <Link
+                              to="/tokens"
+                              className="flex items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-purple-500 hover:bg-purple-50 transition-all"
+                              onClick={() => setIsUserDropdownOpen(false)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-base">💎</span>
+                                Wallet & Store
+                              </div>
+                              <span className="text-xs font-black text-purple-600 bg-purple-100 px-2 py-0.5 rounded-md">{balance.toLocaleString()}</span>
+                            </Link>
                           )}
 
                           {user?.role === 'admin' ? (
@@ -346,7 +326,7 @@ const Navbar = () => {
                             </Link>
                           ) : user?.role === 'student' ? (
                             <Link
-                              to="/progress"
+                              to="/profile"
                               className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-l-4 border-transparent hover:border-green-500 hover:bg-green-50 transition-all"
                               onClick={() => setIsUserDropdownOpen(false)}
                             >

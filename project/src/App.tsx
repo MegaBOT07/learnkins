@@ -33,7 +33,7 @@ import ParentalControl from "./pages/parental/ParentalControl";
 import Contact from "./pages/contact/Contact";
 import Flashcards from "./pages/learning/Flashcards";
 import Notes from "./pages/learning/Notes";
-import Progress from "./pages/progress/Progress";
+
 import Team from "./pages/about/Team";
 import About from "./pages/about/About";
 import Privacy from "./pages/about/Privacy";
@@ -46,7 +46,7 @@ import StartupAnimation from "./components/animation/StartupAnimation";
 import LearnerBot from "./features/learnerbot/EmbeddedLearnerBot";
 import WalletPage from "./pages/wallet/WalletPage";
 import ProfilePage from "./pages/profile/ProfilePage";
-import ShopPage from "./pages/shop/ShopPage";
+
 import ParentReportPage from "./pages/parent/ParentReportPage";
 import MayaCompanion from "./components/maya/MayaCompanion";
 import PublicVerify from "./pages/verify/PublicVerify";
@@ -96,7 +96,8 @@ const NO_FOOTER_ROUTES = [
 function AppLayout() {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const hideChrome = AUTH_ROUTES.includes(location.pathname);
+  const hideChrome = AUTH_ROUTES.includes(location.pathname) ||
+    (isAuthenticated && user?.role === "parent" && location.pathname.startsWith("/parent-report"));
 
   // Hide footer on specific pages (games, admin, profile, etc)
   const hideFooter =
@@ -168,12 +169,12 @@ function AppLayout() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/careers" element={<Careers />} />
-          <Route path="/progress" element={<Progress />} />
+          <Route path="/progress" element={<Navigate to="/profile" replace />} />
           <Route path="/team" element={<Team />} />
           <Route path="/learnerbot" element={<LearnerBot />} />
           <Route path="/tokens" element={<WalletPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/shop" element={<ShopPage />} />
+          <Route path="/shop" element={<Navigate to="/tokens" replace />} />
           <Route path="/parent-report" element={<ParentReportPage />} />
         </Routes>
       </main>

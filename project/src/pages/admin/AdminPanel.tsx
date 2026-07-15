@@ -467,7 +467,7 @@ const AdminPanel = () => {
 
   const handleExportCSV = () => {
     const students = users.filter(u => u.role === 'student');
-    const headers = ['Name', 'Email', 'Grade', 'Role', 'Level', 'XP', 'Tokens', 'Progress %', 'Joined'];
+     const headers = ['Name', 'Email', 'Grade', 'Role', 'Level', 'XP', '💎', 'Progress %', 'Joined'];
     const rows = students.map((u: any) => [
       u.name || '',
       u.email || '',
@@ -917,9 +917,9 @@ const AdminPanel = () => {
           </div>
 
           <p className="px-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6 mb-2">Economy</p>
-          <div className={sidebarItemClass("tokens")} onClick={() => { setActiveTab("tokens"); fetchTokenStats(); }}>
+           <div className={sidebarItemClass("tokens")} onClick={() => { setActiveTab("tokens"); fetchTokenStats(); }}>
             <Gem size={18} />
-            <span>Tokens & Shop</span>
+            <span>💎 Diamonds & Shop</span>
           </div>
         </nav>
 
@@ -948,7 +948,8 @@ const AdminPanel = () => {
               {activeTab === 'flashcards' && 'Knowledge Base'}
               {activeTab === 'materials' && 'Educational Assets'}
               {activeTab === 'messages' && 'Contact Messages'}
-              {activeTab === 'tokens' && 'Tokens & Shop'}
+               {activeTab === 'tokens' && '💎 Diamonds & Shop'}
+               {activeTab === 'certificates' && 'Certificates'}
             </h2>
           </div>
 
@@ -1054,8 +1055,8 @@ const AdminPanel = () => {
                         <span className="font-black text-sm uppercase">Shop Items</span>
                         <span className="font-bold text-xl">{shopItems.length}</span>
                       </div>
-                      <div className="text-xs font-bold text-gray-500">
-                        {contactMessages.filter((m: any) => m.status === 'new').length} unread messages
+                       <div className="text-xs font-bold text-gray-500">
+                        {shopItems.filter((item: any) => item.stock !== 0).length} available in shop
                       </div>
                     </div>
                   </div>
@@ -1783,7 +1784,7 @@ const AdminPanel = () => {
                           const amt = d.totalAmount ?? d.amount ?? 0;
                           const pct = maxAmt > 0 ? (amt / maxAmt) * 100 : 0;
                           return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d._id ?? d.date}: ${amt} tokens`}>
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${d._id ?? d.date}: ${amt} diamonds`}>
                               <div className="w-full rounded-t-sm bg-indigo-500 transition-all" style={{ height: `${Math.max(pct, 5)}%` }} />
                               <span className="text-[9px] text-slate-400">{(d._id ?? d.date ?? "")?.slice(5)}</span>
                             </div>
@@ -1857,7 +1858,7 @@ const AdminPanel = () => {
                         </div>
                         <div className="bg-slate-50 rounded-lg p-3">
                           <p className="text-xl font-extrabold text-indigo-600">{shopStats.totalTokensSpent ?? 0} 💎</p>
-                          <p className="text-xs text-slate-500 mt-0.5">Tokens Spent in Shop</p>
+                           <p className="text-xs text-slate-500 mt-0.5">💎 Diamonds Spent in Shop</p>
                         </div>
                       </div>
                       {shopStats.topItems?.length > 0 && (
@@ -2483,7 +2484,7 @@ const AdminPanel = () => {
                     <input type="number" className={theme.input} value={newShopItem.price} onChange={(e) => setNewShopItem({ ...newShopItem, price: parseInt(e.target.value) || 10 })} />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
                     <input className={theme.input} value={newShopItem.icon} onChange={(e) => setNewShopItem({ ...newShopItem, icon: e.target.value })} />
@@ -2495,6 +2496,24 @@ const AdminPanel = () => {
                       <option value="science">Science</option>
                       <option value="mathematics">Math</option>
                       <option value="english">English</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={newShopItem.grade} onChange={(e) => setNewShopItem({ ...newShopItem, grade: e.target.value })}>
+                      <option value="all">All Grades</option>
+                      <option value="1">Grade 1</option>
+                      <option value="2">Grade 2</option>
+                      <option value="3">Grade 3</option>
+                      <option value="4">Grade 4</option>
+                      <option value="5">Grade 5</option>
+                      <option value="6">Grade 6</option>
+                      <option value="7">Grade 7</option>
+                      <option value="8">Grade 8</option>
+                      <option value="9">Grade 9</option>
+                      <option value="10">Grade 10</option>
                     </select>
                   </div>
                   <div>
@@ -2519,7 +2538,7 @@ const AdminPanel = () => {
                 <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Shop Item</h3>
                 <button onClick={() => setEditingShopItem(null)} className="text-slate-400 hover:text-slate-900 transition-all"><X size={20} /></button>
               </div>
-              <div className="p-6 space-y-4">
+               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Title</label>
                   <input className={theme.input} value={editingShopItem.title || ''} onChange={(e) => setEditingShopItem({ ...editingShopItem, title: e.target.value })} />
@@ -2530,12 +2549,37 @@ const AdminPanel = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Type</label>
+                    <select className={theme.input} value={editingShopItem.type || 'power_up'} onChange={(e) => setEditingShopItem({ ...editingShopItem, type: e.target.value })}>
+                      <option value="flashcard_pack">Flashcard Pack</option>
+                      <option value="quiz_unlock">Quiz Unlock</option>
+                      <option value="power_up">Power Up</option>
+                      <option value="boost">Boost</option>
+                      <option value="cosmetic">Cosmetic</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Price (💎)</label>
                     <input type="number" className={theme.input} value={editingShopItem.price || 0} onChange={(e) => setEditingShopItem({ ...editingShopItem, price: parseInt(e.target.value) || 0 })} />
                   </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Icon</label>
+                    <input className={theme.input} value={editingShopItem.icon || ''} onChange={(e) => setEditingShopItem({ ...editingShopItem, icon: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
+                    <select className={theme.input} value={editingShopItem.subject || 'all'} onChange={(e) => setEditingShopItem({ ...editingShopItem, subject: e.target.value })}>
+                      <option value="all">All</option>
+                      <option value="science">Science</option>
+                      <option value="mathematics">Math</option>
+                      <option value="english">English</option>
+                    </select>
+                  </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
-                    <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({ ...editingShopItem, stock: parseInt(e.target.value) || -1 })} />
+                    <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({ ...editingShopItem, stock: parseInt(e.target.value) || -1 })} placeholder="-1 = unlimited" />
                   </div>
                 </div>
               </div>
