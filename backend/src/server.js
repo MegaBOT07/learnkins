@@ -203,15 +203,9 @@ const connectDb = async () => {
       console.log('✓ Dropped orphaned username_1 index');
     } catch (_) { /* index doesn't exist — that's fine */ }
 
-    // Auto-seed test users if database is empty
-    await seedTestUsers();
-    await seedSubjects();
-    await seedShopItems();
-    await seedContent();
-
   } catch (err) {
     console.error('❌ MongoDB connection error:', err.message);
-    // do not exit here — allow server to run but many features will fail
+    process.exit(1);
   }
 };
 
@@ -414,8 +408,6 @@ const seedShopItems = async () => {
   }
 };
 
-connectDb();
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -459,29 +451,31 @@ app.get('/favicon.ico', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(
-    `Server running on port ${PORT} in ${process.env.NODE_ENV || "development"
-    } mode`
-  );
-  console.log(
-    `JWT Secret: ${process.env.JWT_SECRET ? "Configured" : "Using default"}`
-  );
-  console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);
-});
+connectDb().then(() => {
+  const PORT = process.env.PORT || 5000;
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(
+      `Server running on port ${PORT} in ${process.env.NODE_ENV || "development"
+      } mode`
+    );
+    console.log(
+      `JWT Secret: ${process.env.JWT_SECRET ? "Configured" : "Using default"}`
+    );
+    console.log(`MongoDB URI: ${process.env.MONGODB_URI}`);
+  });
 
-// Handle server errors
-server.on('error', (err) => {
-  console.error('Server error:', err);
-  process.exit(1);
-});
+  // Handle server errors
+  server.on('error', (err) => {
+    console.error('Server error:', err);
+    process.exit(1);
+  });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
-    process.exit(0);
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      console.log('HTTP server closed');
+      process.exit(0);
+    });
   });
 });

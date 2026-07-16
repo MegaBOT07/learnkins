@@ -41,7 +41,6 @@ export const register = async (req, res, next) => {
 
     let parentId = null;
 
-    // If registering a student, find or create parent
     if (role === 'student') {
       if (!parentEmail) {
         return res.status(400).json({
@@ -50,25 +49,26 @@ export const register = async (req, res, next) => {
         });
       }
 
-      let parent = await User.findOne({ email: parentEmail.toLowerCase() });
-      if (!parent) {
-        // Create parent account using the same password as the student
-        parent = await User.create({
+      const existingParent = await User.findOne({ email: parentEmail.toLowerCase() }).select('_id');
+
+      if (existingParent) {
+        parentId = existingParent._id;
+      } else {
+        const parent = await User.create({
           name: `Parent of ${name}`,
           email: parentEmail,
           password,
           role: 'parent'
         });
+        parentId = parent._id;
 
-        // Send welcome email to parent
-        await sendEmail({
+        // Fire-and-forget: send welcome email without blocking response
+        sendEmail({
           email: parentEmail,
           subject: 'Your LearnKins Parent Account is Ready',
           message: `A parent account has been created for your child ${name}.\n\nYou can log in with:\nEmail: ${parentEmail}\nPassword: (same password your child used to sign up)\n\nVisit: ${process.env.CLIENT_URL || 'http://localhost:5173'}/login`
-        });
+        }).catch(err => console.error('Welcome email failed:', err.message));
       }
-
-      parentId = parent._id;
     }
 
     // Create user
@@ -83,12 +83,10 @@ export const register = async (req, res, next) => {
     });
     console.log('User created successfully:', user._id);
 
-    // Add child to parent's children array
+    // Fire-and-forget: link child to parent
     if (parentId) {
-      console.log('Linking child to parent:', parentId);
-      await User.findByIdAndUpdate(parentId, {
-        $push: { children: user._id }
-      });
+      User.findByIdAndUpdate(parentId, { $push: { children: user._id } })
+        .catch(err => console.error('Link child to parent failed:', err.message));
     }
 
     const token = generateToken(user._id);
