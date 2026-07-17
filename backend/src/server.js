@@ -64,21 +64,25 @@ app.set('trust proxy', 1);
 // requests get CORS headers even when rate-limited
 app.use(
   cors({
-    origin: function (origin, callback) {
       const allowedOrigins = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://learnkins.com",
+        "https://www.learnkins.com",
         "https://learnkins-bp00.onrender.com",
-        // allow same-origin / deployments (fallback)
       ];
 
       // If no origin (mobile/curl), allow it
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      
+      // Allow any subdomains of learnkins.com or onrender.com dynamically
+      if (origin.endsWith(".learnkins.com") || origin.endsWith(".onrender.com")) {
+        return callback(null, true);
+      }
 
       // If running from deployed frontend, allow it via env var(s)
       const extraOrigins = (process.env.CORS_ORIGINS || "")
