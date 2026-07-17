@@ -126,6 +126,16 @@ export default function WalletPage() {
 
   const isLoggedIn = !!localStorage.getItem("token");
 
+  // Load Razorpay SDK once on mount
+  useEffect(() => {
+    const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+    if (existing) return;
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   useEffect(() => {
     const loadPlans = async () => {
       try {
@@ -180,12 +190,11 @@ export default function WalletPage() {
       const orderRes = await paymentAPI.createOrder(plan.key);
       const { orderId, amount, currency, keyId } = orderRes.data.data;
       await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
-        document.body.appendChild(script);
+        if (window.Razorpay) { resolve(); return; }
+        const interval = setInterval(() => {
+          if (window.Razorpay) { clearInterval(interval); resolve(); }
+        }, 50);
+        setTimeout(() => { clearInterval(interval); reject(new Error("Razorpay SDK failed to load")); }, 5000);
       });
       const options = {
         key: keyId, amount, currency, name: "LearnKins",

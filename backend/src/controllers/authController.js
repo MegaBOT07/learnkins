@@ -54,10 +54,13 @@ export const register = async (req, res, next) => {
       if (existingParent) {
         parentId = existingParent._id;
       } else {
+        // Generate a random password for the parent (they'll set their own via reset)
+        const tempPassword = crypto.randomBytes(12).toString('base64url');
+
         const parent = await User.create({
           name: `Parent of ${name}`,
           email: parentEmail,
-          password,
+          password: tempPassword,
           role: 'parent'
         });
         parentId = parent._id;
@@ -66,7 +69,7 @@ export const register = async (req, res, next) => {
         sendEmail({
           email: parentEmail,
           subject: 'Your LearnKins Parent Account is Ready',
-          message: `A parent account has been created for your child ${name}.\n\nYou can log in with:\nEmail: ${parentEmail}\nPassword: (same password your child used to sign up)\n\nVisit: ${process.env.CLIENT_URL || 'http://localhost:5173'}/login`
+          message: `A parent account has been created for your child ${name}.\n\nYour temporary password is: ${tempPassword}\n\nPlease log in and change your password immediately.\n\nVisit: ${process.env.CLIENT_URL || 'http://localhost:5173'}/login`
         }).catch(err => console.error('Welcome email failed:', err.message));
       }
     }
@@ -301,20 +304,23 @@ export const forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const message = `
-      Your password reset OTP is: ${otp}
-      
-      This code will expire in 10 minutes.
-      Do not share this code with anyone.
-      
-      If you did not request this, please ignore this email.
+    const message = `Your password reset OTP is: ${otp}\n\nThis code will expire in 10 minutes.\nDo not share this code with anyone.\n\nIf you did not request this, please ignore this email.`;
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin:0 0 8px;">Password Reset OTP</h2>
+        <p style="color:#6b7280;margin:0 0 16px;">Use the code below to reset your password.</p>
+        <div style="background:#f3f4f6;border-radius:8px;padding:16px;text-align:center;font-size:32px;font-weight:900;letter-spacing:8px;color:#111;">${otp}</div>
+        <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
+      </div>
     `;
 
     try {
       await sendEmail({
         email: user.email,
         subject: 'Password Reset OTP',
-        message
+        message,
+        html
       });
 
       res.status(200).json({
@@ -322,6 +328,7 @@ export const forgotPassword = async (req, res) => {
         message: 'OTP sent to your email'
       });
     } catch (error) {
+      console.error('OTP email failed:', error.message);
       user.resetOTP = undefined;
       user.resetOTPExpiry = undefined;
       await user.save();

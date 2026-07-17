@@ -9,10 +9,12 @@ import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// All payment routes require authentication
+// Public routes
+router.get('/plans', getPlans);
+
+// All other payment routes require authentication
 router.use(protect);
 
-router.get('/plans', getPlans);
 router.post('/create-order', createOrder);
 router.post('/verify', verifyPayment);
 router.get('/history', getPaymentHistory);

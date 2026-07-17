@@ -86,21 +86,43 @@ export const verifyPayment = async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    // Verify signature
+    // Find the payment record first
+    const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+
+    // Idempotency: if already paid, return existing result without re-awarding tokens
+    if (payment.status === 'paid') {
+      const user = await User.findById(payment.userId);
+      return res.status(200).json({
+        success: true,
+        message: 'Payment already verified.',
+        data: {
+          tokensAwarded: 0,
+          newBalance: user?.tokens || 0,
+          payment: {
+            id: payment._id,
+            plan: payment.plan,
+            amount: payment.amount,
+            razorpayPaymentId: razorpay_payment_id,
+          },
+        },
+      });
+    }
+
+    // Verify signature using timing-safe comparison
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
       .update(body)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
-    }
+    const sigBuf = Buffer.from(razorpay_signature, 'hex');
+    const expectedBuf = Buffer.from(expectedSignature, 'hex');
 
-    // Find the payment record
-    const payment = await Payment.findOne({ razorpayOrderId: razorpay_order_id });
-    if (!payment) {
-      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+      return res.status(400).json({ success: false, message: 'Invalid payment signature' });
     }
 
     // Update payment record

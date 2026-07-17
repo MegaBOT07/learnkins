@@ -12,48 +12,43 @@ export const submitContactForm = async (req, res) => {
       name, email, subject, message, category
     });
 
-    // Send email notification to admin
-    try {
-      await sendEmail({
-        email: process.env.ADMIN_EMAIL || 'admin@learnkins.com',
-        subject: `New Contact Form Submission: ${subject}`,
-        message: `
-          New contact form submission received:
+    // Sanitize subject to prevent email header injection (strip newlines)
+    const safeSubject = subject.replace(/[\r\n]/g, ' ').trim();
 
-          Name: ${name}
-          Email: ${email}
-          Category: ${category}
-          Subject: ${subject}
+    // Fire-and-forget: send admin notification
+    sendEmail({
+      email: process.env.ADMIN_EMAIL || 'admin@learnkins.com',
+      subject: `New Contact Form Submission: ${safeSubject}`,
+      message: `
+        New contact form submission received:
 
-          Message:
-          ${message}
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send email notification:', emailError);
-    }
+        Name: ${name}
+        Email: ${email}
+        Category: ${category}
+        Subject: ${safeSubject}
 
-    // Send confirmation email to user
-    try {
-      await sendEmail({
-        email,
-        subject: 'Thank you for contacting LearnKins',
-        message: `
-          Dear ${name},
+        Message:
+        ${message}
+      `
+    }).catch(err => console.error('Admin notification email failed:', err.message));
 
-          Thank you for contacting us. We have received your message and will get back to you within 24 hours.
+    // Fire-and-forget: send confirmation to submitter
+    sendEmail({
+      email,
+      subject: 'Thank you for contacting LearnKins',
+      message: `
+        Dear ${name},
 
-          Your message:
-          Subject: ${subject}
-          ${message}
+        Thank you for contacting us. We have received your message and will get back to you within 24 hours.
 
-          Best regards,
-          LearnKins Support Team
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError);
-    }
+        Your message:
+        Subject: ${safeSubject}
+        ${message}
+
+        Best regards,
+        LearnKins Support Team
+      `
+    }).catch(err => console.error('Confirmation email failed:', err.message));
 
     res.status(201).json({
       success: true,
@@ -71,7 +66,7 @@ export const submitContactForm = async (req, res) => {
 
 // @desc    Get contact messages
 // @route   GET /api/contact
-// @access  Private (Admin)
+// @access   Private (Admin)
 export const getContactMessages = async (req, res) => {
   try {
     const { status, category, page = 1, limit = 20 } = req.query;

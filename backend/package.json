@@ -12,7 +12,9 @@
     "seed:all": "node src/seeds/seedAllData.js",
     "create:test:users": "node src/seeds/createTestUsers.js",
     "test:check-parent": "node scripts/check-parent.js",
-    "test:check-users": "node scripts/check-users.js"
+    "test:check-users": "node scripts/check-users.js",
+    "test:email": "node src/scripts/test-email.js",
+    "test:email:to": "node src/scripts/test-email.js"
   },
   "dependencies": {
     "adm-zip": "^0.6.0",
