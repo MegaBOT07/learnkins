@@ -13,13 +13,17 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 
 // Helper to generate the PDF
-export const generateCertificatePDF = async (certData) => {
+export const generateCertificatePDF = async (certData, sharedBrowser = null) => {
   const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify/internship/${certData.certificateId}`;
   const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
   
   const htmlContent = getCertificateHTML(certData, qrCodeDataUrl);
   
-  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const browser = sharedBrowser || await puppeteer.launch({ 
+    headless: true, 
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
+  });
+  
   const page = await browser.newPage();
   await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
   
@@ -31,7 +35,11 @@ export const generateCertificatePDF = async (certData) => {
     printBackground: true,
   });
   
-  await browser.close();
+  await page.close(); // Close the page to free memory
+
+  if (!sharedBrowser) {
+    await browser.close(); // Only close the browser if we created it here
+  }
   return pdfPath;
 };
 
@@ -102,36 +110,47 @@ export const bulkCreateCertificates = async (req, res, next) => {
     const zip = new AdmZip();
     const generatedCertificates = [];
 
-    for (const row of data) {
-      const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const certificateId = `LK-${new Date().getFullYear()}-INT-${randomId}`;
+    // Launch a single shared browser for the entire batch to prevent OOM/crashing on Render
+    const browser = await puppeteer.launch({ 
+      headless: true, 
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
+    });
 
-      // Normalize keys: lowercase and remove spaces
-      const normalizedRow = {};
-      for (const key in row) {
-        if (Object.prototype.hasOwnProperty.call(row, key)) {
-          const normalizedKey = key.toString().toLowerCase().replace(/\s+/g, '');
-          normalizedRow[normalizedKey] = row[key];
+    try {
+      for (const row of data) {
+        const randomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const certificateId = `LK-${new Date().getFullYear()}-INT-${randomId}`;
+
+        // Normalize keys: lowercase and remove spaces
+        const normalizedRow = {};
+        for (const key in row) {
+          if (Object.prototype.hasOwnProperty.call(row, key)) {
+            const normalizedKey = key.toString().toLowerCase().replace(/\s+/g, '');
+            normalizedRow[normalizedKey] = row[key];
+          }
         }
+
+        const certificate = await Certificate.create({
+          studentName: normalizedRow.studentname || normalizedRow.name,
+          email: normalizedRow.email,
+          phoneNumber: normalizedRow.phonenumber || normalizedRow.phone,
+          college: normalizedRow.college,
+          university: normalizedRow.university,
+          internshipDomain: normalizedRow.internshipdomain || normalizedRow.domain,
+          internshipTitle: normalizedRow.internshiptitle || normalizedRow.title,
+          duration: normalizedRow.duration,
+          startDate: normalizedRow.startdate,
+          endDate: normalizedRow.enddate,
+          certificateId,
+        });
+
+        const pdfPath = await generateCertificatePDF(certificate, browser);
+        zip.addLocalFile(pdfPath);
+        generatedCertificates.push(certificate);
       }
-
-      const certificate = await Certificate.create({
-        studentName: normalizedRow.studentname || normalizedRow.name,
-        email: normalizedRow.email,
-        phoneNumber: normalizedRow.phonenumber || normalizedRow.phone,
-        college: normalizedRow.college,
-        university: normalizedRow.university,
-        internshipDomain: normalizedRow.internshipdomain || normalizedRow.domain,
-        internshipTitle: normalizedRow.internshiptitle || normalizedRow.title,
-        duration: normalizedRow.duration,
-        startDate: normalizedRow.startdate,
-        endDate: normalizedRow.enddate,
-        certificateId,
-      });
-
-      const pdfPath = await generateCertificatePDF(certificate);
-      zip.addLocalFile(pdfPath);
-      generatedCertificates.push(certificate);
+    } finally {
+      // Always ensure the shared browser is closed even if an error occurs
+      await browser.close();
     }
 
     fs.unlinkSync(filePath); // Clean up uploaded file
