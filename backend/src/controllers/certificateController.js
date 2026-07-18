@@ -79,6 +79,7 @@ export const createCertificate = async (req, res, next) => {
       startDate,
       endDate,
       certificateId,
+      pdfUrl: `/uploads/certificates/${certificateId}.pdf`
     });
 
     await generateCertificatePDF(certificate);
@@ -147,6 +148,7 @@ export const bulkCreateCertificates = async (req, res, next) => {
           startDate: normalizedRow.startdate,
           endDate: normalizedRow.enddate,
           certificateId,
+          pdfUrl: `/uploads/certificates/${certificateId}.pdf`
         });
 
         const pdfPath = await generateCertificatePDF(certificate, browser);
