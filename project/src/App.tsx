@@ -94,7 +94,9 @@ const NO_FOOTER_ROUTES = [
 function AppLayout() {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const isVerifyRoute = location.pathname.startsWith("/verify/internship");
   const hideChrome = AUTH_ROUTES.includes(location.pathname) ||
+    isVerifyRoute ||
     (isAuthenticated && user?.role === "parent" && location.pathname.startsWith("/parent-report"));
 
   // Hide footer on specific pages (games, admin, profile, etc)
@@ -182,7 +184,13 @@ function AppLayout() {
 }
 
 function App() {
-  const [showStartupAnimation, setShowStartupAnimation] = useState(true);
+  const [showStartupAnimation, setShowStartupAnimation] = useState(() => {
+    // Skip animation for verification routes directly
+    if (window.location.pathname.startsWith('/verify/internship')) {
+      return false;
+    }
+    return true;
+  });
 
   useEffect(() => {
     // Temporarily disable localStorage check to always show animation
