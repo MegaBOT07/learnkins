@@ -1473,7 +1473,7 @@ const AdminPanel = () => {
                               <Eye size={14} />
                             </a>
                             <a 
-                              href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/certificates/${cert.certificateId}.pdf`} 
+                              href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/pdfs/${cert.certificateId}.pdf`} 
                               target="_blank" 
                               rel="noreferrer" 
                               className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 rounded-lg transition-all" 
