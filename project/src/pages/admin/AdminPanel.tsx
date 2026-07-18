@@ -1472,6 +1472,16 @@ const AdminPanel = () => {
                             <a href={`/verify/internship/${cert.certificateId}`} target="_blank" rel="noreferrer" className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 hover:border-indigo-200 hover:bg-indigo-50 rounded-lg transition-all" title="View Verification">
                               <Eye size={14} />
                             </a>
+                            <a 
+                              href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/certificates/${cert.certificateId}.pdf`} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 rounded-lg transition-all" 
+                              title="Download Certificate"
+                              download
+                            >
+                              <Download size={14} />
+                            </a>
                             <button
                               onClick={() => handleDeleteCertificate(cert._id)}
                               className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-100 hover:bg-rose-50 rounded-lg transition-all"
