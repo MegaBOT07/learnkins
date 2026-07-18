@@ -5,8 +5,8 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "build": "npx puppeteer browsers install chrome && babel src -d dist --extensions .js --copy-files",
-    "start": "npx puppeteer browsers install chrome && node dist/server.js",
+    "build": "babel src -d dist --extensions .js --copy-files",
+    "start": "node dist/server.js",
     "dev": "nodemon src/server.js",
     "seed": "node src/seeds/seedData.js",
     "seed:all": "node src/seeds/seedAllData.js",
@@ -17,6 +17,7 @@
     "test:email:to": "node src/scripts/test-email.js"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^149.0.0",
     "adm-zip": "^0.6.0",
     "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
@@ -36,7 +37,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.11",
     "pdf-lib": "^1.17.1",
-    "puppeteer": "^25.3.0",
+    "puppeteer-core": "^23.4.1",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.6",
     "react-markdown": "^10.1.0",

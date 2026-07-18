@@ -1,6 +1,7 @@
 import Certificate from "../models/Certificate.js";
 import QRCode from "qrcode";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import xlsx from "xlsx";
 import AdmZip from "adm-zip";
 import fs from "fs";
@@ -20,8 +21,10 @@ export const generateCertificatePDF = async (certData, sharedBrowser = null) => 
   const htmlContent = getCertificateHTML(certData, qrCodeDataUrl);
   
   const browser = sharedBrowser || await puppeteer.launch({ 
-    headless: true, 
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
   
   const page = await browser.newPage();
@@ -112,8 +115,10 @@ export const bulkCreateCertificates = async (req, res, next) => {
 
     // Launch a single shared browser for the entire batch to prevent OOM/crashing on Render
     const browser = await puppeteer.launch({ 
-      headless: true, 
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'] 
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     try {
