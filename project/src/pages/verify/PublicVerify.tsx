@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, CheckCircle, Download, FileText, Calendar, Building, User } from 'lucide-react';
 import { useParams } from 'react-router-dom';
@@ -15,9 +15,7 @@ const PublicVerify = () => {
   useEffect(() => {
     const verifyCert = async () => {
       try {
-        // Use Vite's env variable or fallback to localhost
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        const res = await axios.get(`${apiUrl}/api/verify/${certificateId}`);
+        const res = await api.get(`/verify/${certificateId}`);
         if (res.data.isValid) {
           setData(res.data.data);
           setStatus('valid');
@@ -115,23 +113,23 @@ const PublicVerify = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-slate-200">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div>
-                      <p className="text-sm text-slate-500">Certificate ID</p>
-                      <p className="font-mono text-lg font-bold text-slate-900">{data.certificateId}</p>
+                  <div className="mt-8 pt-8 border-t border-slate-200">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm text-slate-500">Certificate ID</p>
+                        <p className="font-mono text-lg font-bold text-slate-900">{data.certificateId}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-slate-500">Issue Date</p>
+                        <p className="font-semibold text-slate-900">{new Date(data.issueDate).toLocaleDateString()}</p>
+                      </div>
+                      {data.pdfUrl && (
+                        <a href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '')}${data.pdfUrl}`} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
+                          <Download className="w-5 h-5" /> Download PDF
+                        </a>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-sm text-slate-500">Issue Date</p>
-                      <p className="font-semibold text-slate-900">{new Date(data.issueDate).toLocaleDateString()}</p>
-                    </div>
-                    {data.pdfUrl && (
-                      <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${data.pdfUrl}`} target="_blank" rel="noreferrer" className="btn-primary flex items-center gap-2">
-                        <Download className="w-5 h-5" /> Download PDF
-                      </a>
-                    )}
                   </div>
-                </div>
               </div>
               <div className="bg-slate-50 px-8 py-4 border-t border-slate-200 flex justify-between items-center text-sm text-slate-500">
                 <span>Verified Count: {data.verificationCount}</span>
