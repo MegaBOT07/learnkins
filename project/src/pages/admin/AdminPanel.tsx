@@ -669,10 +669,12 @@ const AdminPanel = () => {
     if (!(await confirmDelete("Delete this certificate?"))) return;
     try {
       setLoading(true);
+      setCertificates(prev => prev.filter(c => (c._id || c.id) !== id)); // Optimistic UI update
       await certificateAPI.deleteCertificate(id);
       fetchAll();
     } catch (err) {
       console.error(err);
+      fetchAll(); // Revert on failure
     } finally {
       setLoading(false);
     }
