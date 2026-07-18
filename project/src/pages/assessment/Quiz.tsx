@@ -506,7 +506,7 @@ const Quiz = () => {
               <button
                 onClick={() => {
                   setShowPopup(false);
-                  navigate("/games-quiz/leaderboard");
+                  navigate("/leaderboard");
                 }}
                 className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl border-2 border-blue-600 font-bold hover:bg-blue-700 transition-all"
               >

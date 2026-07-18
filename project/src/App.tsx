@@ -14,9 +14,6 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import Subjects from "./pages/subjects/Subjects";
 import SubjectDetail from "./pages/subjects/SubjectDetail";
 import StudyMaterials from "./pages/learning/StudyMaterials";
-// @ts-ignore
-import GamesQuiz from "./pages/assessment/GamesQuiz";
-import SubjectQuizzes from "./pages/assessment/SubjectQuizzes"
 import Leaderboard from "./pages/assessment/LeaderBoard";
 import Quiz from "./pages/assessment/Quiz";
 import Games from "./pages/games/Games";
@@ -26,6 +23,7 @@ import ProfessionalQuizzes from "./pages/assessment/ProfessionalQuizzes";
 import ProfessionalQuiz from "./pages/assessment/ProfessionalQuiz";
 import MyQuizAttempts from "./pages/assessment/MyQuizAttempts";
 import QuizAttemptReview from "./pages/assessment/QuizAttemptReview";
+import UnifiedLeaderboard from "./pages/assessment/UnifiedLeaderboard";
 
 import Community from "./pages/community/Community";
 import StudyGroupDetail from "./pages/community/StudyGroupDetail";
@@ -127,9 +125,8 @@ function AppLayout() {
           <Route path="/subjects/:slug/:chapterId" element={<SubjectDetail />} />
           <Route path="/subjects/:slug/:chapterId/videos" element={<VideoPage />} />
           <Route path="/study-materials" element={<StudyMaterials />} />
-          <Route path="/games-quiz" element={<GamesQuiz />} />
-          <Route path="/games-quiz/:subject" element={<SubjectQuizzes />} />
-          <Route path="/games-quiz/leaderboard" element={<Leaderboard />} />
+          <Route path="/quizzes/leaderboard" element={<Leaderboard />} />
+          <Route path="/leaderboard" element={<UnifiedLeaderboard />} />
           <Route path="/games" element={<Games />} />
 
           {/* Integrated game routes */}
@@ -161,7 +158,7 @@ function AppLayout() {
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/notes" element={<Notes />} />
           <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/maths" element={<SubjectDetail />} />
+          <Route path="/mathematics" element={<SubjectDetail />} />
           <Route path="/science" element={<SubjectDetail />} />
           <Route path="/social-science" element={<SubjectDetail />} />
           <Route path="/english" element={<SubjectDetail />} />

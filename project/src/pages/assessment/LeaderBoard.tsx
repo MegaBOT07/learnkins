@@ -59,7 +59,7 @@ const Leaderboard = () => {
               Home
             </Link>
             <ArrowRight className="h-4 w-4" />
-            <Link to="/games-quiz" className="hover:text-blue-400 transition-colors">
+            <Link to="/quizzes" className="hover:text-blue-400 transition-colors">
               Quizzes
             </Link>
             <ArrowRight className="h-4 w-4" />
@@ -229,7 +229,7 @@ const Leaderboard = () => {
 
           <div className="text-center mt-10">
             <Link
-              to="/games-quiz"
+              to="/quizzes"
               className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg"
             >
               <ArrowLeft className="h-5 w-5" />

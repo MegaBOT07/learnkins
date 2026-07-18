@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { ArrowRight, Trophy, Clock, Users, Search, Star, Trash2 } from "lucide-react";
-import { professionalQuizAPI, subjectAPI } from "../../utils/api";
+import { motion } from "framer-motion";
+import { ArrowRight, Trophy, Clock, Users, Search, Star, Trash2, Flame } from "lucide-react";
+import { professionalQuizAPI, subjectAPI, leaderboardAPI } from "../../utils/api";
 import { useToast } from "../../components/Toast";
 import { useConfirm } from "../../components/ConfirmDialog";
 // @ts-ignore
@@ -55,6 +56,7 @@ const ProfessionalQuizzes = () => {
   const [myAIQuizzes, setMyAIQuizzes] = useState<ProfessionalQuiz[]>([]);
   const [loadingAIQuizzes, setLoadingAIQuizzes] = useState(false);
   const [deletingAIQuizId, setDeletingAIQuizId] = useState<string | null>(null);
+  const [topPlayers, setTopPlayers] = useState<any[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
   const { showToast } = useToast();
@@ -184,6 +186,18 @@ const ProfessionalQuizzes = () => {
     );
     setFilteredQuizzes(filtered);
   }, [searchTerm, quizzes]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await leaderboardAPI.getLeaderboard({ filter: "all" });
+        setTopPlayers(res.data.data.leaderboard.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
 
   const getDifficultyStyle = (difficulty: string) => {
     switch (difficulty) {
@@ -707,6 +721,53 @@ const ProfessionalQuizzes = () => {
           </div>
         </section>
       )}
+
+      {/* Leaderboard */}
+      <section className="bg-black text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-yellow-500" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-black mb-3">Champions League</h2>
+            <p className="text-lg text-gray-300">The elite players who dominate the leaderboards</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {topPlayers.length > 0 ? topPlayers.map((p: any, i: number) => {
+              const rankStyles = [
+                { badge: "\u{1F947}", border: "border-yellow-500" },
+                { badge: "\u{1F948}", border: "border-gray-400" },
+                { badge: "\u{1F949}", border: "border-orange-500" },
+              ][i];
+              return (
+                <motion.div key={p.userId} whileHover={{ scale: 1.05, y: -5 }} className={`bg-white/10 rounded-2xl p-6 text-center border-2 ${rankStyles.border}`}>
+                  <div className="text-5xl mb-3">{rankStyles.badge}</div>
+                  <h3 className="text-xl font-black mb-2">{p.name}</h3>
+                  <div className="text-3xl font-black text-yellow-400 mb-2">{p.points.toLocaleString()} pts</div>
+                  <div className="text-sm text-gray-300 font-bold mb-2">Rank #{p.rank}</div>
+                  {p.currentStreak > 0 && (
+                    <div className="flex items-center justify-center text-sm font-bold text-orange-400">
+                      <Flame className="h-4 w-4 mr-1" />{p.currentStreak} day streak
+                    </div>
+                  )}
+                </motion.div>
+              );
+            }) : (
+              [1, 2, 3].map((i) => (
+                <motion.div key={i} className="bg-white/10 rounded-2xl p-6 text-center border-2 border-gray-600 animate-pulse">
+                  <div className="text-5xl mb-3">{"\u{1F3C6}"}</div>
+                  <div className="h-6 bg-white/20 rounded w-24 mx-auto mb-2" />
+                  <div className="h-8 bg-white/20 rounded w-20 mx-auto mb-2" />
+                  <div className="h-4 bg-white/20 rounded w-16 mx-auto" />
+                </motion.div>
+              ))
+            )}
+          </div>
+          <div className="text-center mt-12">
+            <Link to="/leaderboard" className="inline-flex items-center px-8 py-3 bg-white text-black font-black rounded-xl border-2 border-white hover:bg-transparent hover:text-white transition-all">
+              View Full Leaderboard<ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* ── Auth Prompt Modal ── */}
       {showAuthPrompt && (

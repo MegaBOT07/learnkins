@@ -64,7 +64,7 @@ const STEPS: TourStep[] = [
       "Learning is more fun when it's a game! Try our interactive quizzes and games. Compete, earn points, and level up. The more you play, the better you get!",
     icon: <Gamepad2 className="h-5 w-5" />,
     color: "from-orange-500 to-red-500",
-    action: { label: "Play Now", path: "/games-quiz" },
+    action: { label: "Play Now", path: "/quizzes" },
     highlight: "navbar",
   },
   {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { subjectAPI, materialAPI } from "../../utils/api";
 import Container from "../../components/common/Container";
+// @ts-ignore
+import { useAuth } from "../../context/AuthContext";
 
 const iconMap: Record<string, React.ReactNode> = {
   brain: <Brain className="h-12 w-12" />,
@@ -36,12 +38,77 @@ const iconMap: Record<string, React.ReactNode> = {
   "book-text": <BookText className="h-12 w-12" />,
 };
 
+const DUMMY_SUBJECTS = [
+  {
+    _id: "dummy-1",
+    name: "Mathematics",
+    slug: "mathematics",
+    description: "Master numbers, algebra, geometry and problem solving with step-by-step explanations.",
+    icon: "calculator",
+    color: "#3B82F6",
+    grade: "6th",
+    chapters: [
+      { title: "Number Systems", topics: ["Integers", "Fractions", "Decimals", "Rational Numbers"] },
+      { title: "Algebra", topics: ["Variables", "Expressions", "Linear Equations"] },
+    ],
+  },
+  {
+    _id: "dummy-2",
+    name: "English",
+    slug: "english",
+    description: "Improve your reading, writing, grammar and communication skills.",
+    icon: "booktext",
+    color: "#10B981",
+    grade: "6th",
+    chapters: [
+      { title: "Reading Comprehension", topics: ["Passage Analysis", "Inference", "Vocabulary"] },
+      { title: "Writing Skills", topics: ["Essay Writing", "Letter Writing", "Story Writing"] },
+    ],
+  },
+  {
+    _id: "dummy-3",
+    name: "Science",
+    slug: "science",
+    description: "Explore physics, chemistry and biology through interactive experiments and lessons.",
+    icon: "beaker",
+    color: "#F59E0B",
+    grade: "6th",
+    chapters: [
+      { title: "Physics", topics: ["Motion", "Force", "Energy", "Light"] },
+      { title: "Biology", topics: ["Cells", "Human Body", "Plants"] },
+    ],
+  },
+  {
+    _id: "dummy-4",
+    name: "Social Science",
+    slug: "social-science",
+    description: "Learn about history, geography, civics and the world around you.",
+    icon: "globe",
+    color: "#8B5CF6",
+    grade: "6th",
+    chapters: [
+      { title: "History", topics: ["Ancient India", "Medieval India", "Freedom Struggle"] },
+      { title: "Geography", topics: ["Latitude & Longitude", "Climate", "Natural Resources"] },
+    ],
+  },
+];
+
 const Subjects = () => {
+  // @ts-ignore
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [materialCounts, setMaterialCounts] = useState<Record<string, any>>({});
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setSubjects(DUMMY_SUBJECTS);
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         const res = await subjectAPI.getSubjects();
@@ -71,7 +138,7 @@ const Subjects = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const materialTypes = [
     {
@@ -305,13 +372,23 @@ const Subjects = () => {
                         </div>
                       </div>
 
-                      <Link
-                        to={`/${subj.slug}`}
-                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] group"
-                      >
-                        Start Learning
-                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                      {isAuthenticated ? (
+                        <Link
+                          to={`/${subj.slug}`}
+                          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] group"
+                        >
+                          Start Learning
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      ) : (
+                        <button
+                          onClick={() => setShowAuthPrompt(true)}
+                          className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-black text-white font-bold rounded-xl border-2 border-black hover:bg-white hover:text-black transition-all active:scale-95 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] group"
+                        >
+                          Start Learning
+                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -500,6 +577,37 @@ const Subjects = () => {
           </div>
         </Container>
       </div>
+      {/* ── Auth Prompt Modal ── */}
+      {showAuthPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl border-2 border-yellow-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => setShowAuthPrompt(false)}
+              className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold leading-none"
+            >
+              &times;
+            </button>
+            <h3 className="text-2xl font-black text-black mb-2">Login Required</h3>
+            <p className="text-gray-600 mb-6">
+              You need to sign in or create an account to start learning.
+            </p>
+            <Link
+              to="/login"
+              state={{ from: { pathname: location.pathname } }}
+              className="block w-full text-center px-6 py-3 bg-black text-white rounded-xl border-2 border-black font-black hover:bg-white hover:text-black transition-all mb-3"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              state={{ from: { pathname: location.pathname } }}
+              className="block w-full text-center px-6 py-3 bg-yellow-500 text-black rounded-xl border-2 border-yellow-500 font-black hover:bg-white hover:text-black transition-all"
+            >
+              Create Account
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

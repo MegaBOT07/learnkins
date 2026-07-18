@@ -79,7 +79,7 @@ const Home = () => {
     },
     {
       name: "Mathematics",
-      slug: "maths",
+      slug: "mathematics",
       icon: <Target className="h-8 w-8 text-black transition-colors" />,
       description: "Master mathematical concepts",
       borderColor: "border-orange-500",
@@ -197,7 +197,7 @@ const Home = () => {
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" strokeWidth={3} />
                 </Link>
                 <Link
-                  to="/games-quiz"
+                  to="/quizzes"
                   className="inline-flex items-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-xl text-lg border-2 border-black hover:bg-gray-50 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all duration-200"
                 >
                   <Play className="h-5 w-5 fill-current text-pink-500" />

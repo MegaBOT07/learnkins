@@ -20,6 +20,7 @@ import {
   Play,
   Target,
   Shield,
+  Trophy,
 } from "lucide-react";
 import Logo from "../common/Logo";
 import Container from "../common/Container";
@@ -64,7 +65,7 @@ const Navbar = () => {
     { name: "Flashcards", path: "/flashcards", icon: BookOpen },
     {
       name: "Games & Quiz",
-      path: "/games-quiz",
+      path: "/quizzes",
       hasDropdown: true,
       icon: Gamepad2,
     },
@@ -195,7 +196,16 @@ const Navbar = () => {
                                 onClick={() => setIsGamesDropdownOpen(false)}
                               >
                                 <Target size={20} strokeWidth={2.5} className="group-hover:text-orange-600" />
-                                <span> Quizzes</span>
+                                <span>Quizzes</span>
+                              </Link>
+
+                              <Link
+                                to="/leaderboard"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black border-2 border-transparent hover:border-yellow-500 hover:bg-yellow-50 rounded-xl transition-all"
+                                onClick={() => setIsGamesDropdownOpen(false)}
+                              >
+                                <Trophy size={20} strokeWidth={2.5} className="group-hover:text-yellow-600" />
+                                <span>Leaderboard</span>
                               </Link>
 
                               {/*
@@ -439,6 +449,14 @@ const Navbar = () => {
                               >
                                 <Target size={18} strokeWidth={2.5} />
                                 <span>Quizzes</span>
+                              </Link>
+                              <Link
+                                to="/leaderboard"
+                                className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-black hover:bg-yellow-50 hover:text-yellow-600 rounded-xl transition-colors"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                <Trophy size={18} strokeWidth={2.5} />
+                                <span>Leaderboard</span>
                               </Link>
                             </motion.div>
                           )}

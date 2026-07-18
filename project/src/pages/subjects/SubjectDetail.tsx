@@ -90,7 +90,7 @@ const SubjectDetail = () => {
     const pathParts = location.pathname.split("/").filter(Boolean);
     if (pathParts[0] === "subjects" && pathParts[1]) return pathParts[1];
     if (params.slug) return params.slug;
-    const directSubjects = ["maths", "science", "social-science", "english"];
+    const directSubjects = ["mathematics", "science", "social-science", "english"];
     if (directSubjects.includes(pathParts[0])) return pathParts[0];
     return "";
   };

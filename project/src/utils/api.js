@@ -105,6 +105,11 @@ export const quizAPI = {
   getLeaderboard: (subject = 'all') => api.get('/quizzes/leaderboard', { params: { subject } }),
 };
 
+// Leaderboard API
+export const leaderboardAPI = {
+  getLeaderboard: (params = {}) => api.get('/leaderboard', { params }),
+};
+
 // Game API
 export const gameAPI = {
   getGames: () => api.get("/games"),

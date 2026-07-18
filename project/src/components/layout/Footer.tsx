@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   Mail,
@@ -12,9 +12,14 @@ import {
   ExternalLink,
   CheckCircle,
   Loader2,
+  AlertCircle,
+  Shield,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Logo from "../common/Logo";
 import Container from "../common/Container";
+import { useAuth } from "../../context/AuthContext";
 
 const XIcon = () => (
   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -27,6 +32,43 @@ const Footer = () => {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [newsletterMsg, setNewsletterMsg] = useState("");
+  const [showParentLoginModal, setShowParentLoginModal] = useState(false);
+  const [parentLoginEmail, setParentLoginEmail] = useState("");
+  const [parentLoginPassword, setParentLoginPassword] = useState("");
+  const [showParentPassword, setShowParentPassword] = useState(false);
+  const [parentLoginLoading, setParentLoginLoading] = useState(false);
+  const [parentLoginError, setParentLoginError] = useState("");
+  const { user, isAuthenticated, login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleParentalControlClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isAuthenticated && user?.role === "parent") {
+      navigate("/parental-control");
+    } else {
+      setShowParentLoginModal(true);
+    }
+  };
+
+  const handleParentLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setParentLoginLoading(true);
+    setParentLoginError("");
+    const result = await login({ email: parentLoginEmail, password: parentLoginPassword });
+    if (result.success && result.user) {
+      if (result.user.role === "parent") {
+        setShowParentLoginModal(false);
+        setParentLoginEmail("");
+        setParentLoginPassword("");
+        navigate("/parental-control");
+      } else {
+        setParentLoginError("Only parents can access Parental Control. Please log in with a parent account.");
+      }
+    } else {
+      setParentLoginError(result.error || "Login failed. Please check your credentials.");
+    }
+    setParentLoginLoading(false);
+  };
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,20 +102,19 @@ const Footer = () => {
   const footerLinks = {
     subjects: [
       { name: "Science", path: "/science", hoverColor: "hover:text-cyan-500" },
-      { name: "Mathematics", path: "/maths", hoverColor: "hover:text-orange-500" },
+      { name: "Mathematics", path: "/mathematics", hoverColor: "hover:text-orange-500" },
       { name: "Social Science", path: "/social-science", hoverColor: "hover:text-green-500" },
       { name: "English", path: "/english", hoverColor: "hover:text-pink-500" },
     ],
     resources: [
       { name: "Study Materials", path: "/study-materials", hoverColor: "hover:text-blue-500" },
       { name: "Video Lessons", path: "/subjects", hoverColor: "hover:text-purple-500" },
-      { name: "Practice Quizzes", path: "/games-quiz", hoverColor: "hover:text-orange-500" },
+      { name: "Practice Quizzes", path: "/quizzes", hoverColor: "hover:text-orange-500" },
       { name: "Team", path: "/team", hoverColor: "hover:text-green-500" },
     ],
     support: [
       { name: "Help Center", path: "/contact", hoverColor: "hover:text-pink-500" },
       { name: "Community", path: "/community", hoverColor: "hover:text-blue-500" },
-      { name: "Parental Control", path: "/parental-control", hoverColor: "hover:text-purple-500" },
       { name: "Contact Us", path: "/contact", hoverColor: "hover:text-cyan-500" },
     ],
     company: [
@@ -168,6 +209,15 @@ const Footer = () => {
                   <Link to={link.path} className={`text-gray-600 font-bold ${link.hoverColor} transition-all duration-200 hover:translate-x-2 inline-flex items-center gap-1`}>{link.name}</Link>
                 </li>
               ))}
+              <li>
+                <button
+                  onClick={handleParentalControlClick}
+                  className={`text-gray-600 font-bold hover:text-purple-500 transition-all duration-200 hover:translate-x-2 inline-flex items-center gap-1`}
+                >
+                  <Shield className="h-4 w-4" />
+                  Parental Control
+                </button>
+              </li>
             </ul>
           </div>
 
@@ -243,6 +293,112 @@ const Footer = () => {
           </div>
         </Container>
       </div>
+
+      {/* Parental Control Login Modal */}
+      {showParentLoginModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl border-2 border-purple-500 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md w-full mx-4 relative">
+            <button
+              onClick={() => {
+                setShowParentLoginModal(false);
+                setParentLoginError("");
+                setParentLoginEmail("");
+                setParentLoginPassword("");
+              }}
+              className="absolute top-3 right-3 text-gray-400 hover:text-black text-2xl font-bold leading-none"
+            >
+              &times;
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-purple-100 border-2 border-purple-500 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-black">Parent Login</h3>
+                <p className="text-sm text-gray-500 font-medium">Sign in to access Parental Control</p>
+              </div>
+            </div>
+
+            <p className="text-gray-600 mb-6 text-sm">
+              You need to sign in with a parent account to manage your child's learning controls and settings.
+            </p>
+
+            {parentLoginError && (
+              <div className="bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded-xl flex items-center space-x-2 font-medium mb-4 text-sm">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>{parentLoginError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleParentLoginSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="parent-email" className="block text-xs font-black text-black uppercase tracking-wider mb-1.5">
+                  Parent Email
+                </label>
+                <input
+                  id="parent-email"
+                  type="email"
+                  required
+                  value={parentLoginEmail}
+                  onChange={(e) => {
+                    setParentLoginEmail(e.target.value);
+                    setParentLoginError("");
+                  }}
+                  className="w-full px-4 py-3 border-2 border-black rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm"
+                  placeholder="Enter parent email"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="parent-password" className="block text-xs font-black text-black uppercase tracking-wider mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="parent-password"
+                    type={showParentPassword ? "text" : "password"}
+                    required
+                    value={parentLoginPassword}
+                    onChange={(e) => {
+                      setParentLoginPassword(e.target.value);
+                      setParentLoginError("");
+                    }}
+                    className="w-full px-4 py-3 pr-12 border-2 border-black rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all text-sm"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    onClick={() => setShowParentPassword(!showParentPassword)}
+                  >
+                    {showParentPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400 hover:text-black transition-colors" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400 hover:text-black transition-colors" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={parentLoginLoading}
+                className="w-full bg-purple-600 text-white py-3 px-6 rounded-xl border-2 border-black font-black text-sm hover:bg-white hover:text-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 uppercase tracking-wider"
+              >
+                {parentLoginLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In as Parent"
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </footer>
   );
 };

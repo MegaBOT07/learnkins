@@ -1,16 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Trophy, Star, Clock, Users, Flame, TrendingUp,
-  Gamepad2, Beaker, Calculator, Globe2, BookText,
+  Gamepad2, Beaker, Calculator, Globe2, BookText, Crown, Medal,
 } from "lucide-react";
+import { leaderboardAPI } from "../../utils/api";
 
 const Games = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentStreak] = useState(7);
   const [totalScore] = useState(15420);
+  const [topPlayers, setTopPlayers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchTopPlayers = async () => {
+      try {
+        const res = await leaderboardAPI.getLeaderboard({ filter: 'all' });
+        if (res.data.success) {
+          setTopPlayers(res.data.data.leaderboard.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch leaderboard:", err);
+      }
+    };
+    fetchTopPlayers();
+  }, []);
 
   const categories = [
     { id: "all", name: "All", icon: <Gamepad2 className="w-5 h-5" />, border: "border-black" },
@@ -139,24 +155,38 @@ const Games = () => {
             <p className="text-lg text-gray-300">The elite players who dominate the leaderboards</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { name: "Alex Johnson", score: 9850, badge: "🥇", rank: 1, streak: 15, border: "border-yellow-500" },
-              { name: "Sarah Chen", score: 9720, badge: "🥈", rank: 2, streak: 12, border: "border-gray-400" },
-              { name: "Mike Rodriguez", score: 9650, badge: "🥉", rank: 3, streak: 10, border: "border-orange-500" },
-            ].map((p, i) => (
-              <motion.div key={i} whileHover={{ scale: 1.05, y: -5 }} className={`bg-white/10 rounded-2xl p-6 text-center border-2 ${p.border}`}>
-                <div className="text-5xl mb-3">{p.badge}</div>
-                <h3 className="text-xl font-black mb-2">{p.name}</h3>
-                <div className="text-3xl font-black text-yellow-400 mb-2">{p.score.toLocaleString()} pts</div>
-                <div className="text-sm text-gray-300 font-bold mb-2">Rank #{p.rank}</div>
-                <div className="flex items-center justify-center text-sm font-bold text-orange-400">
-                  <Flame className="h-4 w-4 mr-1" />{p.streak} day streak
-                </div>
-              </motion.div>
-            ))}
+            {topPlayers.length > 0 ? topPlayers.map((p, i) => {
+              const rankStyles = [
+                { badge: "🥇", border: "border-yellow-500" },
+                { badge: "🥈", border: "border-gray-400" },
+                { badge: "🥉", border: "border-orange-500" },
+              ][i];
+              return (
+                <motion.div key={p.userId} whileHover={{ scale: 1.05, y: -5 }} className={`bg-white/10 rounded-2xl p-6 text-center border-2 ${rankStyles.border}`}>
+                  <div className="text-5xl mb-3">{rankStyles.badge}</div>
+                  <h3 className="text-xl font-black mb-2">{p.name}</h3>
+                  <div className="text-3xl font-black text-yellow-400 mb-2">{p.points.toLocaleString()} pts</div>
+                  <div className="text-sm text-gray-300 font-bold mb-2">Rank #{p.rank}</div>
+                  {p.currentStreak > 0 && (
+                    <div className="flex items-center justify-center text-sm font-bold text-orange-400">
+                      <Flame className="h-4 w-4 mr-1" />{p.currentStreak} day streak
+                    </div>
+                  )}
+                </motion.div>
+              );
+            }) : (
+              [1, 2, 3].map((i) => (
+                <motion.div key={i} className="bg-white/10 rounded-2xl p-6 text-center border-2 border-gray-600 animate-pulse">
+                  <div className="text-5xl mb-3">🏆</div>
+                  <div className="h-6 bg-white/20 rounded w-24 mx-auto mb-2" />
+                  <div className="h-8 bg-white/20 rounded w-20 mx-auto mb-2" />
+                  <div className="h-4 bg-white/20 rounded w-16 mx-auto" />
+                </motion.div>
+              ))
+            )}
           </div>
           <div className="text-center mt-12">
-            <Link to="/community" className="inline-flex items-center px-8 py-3 bg-white text-black font-black rounded-xl border-2 border-white hover:bg-transparent hover:text-white transition-all">
+            <Link to="/leaderboard" className="inline-flex items-center px-8 py-3 bg-white text-black font-black rounded-xl border-2 border-white hover:bg-transparent hover:text-white transition-all">
               View Full Leaderboard<ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </div>
