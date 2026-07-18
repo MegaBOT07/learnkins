@@ -238,13 +238,16 @@ const generateQuestionsWithOpenAI = async (difficulty, subject, totalQuestions, 
   const prompt = `Generate ${totalQuestions} quiz questions for ${subject}${topicClause}${gradeClause}, ${difficulty} difficulty.
 ${typeInstruction}
 
+IMPORTANT: Distribute the correctAnswer index ACROSS all options (0, 1, 2, 3). Do NOT make all correct answers index 0. Roughly 25% of questions should have each option as the correct answer.
+
 Format: JSON array. Each object:
-- multiple-choice: {"type":"multiple-choice","question":"...","options":["A","B","C","D"],"correctAnswer":0,"explanation":"..."}
-- true-false: {"type":"true-false","question":"...","options":["True","False"],"correctAnswer":0,"explanation":"..."}
+- multiple-choice: {"type":"multiple-choice","question":"...","options":["real option text","real option text","real option text","real option text"],"correctAnswer":2,"explanation":"..."}
+- true-false: {"type":"true-false","question":"...","options":["True","False"],"correctAnswer":1,"explanation":"..."}
 - short-answer: {"type":"short-answer","question":"...","options":[],"correctAnswer":"word or number","explanation":"..."}
 
 Rules:
 - correctAnswer is index 0-3 for multiple-choice/true-false, text for short-answer.
+- Write real, meaningful option text — do NOT use placeholder labels like "A", "B", "C", "D".
 - No trailing commas. No comments. Escape quotes inside strings with \\".
 - Return ONLY the JSON array — no markdown, no backticks, no explanation.`;
 
@@ -256,6 +259,17 @@ Rules:
       if (!content) continue;
       const questions = parseJSONFromResponse(content);
       if (questions && Array.isArray(questions) && questions.length > 0) {
+        // Fix: if all MC/TF answers are the same index, shuffle the options
+        const mcTf = questions.filter(q => q.type !== 'short-answer' && Array.isArray(q.options) && q.options.length > 1);
+        if (mcTf.length > 1 && mcTf.every(q => q.correctAnswer === mcTf[0].correctAnswer)) {
+          questions = questions.map(q => {
+            if (q.type === 'short-answer' || !Array.isArray(q.options) || q.options.length < 2) return q;
+            const correctText = q.options[q.correctAnswer];
+            const shuffled = [...q.options].sort(() => Math.random() - 0.5);
+            return { ...q, options: shuffled, correctAnswer: shuffled.indexOf(correctText) };
+          });
+        }
+
         if (model !== MODELS_TO_TRY[0]) {
           console.log(`AI quiz: ${model} succeeded (fallback from ${MODELS_TO_TRY[0]})`);
         }
@@ -511,8 +525,9 @@ export const submitProfessionalQuiz = async (req, res) => {
         if (question.type === 'short-answer') {
           isCorrect = String(selectedAnswer).trim().toLowerCase() === String(question.correctAnswer).trim().toLowerCase();
         } else {
-          const correctOption = Array.isArray(question.options) ? question.options[question.correctAnswer] : undefined;
-          isCorrect = correctOption !== undefined && String(selectedAnswer).trim().toLowerCase() === String(correctOption).trim().toLowerCase();
+          const selectedIdx = Number(selectedAnswer);
+          const correctIdx = Number(question.correctAnswer);
+          isCorrect = !isNaN(selectedIdx) && !isNaN(correctIdx) && selectedIdx === correctIdx;
         }
       }
 
@@ -569,6 +584,11 @@ export const submitProfessionalQuiz = async (req, res) => {
       if (passed && pct === 100) {
         user.perfectScores = (user.perfectScores || 0) + 1;
       }
+
+      // Award points: 5 per correct answer + 20 bonus for pass + 50 bonus for perfect
+      const correctCount = processedAnswers.filter(a => a.isCorrect).length;
+      const quizPoints = correctCount * 5 + (passed ? 20 : 0) + (pct === 100 ? 50 : 0);
+      user.points = (user.points || 0) + quizPoints;
 
       levelUpData = user.addExperience(totalXP);
       await user.save();

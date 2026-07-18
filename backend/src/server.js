@@ -26,6 +26,7 @@ import paymentRoutes from './routes/payments.js';
 import newsletterRoutes from './routes/newsletter.js';
 import verificationRoutes from './routes/verificationRoutes.js';
 import certificateRoutes from './routes/certificateRoutes.js';
+import leaderboardRoutes from './routes/leaderboard.js';
 // Import models for seeding
 import User from "./models/User.js";
 import ShopItem from "./models/ShopItem.js";
@@ -432,6 +433,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/newsletter", newsletterRoutes);
 app.use("/api/verify", verificationRoutes);
 app.use("/api/certificates", certificateRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

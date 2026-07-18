@@ -516,6 +516,9 @@ export const submitQuiz = async (req, res) => {
         if (passed && percentage === 100) {
           user.perfectScores = (user.perfectScores || 0) + 1;
         }
+        // Award points: 10 per correct answer + 20 bonus for pass + 50 bonus for perfect
+        const quizPoints = correctCount * 10 + (passed ? 20 : 0) + (percentage === 100 ? 50 : 0);
+        user.points = (user.points || 0) + quizPoints;
         await user.save();
 
         // Check and award achievements

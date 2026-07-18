@@ -243,6 +243,11 @@ export const logGameActivity = async (req, res) => {
     }
 
     user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
+
+    // Award leaderboard points from game score
+    const gamePoints = Math.floor(score || 0);
+    user.points = (user.points || 0) + gamePoints;
+
     await user.save();
 
     const newAchievements = await checkAndAwardAchievements(user._id);
