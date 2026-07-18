@@ -15,7 +15,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 // Helper to generate the PDF
 export const generateCertificatePDF = async (certData, sharedBrowser = null) => {
-  const verifyUrl = `${process.env.FRONTEND_URL || 'https://learnkins-4tsx.onrender.com'}/verify/internship/${certData.certificateId}`;
+  const verifyUrl = `${process.env.FRONTEND_URL || 'https://learnkins.com'}/verify/internship/${certData.certificateId}`;
   const qrCodeDataUrl = await QRCode.toDataURL(verifyUrl, { width: 100, margin: 1 });
   
   const htmlContent = getCertificateHTML(certData, qrCodeDataUrl);
