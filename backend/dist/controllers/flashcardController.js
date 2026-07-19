@@ -1,10 +1,11 @@
 import Flashcard from '../models/Flashcard.js';
 import Progress from '../models/Progress.js';
-import { checkFlashcardAchievements } from '../utils/achievementChecker.js';
+import User from '../models/User.js';
+import { checkFlashcardAchievements, checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get all flashcards
 // @route   GET /api/flashcards
-// @access  Public
+// @access  Public (private cards included for their owner)
 export const getFlashcards = async (req, res) => {
   try {
     const {
@@ -15,9 +16,15 @@ export const getFlashcards = async (req, res) => {
       limit = 12,
       sortBy = 'recent'
     } = req.query;
-    let filter = {
-      isPublic: true,
-      isActive: true
+
+    // Show public cards + the authenticated user's own private cards
+    const filter = {
+      isActive: true,
+      $or: [{
+        isPublic: true
+      }, ...(req.user ? [{
+        createdBy: req.user.id
+      }] : [])]
     };
 
     // Treat literal 'undefined' or 'null' query values as absent (frontend sometimes sends them)
@@ -128,7 +135,7 @@ export const createFlashcard = async (req, res) => {
       chapter,
       difficulty,
       tags: Array.isArray(tags) ? tags.map(t => typeof t === 'string' ? t.trim().toLowerCase() : t) : tags ? tags.split(',').map(tag => tag.trim().toLowerCase()) : [],
-      isPublic: isPublic !== undefined ? isPublic : true,
+      isPublic: req.user.role === 'admin' ? true : isPublic !== undefined ? isPublic : false,
       createdBy: req.user.id
     });
     await flashcard.populate('createdBy', 'name');
@@ -182,7 +189,7 @@ export const updateFlashcard = async (req, res) => {
     flashcard.difficulty = difficulty || flashcard.difficulty;
     flashcard.isPublic = isPublic !== undefined ? isPublic : flashcard.isPublic;
     if (tags) {
-      flashcard.tags = tags.split(',').map(tag => tag.trim().toLowerCase());
+      flashcard.tags = Array.isArray(tags) ? tags.map(t => typeof t === 'string' ? t.trim().toLowerCase() : t) : tags.split(',').map(tag => tag.trim().toLowerCase());
     }
     await flashcard.save();
     await flashcard.populate('createdBy', 'name');
@@ -221,9 +228,8 @@ export const deleteFlashcard = async (req, res) => {
       });
     }
 
-    // Soft delete
-    flashcard.isActive = false;
-    await flashcard.save();
+    // Hard delete
+    await flashcard.deleteOne();
     res.status(200).json({
       success: true,
       message: 'Flashcard deleted successfully'
@@ -273,13 +279,21 @@ export const studyFlashcard = async (req, res) => {
       upsert: true
     });
 
+    // Update user study stats (~2 min per card, or use timeSpent if provided)
+    const studyHours = req.body.timeSpent ? Math.round(req.body.timeSpent / 60 * 100) / 100 : 0.033;
+    const user = await User.findById(req.user.id);
+    if (user) {
+      user.totalStudyHours = (user.totalStudyHours || 0) + studyHours;
+      await user.save();
+    }
+
     // Check flashcard achievements
     const newAchievements = await checkFlashcardAchievements(req.user.id, 1);
     res.status(200).json({
       success: true,
       message: 'Study session recorded',
       data: {
-        studyCount: flashcard.studyCount + 1
+        studyCount: flashcard.studyCount
       },
       newAchievements
     });
@@ -337,7 +351,10 @@ export const rateFlashcard = async (req, res) => {
 export const generateAIFlashcards = async (req, res) => {
   try {
     const {
-      topic
+      topic,
+      subject = 'science',
+      difficulty = 'Medium',
+      count = 5
     } = req.body;
     if (!topic || !topic.trim()) {
       return res.status(400).json({
@@ -345,6 +362,10 @@ export const generateAIFlashcards = async (req, res) => {
         message: 'Topic is required'
       });
     }
+    const allowedSubjects = ['science', 'mathematics', 'social-science', 'english'];
+    const finalSubject = allowedSubjects.includes(subject) ? subject : 'science';
+    const finalDifficulty = ['Easy', 'Medium', 'Hard'].includes(difficulty) ? difficulty : 'Medium';
+    const finalCount = Math.max(1, Math.min(10, parseInt(count) || 5));
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return res.status(500).json({
@@ -352,15 +373,15 @@ export const generateAIFlashcards = async (req, res) => {
         message: 'AI service not configured'
       });
     }
-    const prompt = `Generate exactly 5 unique and educational flashcards about "${topic.trim()}".
+    const prompt = `Generate exactly ${finalCount} unique and educational flashcards about "${topic.trim()}" for subject "${finalSubject}" at "${finalDifficulty}" difficulty.
 
 Return ONLY a valid JSON array with NO markdown code blocks, NO extra text, just the array itself:
 [
   {
     "question": "Clear, concise question",
     "answer": "Detailed, educational answer",
-    "difficulty": "Easy",
-    "subject": "science"
+    "difficulty": "${finalDifficulty}",
+    "subject": "${finalSubject}"
   }
 ]
 
@@ -375,7 +396,7 @@ Valid difficulties: Easy, Medium, Hard`;
         'X-Title': 'Learnkins'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini',
+        model: 'openrouter/free',
         messages: [{
           role: 'user',
           content: prompt
@@ -394,8 +415,16 @@ Valid difficulties: Easy, Medium, Hard`;
     try {
       cards = JSON.parse(content);
     } catch {
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) cards = JSON.parse(jsonMatch[0]);
+      try {
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          cards = JSON.parse(jsonMatch[0]);
+        } else {
+          console.warn("Could not find JSON array in OpenRouter response");
+        }
+      } catch (parseError) {
+        console.error("Failed to parse extracted JSON array:", parseError);
+      }
     }
     res.status(200).json({
       success: true,
@@ -406,6 +435,67 @@ Valid difficulties: Easy, Medium, Hard`;
     res.status(500).json({
       success: false,
       message: error?.message || 'Failed to generate flashcards'
+    });
+  }
+};
+
+// @desc    Batch create flashcards (for saving AI-generated cards)
+// @route   POST /api/flashcards/batch
+// @access  Private
+export const batchCreateFlashcards = async (req, res) => {
+  try {
+    const {
+      flashcards
+    } = req.body;
+    if (!Array.isArray(flashcards) || flashcards.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Flashcards array is required and must not be empty'
+      });
+    }
+    if (flashcards.length > 50) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum 50 flashcards per batch'
+      });
+    }
+    const validSubjects = ['science', 'mathematics', 'social-science', 'english'];
+    const validDifficulties = ['Easy', 'Medium', 'Hard'];
+    const cardsToCreate = flashcards.map((card, idx) => {
+      const question = String(card.question || '').trim();
+      const answer = String(card.answer || '').trim();
+      if (!question || !answer) {
+        throw new Error(`Card at index ${idx} requires question and answer`);
+      }
+      const subject = validSubjects.includes(card.subject) ? card.subject : 'science';
+      const difficulty = validDifficulties.includes(card.difficulty) ? card.difficulty : 'Medium';
+      return {
+        question,
+        answer,
+        subject,
+        difficulty,
+        chapter: card.chapter || '',
+        tags: Array.isArray(card.tags) ? card.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean) : ['ai-generated'],
+        isPublic: req.user.role === 'admin' || req.user.role === 'teacher' ? true : card.isPublic !== undefined ? card.isPublic : false,
+        createdBy: req.user.id
+      };
+    });
+    const created = await Flashcard.insertMany(cardsToCreate);
+    await Flashcard.populate(created, {
+      path: 'createdBy',
+      select: 'name'
+    });
+    res.status(201).json({
+      success: true,
+      message: `${created.length} flashcards created successfully`,
+      count: created.length,
+      data: created
+    });
+  } catch (error) {
+    console.error('Batch create flashcards error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error'
     });
   }
 };

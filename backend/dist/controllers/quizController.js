@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 import Quiz from '../models/Quiz.js';
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
+import Subject from '../models/Subject.js';
 import TokenTransaction from '../models/TokenTransaction.js';
+import jwt from 'jsonwebtoken';
 import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // Helper: award tokens + XP after a quiz; silent – never throws
@@ -36,11 +38,134 @@ async function awardQuizTokens(userId, percentage) {
   }
 }
 
-// @desc    Get all quizzes
+// @desc    Homepage quizzes
+// @route   GET /api/quizzes/homepageQuizCards
+// @access  Public
+export const getHomepageQuizCards = async (req, res) => {
+  try {
+    const userInfo = req.headers["x-user-info"];
+    let grade = null;
+    let userId = null;
+    if (userInfo) {
+      const parsedUser = JSON.parse(userInfo);
+      grade = parsedUser.grade;
+      userId = parsedUser._id;
+    }
+    const baseFilter = {
+      isActive: true,
+      ...(grade && {
+        grade
+      })
+    };
+    const subjectFilter = {
+      isActive: true,
+      ...(grade && {
+        grade
+      })
+    };
+    const formatQuizCard = quiz => {
+      const userAttempt = userId && quiz.attempts?.length ? quiz.attempts.find(a => a.userId?.toString() === userId.toString()) || null : null;
+      return {
+        id: quiz._id,
+        title: quiz.title,
+        description: quiz.description,
+        subject: quiz.subject,
+        chapter: quiz.chapter,
+        grade: quiz.grade,
+        timeLimit: quiz.timeLimit,
+        difficulty: quiz.difficulty,
+        questionCount: quiz.questions?.length || 0,
+        participants: quiz.participants,
+        userAttempt: !!userAttempt
+      };
+    };
+
+    // Latest 4 quizzes for "All"
+    const allPromise = Quiz.find(baseFilter).select("title description subject chapter grade timeLimit participants difficulty questions attempts.userId").sort({
+      createdAt: -1
+    }).limit(4);
+    let subjects = [];
+    if (grade) {
+      subjects = await Subject.find(subjectFilter).select("slug");
+    } else {
+      subjects = [{
+        slug: "mathematics"
+      }, {
+        slug: "science"
+      }, {
+        slug: "social-science"
+      }, {
+        slug: "english"
+      }];
+    }
+    const subjectPromises = subjects.map(async subject => {
+      const quizzes = await Quiz.find({
+        ...baseFilter,
+        subject: subject.slug
+      }).select("title description subject chapter grade timeLimit participants difficulty questions attempts.userId").sort({
+        createdAt: -1
+      }).limit(4);
+      return {
+        subject: subject.slug,
+        quizzes: quizzes.map(formatQuizCard)
+      };
+    });
+    const [allQuizzes, ...categories] = await Promise.all([allPromise, ...subjectPromises]);
+    const filteredCategories = categories.filter(category => category.quizzes.length > 0);
+    res.status(200).json({
+      success: true,
+      data: {
+        all: allQuizzes.map(formatQuizCard),
+        filteredCategories
+      }
+    });
+  } catch (error) {
+    console.error("Homepage quizzes error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
+    });
+  }
+};
+
+// @desc    Get all Subjects
+// @route   GET /api/subjects
+// @access  Public
+export const getSubjects = async (req, res) => {
+  try {
+    const {
+      grade,
+      slug,
+      isActive
+    } = req.query;
+    let filter = {};
+    if (grade) filter.grade = grade;
+    if (slug) filter.slug = slug;
+    if (isActive !== undefined) {
+      filter.isActive = isActive === "true";
+    }
+    const subjects = await Subject.find(filter).sort({
+      createdAt: -1
+    });
+    res.status(200).json({
+      success: true,
+      data: subjects
+    });
+  } catch (error) {
+    console.error("Get subjects error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+// @desc    Get all quizzes 
 // @route   GET /api/quizzes
 // @access  Public
 export const getQuizzes = async (req, res) => {
   try {
+    const user_id = req.user?._id;
     const {
       subject,
       grade,
@@ -48,21 +173,30 @@ export const getQuizzes = async (req, res) => {
       page = 1,
       limit = 10
     } = req.query;
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
     let filter = {
       isActive: true
     };
     if (subject) filter.subject = subject;
     if (grade) filter.grade = grade;
     if (difficulty) filter.difficulty = difficulty;
-    const quizzes = await Quiz.find(filter).select('-questions.correctAnswer -questions.explanation').populate('createdBy', 'name').limit(limit * 1).skip((page - 1) * limit).sort({
+    const quizzes = await Quiz.find(filter).select('-questions.correctAnswer -questions.explanation').populate('createdBy', 'name').limit(limitNumber).skip((pageNumber - 1) * limitNumber).sort({
       createdAt: -1
+    });
+    const quizzesWithAttempt = quizzes.map(quiz => {
+      const userAttempt = quiz.attempts?.find(attempt => attempt.userId?.toString() === user_id?.toString()) || null;
+      return {
+        ...quiz.toObject(),
+        userAttempt
+      };
     });
     const total = await Quiz.countDocuments(filter);
     res.status(200).json({
       success: true,
-      count: quizzes.length,
+      count: quizzesWithAttempt.length,
       total,
-      data: quizzes
+      data: quizzesWithAttempt
     });
   } catch (error) {
     console.error('Get quizzes error:', error);
@@ -84,7 +218,7 @@ export const getQuiz = async (req, res) => {
 
     // Check if it's a valid MongoDB ObjectId
     if (mongoose.Types.ObjectId.isValid(id)) {
-      const quiz = await Quiz.findById(id).select('-questions.correctAnswer -questions.explanation').populate('createdBy', 'name');
+      const quiz = await Quiz.findById(id).select('-questions.correctAnswer -questions.explanation -questions.options.isCorrect').populate('createdBy', 'name');
       if (!quiz) {
         return res.status(404).json({
           success: false,
@@ -146,7 +280,20 @@ export const updateQuiz = async (req, res) => {
         message: 'Invalid quiz id'
       });
     }
-    const quiz = await Quiz.findByIdAndUpdate(req.params.id, req.body, {
+    const allowedFields = ['title', 'description', 'subject', 'chapter', 'grade', 'timeLimit', 'difficulty', 'isActive'];
+    if (req.body.questions) {
+      return res.status(400).json({
+        success: false,
+        message: 'Questions cannot be updated through this endpoint. Use the quiz creation flow instead.'
+      });
+    }
+    const updates = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+    const quiz = await Quiz.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true
     });
@@ -213,8 +360,7 @@ export const submitQuiz = async (req, res) => {
     } = req.params;
     const {
       answers,
-      timeTaken,
-      localResult
+      timeTaken
     } = req.body;
     const userId = req.user?.id;
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -230,21 +376,39 @@ export const submitQuiz = async (req, res) => {
         message: 'Quiz not found'
       });
     }
-
+    const existingAttempt = quiz.attempts.find(attempt => attempt.userId?.toString() === userId?.toString());
+    if (existingAttempt) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already attempted this quiz"
+      });
+    }
     // Calculate score
     let correctCount = 0;
     const processedAnswers = [];
     if (Array.isArray(answers)) {
-      answers.forEach((answer, index) => {
-        const question = quiz.questions[index];
+      answers.forEach((item, index) => {
+        const question = quiz.questions.find(q => q._id && q._id.toString() === item.questionId) || quiz.questions[index];
         if (!question) return;
-        const isCorrect = answer === question.correctAnswer;
-        if (isCorrect) correctCount++;
+        let isCorrect = false;
+
+        // Multiple Choice & True/False
+        if (question.type === "multiple-choice" || question.type === "true-false") {
+          const correctOption = question.options.find(option => option.isCorrect);
+          isCorrect = correctOption?.text?.trim().toLowerCase() === item.answer?.trim().toLowerCase();
+        }
+
+        // Short Answer
+        else if (question.type === "short-answer") {
+          isCorrect = question.correctAnswer?.trim().toLowerCase() === item.answer?.trim().toLowerCase();
+        }
+        if (isCorrect) {
+          correctCount++;
+        }
         processedAnswers.push({
-          questionId: question.id,
-          selectedAnswer: answer,
-          isCorrect,
-          pointsEarned: isCorrect ? question.points : 0
+          questionId: question._id || `q${index}`,
+          answer: item.answer,
+          isCorrect
         });
       });
     }
@@ -264,6 +428,11 @@ export const submitQuiz = async (req, res) => {
       certificateIssued: false
     };
     quiz.attempts.push(attempt);
+    if (!quiz.statistics) quiz.statistics = {
+      totalAttempts: 0,
+      totalPassed: 0,
+      averageScore: 0
+    };
     quiz.statistics.totalAttempts = (quiz.statistics.totalAttempts || 0) + 1;
     if (passed) {
       quiz.statistics.totalPassed = (quiz.statistics.totalPassed || 0) + 1;
@@ -276,10 +445,12 @@ export const submitQuiz = async (req, res) => {
     if (userId) {
       const user = await User.findById(userId);
       if (user) {
-        user.totalQuizzesTaken = (user.totalQuizzesTaken || 0) + 1;
         if (passed && percentage === 100) {
           user.perfectScores = (user.perfectScores || 0) + 1;
         }
+        // Award points: 10 per correct answer + 20 bonus for pass + 50 bonus for perfect
+        const quizPoints = correctCount * 10 + (passed ? 20 : 0) + (percentage === 100 ? 50 : 0);
+        user.points = (user.points || 0) + quizPoints;
         await user.save();
 
         // Check and award achievements
@@ -289,8 +460,8 @@ export const submitQuiz = async (req, res) => {
     res.status(200).json({
       success: true,
       message: passed ? 'Quiz passed!' : 'Quiz failed. Try again!',
-      result: {
-        score: correctCount,
+      data: {
+        correctCount,
         total: quiz.questions.length,
         percentage,
         passed,
@@ -361,6 +532,171 @@ export const getQuizStatistics = async (req, res) => {
     });
   } catch (error) {
     console.error('Get quiz statistics error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// @desc    Get quiz leaderboard (top 100 + user rank)
+// @route   GET /api/quizzes/leaderboard
+// @access  Private
+export const getLeaderboard = async (req, res) => {
+  try {
+    const {
+      subject
+    } = req.query;
+    const userId = req.user?._id;
+    const matchStage = {
+      'attempts.0': {
+        $exists: true
+      }
+    };
+    if (subject && subject !== 'all') {
+      matchStage.subject = subject;
+    }
+    const calcPoints = {
+      $round: [{
+        $multiply: [{
+          $divide: [{
+            $ifNull: ['$totalPoints', 0]
+          }, 100]
+        }, '$attempts.percentage']
+      }, 0]
+    };
+    const results = await Quiz.aggregate([{
+      $match: matchStage
+    }, {
+      $unwind: '$attempts'
+    }, {
+      $addFields: {
+        pointsEarned: calcPoints
+      }
+    }, {
+      $group: {
+        _id: '$attempts.userId',
+        totalPoints: {
+          $sum: '$pointsEarned'
+        },
+        totalAttempts: {
+          $sum: 1
+        },
+        lastAttempt: {
+          $max: '$attempts.attemptDate'
+        }
+      }
+    }, {
+      $sort: {
+        totalPoints: -1
+      }
+    }, {
+      $limit: 100
+    }, {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user'
+      }
+    }, {
+      $unwind: {
+        path: '$user',
+        preserveNullAndEmptyArrays: true
+      }
+    }, {
+      $project: {
+        _id: 0,
+        userId: '$_id',
+        name: {
+          $ifNull: ['$user.name', 'Unknown']
+        },
+        totalPoints: 1,
+        totalAttempts: 1,
+        lastAttempt: 1
+      }
+    }]);
+    const entries = results.map((entry, index) => ({
+      rank: index + 1,
+      ...entry
+    }));
+    let userRank = null;
+    if (userId) {
+      const userInTop = entries.find(e => e.userId?.toString() === userId.toString());
+      if (userInTop) {
+        userRank = {
+          rank: userInTop.rank,
+          totalPoints: userInTop.totalPoints,
+          totalAttempts: userInTop.totalAttempts
+        };
+      } else {
+        const [userData] = await Quiz.aggregate([{
+          $match: matchStage
+        }, {
+          $unwind: '$attempts'
+        }, {
+          $match: {
+            'attempts.userId': userId
+          }
+        }, {
+          $addFields: {
+            pointsEarned: calcPoints
+          }
+        }, {
+          $group: {
+            _id: '$attempts.userId',
+            totalPoints: {
+              $sum: '$pointsEarned'
+            },
+            totalAttempts: {
+              $sum: 1
+            }
+          }
+        }]);
+        if (userData) {
+          const [{
+            count
+          }] = await Quiz.aggregate([{
+            $match: matchStage
+          }, {
+            $unwind: '$attempts'
+          }, {
+            $addFields: {
+              pointsEarned: calcPoints
+            }
+          }, {
+            $group: {
+              _id: '$attempts.userId',
+              totalPoints: {
+                $sum: '$pointsEarned'
+              }
+            }
+          }, {
+            $match: {
+              totalPoints: {
+                $gt: userData.totalPoints
+              }
+            }
+          }, {
+            $count: 'count'
+          }]);
+          userRank = {
+            rank: (count || 0) + 1,
+            totalPoints: userData.totalPoints,
+            totalAttempts: userData.totalAttempts
+          };
+        }
+      }
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        leaderboard: entries,
+        userRank
+      }
+    });
+  } catch (error) {
+    console.error('Leaderboard error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

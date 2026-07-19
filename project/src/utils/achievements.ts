@@ -176,6 +176,10 @@ export const storeNewAchievements = (achievements: NewAchievementData[]): void =
       }
     }
     localStorage.setItem(NEW_ACHIEVEMENT_KEY, JSON.stringify(allAchievements));
+    // Dispatch event so AchievementToast provider can show live toasts
+    window.dispatchEvent(
+      new CustomEvent("learnkins-achievement-unlocked", { detail: allAchievements })
+    );
   } catch { /* noop */ }
 };
 

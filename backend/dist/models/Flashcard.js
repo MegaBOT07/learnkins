@@ -17,6 +17,11 @@ const flashcardSchema = new mongoose.Schema({
     required: true,
     enum: ['science', 'mathematics', 'social-science', 'english']
   },
+  grade: {
+    type: String,
+    enum: ['6th', '7th', '8th', null],
+    default: null
+  },
   chapter: {
     type: String,
     trim: true
@@ -38,7 +43,7 @@ const flashcardSchema = new mongoose.Schema({
   },
   isPublic: {
     type: Boolean,
-    default: true
+    default: false
   },
   studyCount: {
     type: Number,
@@ -119,8 +124,7 @@ flashcardSchema.methods.incrementStudyCount = async function (userId) {
 
 // Add rating
 flashcardSchema.methods.addRating = async function (userId, rating) {
-  // Check if user already rated
-  const existingRating = this.rating.ratings.find(r => r.user.toString() === userId.toString());
+  const existingRating = this.rating.ratings.find(r => r.user && r.user.toString() === userId.toString());
   if (existingRating) {
     existingRating.rating = rating;
   } else {
@@ -130,10 +134,8 @@ flashcardSchema.methods.addRating = async function (userId, rating) {
     });
     this.rating.count += 1;
   }
-
-  // Recalculate average
-  const totalRating = this.rating.ratings.reduce((sum, r) => sum + r.rating, 0);
-  this.rating.average = totalRating / this.rating.ratings.length;
+  const totalRating = this.rating.ratings.reduce((sum, r) => sum + (r.rating || 0), 0);
+  this.rating.average = this.rating.ratings.length > 0 ? totalRating / this.rating.ratings.length : 0;
   await this.save();
 };
 

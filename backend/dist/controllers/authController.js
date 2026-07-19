@@ -52,8 +52,6 @@ export const register = async (req, res, next) => {
       });
     }
     let parentId = null;
-
-    // If registering a student, find or create parent
     if (role === 'student') {
       if (!parentEmail) {
         return res.status(400).json({
@@ -61,27 +59,29 @@ export const register = async (req, res, next) => {
           message: 'Parent email is required for student registration'
         });
       }
-      let parent = await User.findOne({
+      const existingParent = await User.findOne({
         email: parentEmail.toLowerCase()
-      });
-      if (!parent) {
-        // Create parent account
-        parent = await User.create({
+      }).select('_id');
+      if (existingParent) {
+        parentId = existingParent._id;
+      } else {
+        // Generate a random password for the parent (they'll set their own via reset)
+        const tempPassword = crypto.randomBytes(12).toString('base64url');
+        const parent = await User.create({
           name: `Parent of ${name}`,
           email: parentEmail,
-          password: crypto.randomBytes(20).toString('hex'),
-          // Temporary password
+          password: tempPassword,
           role: 'parent'
         });
+        parentId = parent._id;
 
-        // Send welcome email to parent
-        await sendEmail({
+        // Fire-and-forget: send welcome email without blocking response
+        sendEmail({
           email: parentEmail,
-          subject: 'Welcome to Brillix - Parent Account Created',
-          message: `A parent account has been created for you. Please reset your password to access your account.`
-        });
+          subject: 'Your LearnKins Parent Account is Ready',
+          message: `A parent account has been created for your child ${name}.\n\nYour temporary password is: ${tempPassword}\n\nPlease log in and change your password immediately.\n\nVisit: ${process.env.CLIENT_URL || 'http://localhost:5173'}/login`
+        }).catch(err => console.error('Welcome email failed:', err.message));
       }
-      parentId = parent._id;
     }
 
     // Create user
@@ -96,14 +96,13 @@ export const register = async (req, res, next) => {
     });
     console.log('User created successfully:', user._id);
 
-    // Add child to parent's children array
+    // Fire-and-forget: link child to parent
     if (parentId) {
-      console.log('Linking child to parent:', parentId);
-      await User.findByIdAndUpdate(parentId, {
+      User.findByIdAndUpdate(parentId, {
         $push: {
           children: user._id
         }
-      });
+      }).catch(err => console.error('Link child to parent failed:', err.message));
     }
     const token = generateToken(user._id);
     res.status(201).json({
@@ -214,7 +213,7 @@ export const logout = (req, res) => {
 // @access  Private
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).populate('children', 'name email grade').populate('parentId', 'name email');
+    const user = await User.findById(req.user.id).populate('children', 'name email grade').populate('parentId', 'name email').populate('achievements');
     res.status(200).json({
       success: true,
       user
@@ -316,25 +315,28 @@ export const forgotPassword = async (req, res) => {
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     await user.save();
-    const message = `
-      Your password reset OTP is: ${otp}
-      
-      This code will expire in 10 minutes.
-      Do not share this code with anyone.
-      
-      If you did not request this, please ignore this email.
+    const message = `Your password reset OTP is: ${otp}\n\nThis code will expire in 10 minutes.\nDo not share this code with anyone.\n\nIf you did not request this, please ignore this email.`;
+    const html = `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:12px;">
+        <h2 style="margin:0 0 8px;">Password Reset OTP</h2>
+        <p style="color:#6b7280;margin:0 0 16px;">Use the code below to reset your password.</p>
+        <div style="background:#f3f4f6;border-radius:8px;padding:16px;text-align:center;font-size:32px;font-weight:900;letter-spacing:8px;color:#111;">${otp}</div>
+        <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">This code expires in 10 minutes. If you didn't request this, ignore this email.</p>
+      </div>
     `;
     try {
       await sendEmail({
         email: user.email,
         subject: 'Password Reset OTP',
-        message
+        message,
+        html
       });
       res.status(200).json({
         success: true,
         message: 'OTP sent to your email'
       });
     } catch (error) {
+      console.error('OTP email failed:', error.message);
       user.resetOTP = undefined;
       user.resetOTPExpiry = undefined;
       await user.save();

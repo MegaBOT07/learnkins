@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserProgress, updateProgress, getSubjectProgress, getOverallStats, logStudySession, logVideoProgress } from '../controllers/progressController.js';
+import { getUserProgress, updateProgress, getSubjectProgress, getOverallStats, logStudySession, logVideoProgress, logGameActivity } from '../controllers/progressController.js';
 import { protect } from '../middleware/auth.js';
 const router = express.Router();
 
@@ -11,4 +11,5 @@ router.get('/subject/:subject', getSubjectProgress);
 router.put('/update', updateProgress);
 router.post('/session', logStudySession);
 router.post('/video', logVideoProgress);
+router.post('/game-activity', logGameActivity);
 export default router;

@@ -18,6 +18,11 @@ const flashcardSchema = new mongoose.Schema({
     required: true,
     enum: ['science', 'mathematics', 'social-science', 'english']
   },
+  grade: {
+    type: String,
+    enum: ['6th', '7th', '8th', null],
+    default: null
+  },
   chapter: {
     type: String,
     trim: true

@@ -3,9 +3,11 @@ import { getPlans, createOrder, verifyPayment, getPaymentHistory } from '../cont
 import { protect } from '../middleware/auth.js';
 const router = express.Router();
 
-// All payment routes require authentication
-router.use(protect);
+// Public routes
 router.get('/plans', getPlans);
+
+// All other payment routes require authentication
+router.use(protect);
 router.post('/create-order', createOrder);
 router.post('/verify', verifyPayment);
 router.get('/history', getPaymentHistory);

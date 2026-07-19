@@ -19,6 +19,9 @@ const questionSchema = new mongoose.Schema({
     type: Number,
     default: 1
   }
+}, {
+  _id: false,
+  id: false
 });
 const quizSchema = new mongoose.Schema({
   title: {
@@ -50,6 +53,10 @@ const quizSchema = new mongoose.Schema({
     enum: ['Easy', 'Medium', 'Hard'],
     default: 'Medium'
   },
+  participants: {
+    type: Number,
+    default: 0
+  },
   totalPoints: {
     type: Number,
     default: 0
@@ -59,19 +66,43 @@ const quizSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
     },
+    attemptDate: {
+      type: Date,
+      default: Date.now
+    },
     score: Number,
+    percentage: Number,
+    passed: {
+      type: Boolean,
+      default: false
+    },
     totalQuestions: Number,
     timeTaken: Number,
     answers: [{
-      questionId: mongoose.Schema.Types.ObjectId,
+      questionId: {
+        type: mongoose.Schema.Types.Mixed
+      },
       answer: String,
       isCorrect: Boolean
     }],
     completedAt: {
       type: Date,
       default: Date.now
+    },
+    certificateIssued: {
+      type: Boolean,
+      default: false
     }
   }],
+  statistics: {
+    type: Object,
+    default: {
+      totalAttempts: 0,
+      totalPassed: 0,
+      averageScore: 0,
+      highestScore: 0
+    }
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -87,7 +118,9 @@ const quizSchema = new mongoose.Schema({
 
 // Calculate total points
 quizSchema.pre('save', function (next) {
-  this.totalPoints = this.questions.reduce((total, question) => total + question.points, 0);
+  if (this.isModified('questions') || this.isNew) {
+    this.totalPoints = this.questions.reduce((total, question) => total + (question.points || 0), 0);
+  }
   next();
 });
 

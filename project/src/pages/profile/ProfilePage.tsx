@@ -111,6 +111,39 @@ export default function ProfilePage() {
     else if (user) { setLoading(false); setError("User ID not available"); }
   }, [user]);
 
+  // Listen for live achievement unlocks and refresh the grid
+  useEffect(() => {
+    const handleAchievementUnlocked = async () => {
+      if (!user?._id && !user?.id) return;
+      try {
+        const result = await fetchAchievementsWithCache(
+          () => communityAPI.getAchievements(),
+          () => communityAPI.getUserAchievements(),
+          () => userAPI.getUser(user?._id || user?.id || ""),
+        );
+        setAchievements(result.achievements);
+        const me = result.userStats;
+        setUserStats({
+          level: me.level || 1,
+          experience: me.experience || 0,
+          experienceToNext: 100,
+          totalPoints: me.totalPoints || 0,
+          streak: me.currentStreak || 0,
+          totalStudyHours: me.totalStudyHours || 0,
+          quizzesTaken: me.totalQuizzesTaken || 0,
+          gamesPlayed: me.totalGamesPlayed || 0,
+          longestStreak: me.longestStreak || 0,
+          subjectsCompleted: [],
+        });
+      } catch {
+        // silent — keep current data
+      }
+    };
+
+    window.addEventListener("learnkins-achievement-unlocked", handleAchievementUnlocked);
+    return () => window.removeEventListener("learnkins-achievement-unlocked", handleAchievementUnlocked);
+  }, [user]);
+
   if (!user) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">

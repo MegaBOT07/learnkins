@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["student", "parent", "teacher", "admin"],
+    enum: ["student", "parent", "admin"],
     default: "student"
   },
   grade: {
@@ -85,6 +85,14 @@ const userSchema = new mongoose.Schema({
     default: 0
   },
   totalGamesPlayed: {
+    type: Number,
+    default: 0
+  },
+  totalFlashcardsRead: {
+    type: Number,
+    default: 0
+  },
+  perfectScores: {
     type: Number,
     default: 0
   },
@@ -206,7 +214,7 @@ userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
   }
-  const salt = await bcrypt.genSalt(10);
+  const salt = await bcrypt.genSalt(8);
   this.password = await bcrypt.hash(this.password, salt);
 });
 

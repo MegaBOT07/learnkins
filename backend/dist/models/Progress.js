@@ -31,7 +31,7 @@ const progressSchema = new mongoose.Schema({
   completedActivities: [{
     type: {
       type: String,
-      enum: ['video', 'quiz', 'material', 'game']
+      enum: ['video', 'quiz', 'material', 'game', 'flashcard']
     },
     activityId: mongoose.Schema.Types.ObjectId,
     completedAt: {

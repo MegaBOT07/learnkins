@@ -6,6 +6,7 @@ import { GameProvider } from "./context/GameContext";
 import { TokenProvider } from "./context/TokenContext";
 import Navbar from "./components/layout/Navbar";
 import { ToastProvider } from "./components/Toast";
+import { AchievementToastProvider } from "./components/AchievementToast";
 import { ConfirmProvider } from "./components/ConfirmDialog";
 import Home from "./pages/home/Home";
 import Login from "./pages/auth/Login";
@@ -45,9 +46,11 @@ import LearnerBot from "./features/learnerbot/EmbeddedLearnerBot";
 import WalletPage from "./pages/wallet/WalletPage";
 import ProfilePage from "./pages/profile/ProfilePage";
 
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ParentReportPage from "./pages/parent/ParentReportPage";
 import MayaCompanion from "./components/maya/MayaCompanion";
 import PublicVerify from "./pages/verify/PublicVerify";
+import Unauthorized from "./pages/errors/Unauthorized";
 
 // Import game components
 import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryGame";
@@ -159,7 +162,8 @@ function AppLayout() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/notes" element={<Notes />} />
-          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminPanel /></ProtectedRoute>} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/mathematics" element={<SubjectDetail />} />
           <Route path="/science" element={<SubjectDetail />} />
           <Route path="/social-science" element={<SubjectDetail />} />
@@ -217,12 +221,14 @@ function App() {
         <TokenProvider>
           <GameProvider>
             <ToastProvider>
-              <ConfirmProvider>
+              <AchievementToastProvider>
+                <ConfirmProvider>
                 <Router future={{ v7_relativeSplatPath: true }}>
                   <ScrollToTop />
                   <AppLayout />
                 </Router>
               </ConfirmProvider>
+              </AchievementToastProvider>
             </ToastProvider>
           </GameProvider>
         </TokenProvider>

@@ -477,6 +477,12 @@ export interface CommunityAPI {
   getAchievements: () => Promise<AxiosResponse<any>>;
   getUserAchievements: () => Promise<AxiosResponse<any>>;
   awardAchievement: (id: string) => Promise<AxiosResponse<any>>;
+  // Admin
+  createAchievement: (data: any) => Promise<AxiosResponse<any>>;
+  updateAchievement: (id: string, data: any) => Promise<AxiosResponse<any>>;
+  deleteAchievement: (id: string) => Promise<AxiosResponse<any>>;
+  getAchievement: (id: string) => Promise<AxiosResponse<any>>;
+  awardAchievementToUser: (id: string, userId: string) => Promise<AxiosResponse<any>>;
 
   // Stats
   getCommunityStats: () => Promise<AxiosResponse<any>>;

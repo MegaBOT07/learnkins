@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import api, { authAPI, materialAPI, quizAPI, userAPI, flashcardAPI, tokenAPI, shopAPI, contactAPI, subjectAPI, newsletterAPI, certificateAPI } from "../../utils/api";
+import api, { authAPI, materialAPI, professionalQuizAPI, userAPI, flashcardAPI, tokenAPI, shopAPI, contactAPI, subjectAPI, newsletterAPI, certificateAPI } from "../../utils/api";
 import {
   Shield, Upload, FileText, Users, LogOut, Trash2, Plus, X,
   LayoutDashboard, BookOpen, Brain, Settings,
@@ -74,7 +74,7 @@ const AdminPanel = () => {
   const [messagesSubTab, setMessagesSubTab] = useState<"messages" | "newsletter">("messages");
 
   const [newFlashcard, setNewFlashcard] = useState({
-    question: "", answer: "", subject: "science", chapter: "", difficulty: "Medium"
+    question: "", answer: "", subject: "science", grade: "6th", chapter: "", difficulty: "Medium"
   });
 
   const [newMaterial, setNewMaterial] = useState({
@@ -93,6 +93,8 @@ const AdminPanel = () => {
     subject: "",
     grade: "",
     difficulty: "Medium",
+    timeLimit: 30,
+    passingScore: 60,
     questions: [] as any[]
   });
 
@@ -116,15 +118,13 @@ const AdminPanel = () => {
     }
   };
 
-  // Transform frontend question format → backend model format
-  const transformQuestions = (inputs: any[]) => inputs.map((q: any) => ({
+  // Transform frontend question format → ProfessionalQuiz model format
+  const transformQuestions = (inputs: any[]) => inputs.map((q: any, idx: number) => ({
+    id: `q-${Date.now()}-${idx}`,
     question: q.question,
     type: "multiple-choice",
-    options: q.options.map((opt: string, i: number) => ({
-      text: opt,
-      isCorrect: i === q.correctAnswer
-    })),
-    correctAnswer: q.correctAnswer?.toString() || "0",
+    options: (q.options || []).map((opt: any) => typeof opt === 'string' ? opt : opt.text || String(opt)),
+    correctAnswer: q.correctAnswer ?? 0,
     explanation: q.explanation || "",
     points: 1
   }));
@@ -183,8 +183,8 @@ const AdminPanel = () => {
     setLoading(true);
     try {
       const calls = [
-        { key: "materials", fn: () => materialAPI.getMaterials('all') },
-        { key: "quizzes", fn: () => quizAPI.getQuizzes('all') },
+        { key: "materials", fn: () => api.get('/materials?limit=100') },
+        { key: "quizzes", fn: () => professionalQuizAPI.getQuizzes({ limit: '100' }) },
         { key: "users", fn: () => userAPI.getUsers() },
         { key: "flashcards", fn: () => flashcardAPI.getFlashcards('all') },
         { key: "subjects", fn: () => subjectAPI.getSubjects() },
@@ -321,7 +321,7 @@ const AdminPanel = () => {
       await flashcardAPI.createFlashcard(newFlashcard);
       showToast("Flashcard created successfully!", "success");
       setShowFlashcardModal(false);
-      setNewFlashcard({ question: "", answer: "", subject: "science", chapter: "", difficulty: "Medium" });
+      setNewFlashcard({ question: "", answer: "", subject: "science", grade: "6th", chapter: "", difficulty: "Medium" });
       fetchAll();
     } catch (err) {
       console.error(err);
@@ -361,7 +361,7 @@ const AdminPanel = () => {
     if (!(await confirmDelete("Are you sure you want to delete this quiz?"))) return;
     try {
       setLoading(true);
-      await quizAPI.deleteQuiz(id);
+      await professionalQuizAPI.deleteQuiz(id);
       fetchAll();
     } catch (err) {
       console.error(err);
@@ -422,11 +422,14 @@ const AdminPanel = () => {
 
     try {
       setLoading(true);
-      await quizAPI.createQuiz({
+      await professionalQuizAPI.createQuiz({
         ...newQuiz,
         grade: newQuiz.grade || "6th",
         description: newQuiz.description || newQuiz.title,
-        questions: transformQuestions(quizQuestionInputs)
+        questions: transformQuestions(quizQuestionInputs),
+        totalQuestions: quizQuestionInputs.length,
+        passingScore: newQuiz.passingScore,
+        timeLimit: newQuiz.timeLimit
       });
       showToast("Quiz built successfully!", "success");
       setShowQuizModal(false);
@@ -436,6 +439,8 @@ const AdminPanel = () => {
         subject: "",
         grade: "",
         difficulty: "Medium",
+        timeLimit: 30,
+        passingScore: 60,
         questions: []
       });
 
@@ -713,28 +718,32 @@ const AdminPanel = () => {
   const startEditMaterial = (mat: any) => {
     setEditingMaterial({ ...mat });
   };
-  const startEditQuiz = (quiz: any) => {
-    setEditingQuiz({ ...quiz });
-    // Backend stores questions as {options: [{text, isCorrect}], correctAnswer: String}
-    // Frontend expects {options: [strings], correctAnswer: index}
-    const qs = (quiz.questions || []).map((q: any) => {
-      const opts = Array.isArray(q.options)
-        ? q.options.map((o: any) => (typeof o === 'string' ? o : o.text || ''))
-        : ["", "", "", ""];
-      const correctIdx = typeof q.correctAnswer === 'number'
-        ? q.correctAnswer
-        : opts.findIndex((_: string, i: number) => {
-          const opt = q.options?.[i];
-          return opt?.isCorrect === true || i === parseInt(q.correctAnswer);
-        });
-      return {
-        question: q.question || "",
-        options: opts,
-        correctAnswer: correctIdx >= 0 ? correctIdx : 0,
-        explanation: q.explanation || ""
-      };
-    });
-    setQuizQuestionInputs(qs);
+  const startEditQuiz = async (quiz: any) => {
+    setShowQuizModal(true);
+    // Fetch full quiz details (list endpoint excludes questions)
+    try {
+      const res = await professionalQuizAPI.getQuiz(quiz._id);
+      const fullQuiz = res.data?.data || quiz;
+      setEditingQuiz({ ...fullQuiz });
+      const qs = (fullQuiz.questions || []).map((q: any) => {
+        const opts = Array.isArray(q.options)
+          ? q.options.map((o: any) => (typeof o === 'string' ? o : o.text || ''))
+          : ["", "", "", ""];
+        const correctIdx = typeof q.correctAnswer === 'number'
+          ? q.correctAnswer
+          : opts.findIndex((_: string, i: number) => i === parseInt(q.correctAnswer));
+        return {
+          question: q.question || "",
+          options: opts,
+          correctAnswer: correctIdx >= 0 ? correctIdx : 0,
+          explanation: q.explanation || ""
+        };
+      });
+      setQuizQuestionInputs(qs);
+    } catch (err) {
+      console.error("Failed to load quiz details:", err);
+      showToast("Failed to load quiz details", "error");
+    }
   };
   const startEditSubject = (subj: any) => {
     setEditingSubject({ ...subj });
@@ -779,11 +788,12 @@ const AdminPanel = () => {
     if (!editingQuiz) return;
     try {
       setLoading(true);
-      await quizAPI.updateQuiz(editingQuiz._id || editingQuiz.id, {
+      await professionalQuizAPI.updateQuiz(editingQuiz._id || editingQuiz.id, {
         ...editingQuiz,
         grade: editingQuiz.grade || "6th",
         description: editingQuiz.description || editingQuiz.title,
-        questions: transformQuestions(quizQuestionInputs)
+        questions: transformQuestions(quizQuestionInputs),
+        totalQuestions: quizQuestionInputs.length
       });
       showToast("Quiz updated!", "success");
       setEditingQuiz(null);
@@ -1635,21 +1645,28 @@ const AdminPanel = () => {
                   <div key={card._id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                     <div>
                       <div className="flex justify-between items-start mb-4">
-                        <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                          {card.subject}
-                        </span>
-                        <button
-                          onClick={() => startEditFlashcard(card)}
-                          className="text-slate-300 hover:text-indigo-500 transition-colors p-1"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteFlashcard(card._id || card.id)}
-                          className="text-slate-300 hover:text-rose-500 transition-colors p-1"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="flex gap-2">
+                          <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                            {card.subject}
+                          </span>
+                          <span className="px-2.5 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                            {card.grade || "6th"}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => startEditFlashcard(card)}
+                            className="text-slate-300 hover:text-indigo-500 transition-colors p-1"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteFlashcard(card._id || card.id)}
+                            className="text-slate-300 hover:text-rose-500 transition-colors p-1"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                       <h4 className="font-bold text-slate-800 leading-snug mb-2 group-hover:text-indigo-600 transition-colors">{card.question}</h4>
                       <p className="text-slate-500 font-medium text-xs border-t border-slate-100 pt-3 mt-3 italic bg-slate-50/50 p-2 rounded-lg leading-relaxed">A: {card.answer}</p>
@@ -1681,7 +1698,7 @@ const AdminPanel = () => {
                   <div key={q._id} className="bg-white border border-slate-200 rounded-xl p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group shadow-sm">
                     <div className="flex items-center space-x-6">
                       <div className="h-12 w-12 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center font-bold text-xs text-slate-500 shadow-inner">
-                        {q.questions?.length || 0} Q
+                        {q.totalQuestions || q.questions?.length || 0} Q
                       </div>
                       <div>
                         <h4 className="text-lg font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors">{q.title}</h4>
@@ -1739,6 +1756,7 @@ const AdminPanel = () => {
                       <p className="text-slate-500 font-medium text-[11px] mt-2 mb-4 line-clamp-2">Reference documentation for {m.subject} syllabus.</p>
                       <div className="flex items-center space-x-3 text-[10px] font-bold text-indigo-600/70">
                         <span className="bg-indigo-50 px-2 py-0.5 rounded uppercase">{m.subject}</span>
+                        <span className="bg-emerald-50 px-2 py-0.5 rounded uppercase text-emerald-600">{m.grade || "6th"}</span>
                         <div className="h-1 w-1 bg-slate-200 rounded-full" />
                         <span className="uppercase">{m.type || 'PDF Document'}</span>
                       </div>
@@ -1861,7 +1879,7 @@ const AdminPanel = () => {
                       <h3 className="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2"><ShoppingBag size={16} /> Shop Overview</h3>
                       <div className="grid sm:grid-cols-3 gap-4 text-center">
                         <div className="bg-slate-50 rounded-lg p-3">
-                          <p className="text-xl font-extrabold text-slate-900">{shopStats.totalItems ?? 0}</p>
+                          <p className="text-xl font-extrabold text-slate-900">{shopItems.length}</p>
                           <p className="text-xs text-slate-500 mt-0.5">Total Items</p>
                         </div>
                         <div className="bg-slate-50 rounded-lg p-3">
@@ -1869,7 +1887,7 @@ const AdminPanel = () => {
                           <p className="text-xs text-slate-500 mt-0.5">Total Purchases</p>
                         </div>
                         <div className="bg-slate-50 rounded-lg p-3">
-                          <p className="text-xl font-extrabold text-indigo-600">{shopStats.totalTokensSpent ?? 0} 💎</p>
+                          <p className="text-xl font-extrabold text-indigo-600">{shopStats.totalRevenue ?? 0} 💎</p>
                            <p className="text-xs text-slate-500 mt-0.5">💎 Diamonds Spent in Shop</p>
                         </div>
                       </div>
@@ -1879,7 +1897,7 @@ const AdminPanel = () => {
                           <div className="space-y-1.5">
                             {shopStats.topItems.slice(0, 5).map((it: any) => (
                               <div key={it._id} className="flex items-center justify-between text-sm py-1 border-b border-slate-50">
-                                <span className="font-medium text-slate-700">{it.title ?? it._id}</span>
+                                <span className="font-medium text-slate-700">{it.item?.title ?? it.title ?? it._id}</span>
                                 <span className="text-indigo-600 font-bold">{it.count ?? it.purchases ?? 0} sold</span>
                               </div>
                             ))}
@@ -1957,13 +1975,22 @@ const AdminPanel = () => {
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Correct Answer</label>
                   <textarea className={theme.input} rows={2} value={newFlashcard.answer} onChange={(e) => setNewFlashcard({ ...newFlashcard, answer: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
                     <select className={theme.input} value={newFlashcard.subject} onChange={(e) => setNewFlashcard({ ...newFlashcard, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
+                      <option value="social-science">Social Science</option>
                       <option value="english">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={newFlashcard.grade} onChange={(e) => setNewFlashcard({ ...newFlashcard, grade: e.target.value })}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
                     </select>
                   </div>
                   <div>
@@ -2208,6 +2235,14 @@ const AdminPanel = () => {
                       <option value="Medium">Medium</option>
                       <option value="Hard">Hard</option>
                     </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Time Limit (minutes)</label>
+                    <input type="number" min={1} max={180} className={theme.input} value={editingQuiz ? (editingQuiz.timeLimit ?? 30) : newQuiz.timeLimit} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, timeLimit: Number(e.target.value) }) : setNewQuiz({ ...newQuiz, timeLimit: Number(e.target.value) })} />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Passing Score (%)</label>
+                    <input type="number" min={0} max={100} className={theme.input} value={editingQuiz ? (editingQuiz.passingScore ?? 60) : newQuiz.passingScore} onChange={(e) => editingQuiz ? setEditingQuiz({ ...editingQuiz, passingScore: Number(e.target.value) }) : setNewQuiz({ ...newQuiz, passingScore: Number(e.target.value) })} />
                   </div>
                 </div>
 
@@ -2507,6 +2542,7 @@ const AdminPanel = () => {
                       <option value="all">All</option>
                       <option value="science">Science</option>
                       <option value="mathematics">Math</option>
+                      <option value="social-science">Social Science</option>
                       <option value="english">English</option>
                     </select>
                   </div>
@@ -2516,16 +2552,9 @@ const AdminPanel = () => {
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
                     <select className={theme.input} value={newShopItem.grade} onChange={(e) => setNewShopItem({ ...newShopItem, grade: e.target.value })}>
                       <option value="all">All Grades</option>
-                      <option value="1">Grade 1</option>
-                      <option value="2">Grade 2</option>
-                      <option value="3">Grade 3</option>
-                      <option value="4">Grade 4</option>
-                      <option value="5">Grade 5</option>
-                      <option value="6">Grade 6</option>
-                      <option value="7">Grade 7</option>
-                      <option value="8">Grade 8</option>
-                      <option value="9">Grade 9</option>
-                      <option value="10">Grade 10</option>
+                      <option value="6th">Grade 6</option>
+                      <option value="7th">Grade 7</option>
+                      <option value="8th">Grade 8</option>
                     </select>
                   </div>
                   <div>
@@ -2586,6 +2615,7 @@ const AdminPanel = () => {
                       <option value="all">All</option>
                       <option value="science">Science</option>
                       <option value="mathematics">Math</option>
+                      <option value="social-science">Social Science</option>
                       <option value="english">English</option>
                     </select>
                   </div>
@@ -2593,6 +2623,18 @@ const AdminPanel = () => {
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Stock</label>
                     <input type="number" className={theme.input} value={editingShopItem.stock ?? -1} onChange={(e) => setEditingShopItem({ ...editingShopItem, stock: parseInt(e.target.value) || -1 })} placeholder="-1 = unlimited" />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingShopItem.grade || 'all'} onChange={(e) => setEditingShopItem({ ...editingShopItem, grade: e.target.value })}>
+                      <option value="all">All Grades</option>
+                      <option value="6th">Grade 6</option>
+                      <option value="7th">Grade 7</option>
+                      <option value="8th">Grade 8</option>
+                    </select>
+                  </div>
+                  <div></div>
                 </div>
               </div>
               <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
@@ -2620,13 +2662,22 @@ const AdminPanel = () => {
                   <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Answer</label>
                   <textarea className={theme.input} rows={2} value={editingFlashcard.answer || ''} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, answer: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Subject</label>
                     <select className={theme.input} value={editingFlashcard.subject || 'science'} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
+                      <option value="social-science">Social Science</option>
                       <option value="english">English</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Grade</label>
+                    <select className={theme.input} value={editingFlashcard.grade || '6th'} onChange={(e) => setEditingFlashcard({ ...editingFlashcard, grade: e.target.value })}>
+                      <option value="6th">6th</option>
+                      <option value="7th">7th</option>
+                      <option value="8th">8th</option>
                     </select>
                   </div>
                   <div>
@@ -2670,6 +2721,7 @@ const AdminPanel = () => {
                     <select className={theme.input} value={editingMaterial.subject || 'science'} onChange={(e) => setEditingMaterial({ ...editingMaterial, subject: e.target.value })}>
                       <option value="science">Science</option>
                       <option value="mathematics">Mathematics</option>
+                      <option value="social-science">Social Science</option>
                       <option value="english">English</option>
                     </select>
                   </div>
@@ -2680,6 +2732,20 @@ const AdminPanel = () => {
                       <option value="7th">7th</option>
                       <option value="8th">8th</option>
                     </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Difficulty</label>
+                    <select className={theme.input} value={editingMaterial.difficulty || 'Beginner'} onChange={(e) => setEditingMaterial({ ...editingMaterial, difficulty: e.target.value })}>
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chapter</label>
+                    <input className={theme.input} value={editingMaterial.chapter || ''} onChange={(e) => setEditingMaterial({ ...editingMaterial, chapter: e.target.value })} />
                   </div>
                 </div>
               </div>

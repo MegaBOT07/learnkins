@@ -27,9 +27,14 @@ import {
   getAchievements,
   getUserAchievements,
   awardAchievement,
+  createAchievement,
+  updateAchievement,
+  deleteAchievement,
+  getAchievement,
+  awardAchievementToUser,
   getCommunityStats,
 } from "../controllers/communityController.js";
-import { protect } from "../middleware/auth.js";
+import { protect, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -194,5 +199,12 @@ router.post("/groups/:id/posts/:postId/replies", replyToGroupPost);
 // Achievement routes
 router.get("/achievements/user", getUserAchievements);
 router.post("/achievements/:id/award", awardAchievement);
+
+// Admin achievement management
+router.post("/achievements", protect, authorize("admin"), createAchievement);
+router.put("/achievements/:id", protect, authorize("admin"), updateAchievement);
+router.delete("/achievements/:id", protect, authorize("admin"), deleteAchievement);
+router.get("/achievements/:id", protect, authorize("admin"), getAchievement);
+router.post("/achievements/:id/award-user/:userId", protect, authorize("admin"), awardAchievementToUser);
 
 export default router;

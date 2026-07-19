@@ -1,7 +1,7 @@
 import express from "express";
 import { body } from "express-validator";
-import { getDiscussions, createDiscussion, updateDiscussion, deleteDiscussion, likeDiscussion, replyToDiscussion, updateDiscussionReply, deleteDiscussionReply, getStudyGroups, createStudyGroup, joinStudyGroup, updateStudyGroup, deleteStudyGroup, getAchievements, getUserAchievements, awardAchievement, getCommunityStats } from "../controllers/communityController.js";
-import { protect } from "../middleware/auth.js";
+import { getDiscussions, createDiscussion, updateDiscussion, deleteDiscussion, likeDiscussion, replyToDiscussion, updateDiscussionReply, deleteDiscussionReply, getStudyGroups, getStudyGroup, createStudyGroup, joinStudyGroup, leaveStudyGroup, removeGroupMember, updateStudyGroup, deleteStudyGroup, getGroupMessages, sendGroupMessage, getGroupPosts, createGroupPost, deleteGroupPost, likeGroupPost, replyToGroupPost, getAchievements, getUserAchievements, awardAchievement, createAchievement, updateAchievement, deleteAchievement, getAchievement, awardAchievementToUser, getCommunityStats } from "../controllers/communityController.js";
+import { protect, authorize } from "../middleware/auth.js";
 const router = express.Router();
 
 // Validation middleware
@@ -78,12 +78,33 @@ router.put("/discussions/:id/replies/:replyId", validateReply, updateDiscussionR
 router.delete("/discussions/:id/replies/:replyId", deleteDiscussionReply);
 
 // Study group routes
+router.get("/groups/:id", getStudyGroup);
 router.post("/groups", validateStudyGroup, createStudyGroup);
 router.post("/groups/:id/join", joinStudyGroup);
+router.post("/groups/:id/leave", leaveStudyGroup);
+router.delete("/groups/:id/members/:userId", removeGroupMember);
 router.put("/groups/:id", validateStudyGroupUpdate, updateStudyGroup);
 router.delete("/groups/:id", deleteStudyGroup);
+
+// Group messages
+router.get("/groups/:id/messages", getGroupMessages);
+router.post("/groups/:id/messages", sendGroupMessage);
+
+// Group posts
+router.get("/groups/:id/posts", getGroupPosts);
+router.post("/groups/:id/posts", createGroupPost);
+router.delete("/groups/:id/posts/:postId", deleteGroupPost);
+router.post("/groups/:id/posts/:postId/like", likeGroupPost);
+router.post("/groups/:id/posts/:postId/replies", replyToGroupPost);
 
 // Achievement routes
 router.get("/achievements/user", getUserAchievements);
 router.post("/achievements/:id/award", awardAchievement);
+
+// Admin achievement management
+router.post("/achievements", protect, authorize("admin"), createAchievement);
+router.put("/achievements/:id", protect, authorize("admin"), updateAchievement);
+router.delete("/achievements/:id", protect, authorize("admin"), deleteAchievement);
+router.get("/achievements/:id", protect, authorize("admin"), getAchievement);
+router.post("/achievements/:id/award-user/:userId", protect, authorize("admin"), awardAchievementToUser);
 export default router;

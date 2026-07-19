@@ -778,6 +778,117 @@ export const awardAchievement = async (req, res) => {
   }
 };
 
+// @desc    Create achievement (admin)
+// @route   POST /api/community/achievements
+// @access  Private/Admin
+export const createAchievement = async (req, res) => {
+  try {
+    const achievement = await Achievement.create(req.body);
+    res.status(201).json({ success: true, achievement });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const fields = Object.fromEntries(
+        Object.entries(error.errors).map(([key, val]) => [key, val.message])
+      );
+      return res.status(400).json({ success: false, message: 'Validation failed', fields });
+    }
+    console.error('Create achievement error:', error);
+    res.status(500).json({ success: false, message: 'Server error while creating achievement' });
+  }
+};
+
+// @desc    Update achievement (admin)
+// @route   PUT /api/community/achievements/:id
+// @access  Private/Admin
+export const updateAchievement = async (req, res) => {
+  try {
+    const achievement = await Achievement.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!achievement) {
+      return res.status(404).json({ success: false, message: 'Achievement not found' });
+    }
+    res.status(200).json({ success: true, achievement });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const fields = Object.fromEntries(
+        Object.entries(error.errors).map(([key, val]) => [key, val.message])
+      );
+      return res.status(400).json({ success: false, message: 'Validation failed', fields });
+    }
+    console.error('Update achievement error:', error);
+    res.status(500).json({ success: false, message: 'Server error while updating achievement' });
+  }
+};
+
+// @desc    Delete achievement (admin)
+// @route   DELETE /api/community/achievements/:id
+// @access  Private/Admin
+export const deleteAchievement = async (req, res) => {
+  try {
+    const achievement = await Achievement.findByIdAndDelete(req.params.id);
+    if (!achievement) {
+      return res.status(404).json({ success: false, message: 'Achievement not found' });
+    }
+    // Remove this achievement from all users who have it
+    await User.updateMany(
+      { achievements: req.params.id },
+      { $pull: { achievements: req.params.id } }
+    );
+    res.status(200).json({ success: true, message: 'Achievement deleted and removed from all users' });
+  } catch (error) {
+    console.error('Delete achievement error:', error);
+    res.status(500).json({ success: false, message: 'Server error while deleting achievement' });
+  }
+};
+
+// @desc    Get achievement by ID
+// @route   GET /api/community/achievements/:id
+// @access  Private/Admin
+export const getAchievement = async (req, res) => {
+  try {
+    const achievement = await Achievement.findById(req.params.id);
+    if (!achievement) {
+      return res.status(404).json({ success: false, message: 'Achievement not found' });
+    }
+    res.status(200).json({ success: true, achievement });
+  } catch (error) {
+    console.error('Get achievement error:', error);
+    res.status(500).json({ success: false, message: 'Server error while fetching achievement' });
+  }
+};
+
+// @desc    Award achievement to a specific user (admin)
+// @route   POST /api/community/achievements/:id/award-user/:userId
+// @access  Private/Admin
+export const awardAchievementToUser = async (req, res) => {
+  try {
+    const { id, userId } = req.params;
+
+    const achievement = await Achievement.findById(id);
+    if (!achievement) {
+      return res.status(404).json({ success: false, message: 'Achievement not found' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.achievements?.some(a => a.toString() === id)) {
+      return res.status(400).json({ success: false, message: 'User already has this achievement' });
+    }
+
+    if (!user.achievements) user.achievements = [];
+    user.achievements.push(id);
+    user.points = (user.points || 0) + achievement.points;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Achievement awarded to user', achievement, userPoints: user.points });
+  } catch (error) {
+    console.error('Award achievement to user error:', error);
+    res.status(500).json({ success: false, message: 'Server error while awarding achievement to user' });
+  }
+};
+
 // @desc    Get community stats
 // @route   GET /api/community/stats
 // @access  Public

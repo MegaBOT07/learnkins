@@ -8,9 +8,9 @@ router.get('/', getSubjects);
 router.get('/:slug', getSubject);
 router.get('/:slug/chapters', getSubjectChapters);
 
-// Protected routes (admin/teacher only)
+// Protected routes (admin only)
 router.use(protect);
-router.use(authorize('admin', 'teacher'));
+router.use(authorize('admin'));
 router.post('/', createSubject);
 router.put('/:id', updateSubject);
 router.delete('/:id', deleteSubject);
