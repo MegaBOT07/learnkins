@@ -79,17 +79,6 @@ export function AchievementToastProvider({ children }: { children: ReactNode }) 
     };
   }, []);
 
-  // Temporary test toast — fires hardcoded toasts on mount to verify the system works
-  useEffect(() => {
-    const t = setTimeout(() => {
-      showAchievementToast({ name: `Test ${new Date().toLocaleTimeString()}`, points: 100, icon: "🧪", category: "mastery" });
-    }, 1000);
-    const t2 = setTimeout(() => {
-      showAchievementToast({ name: `Test ${new Date().toLocaleTimeString()}`, points: 50, icon: "⭐", category: "learning" });
-    }, 3000);
-    return () => { clearTimeout(t); clearTimeout(t2); };
-  }, [showAchievementToast]);
-
   // Auto-listen for achievement unlock events from storeNewAchievements()
   useEffect(() => {
     const handler = (e: Event) => {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { tokenAPI } from "../utils/api";
+import { storeNewAchievements } from "../utils/achievements";
 
 type Transaction = {
   id: string;
@@ -193,6 +194,16 @@ export const TokenProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         const resp = await (tokenAPI as any).claimDaily();
         if (resp?.data?.success) {
+          if (resp.data.newAchievements?.length > 0) {
+            storeNewAchievements(
+              resp.data.newAchievements.map((a: any) => ({
+                icon: a.icon || '🏆',
+                name: a.name || 'Achievement Unlocked',
+                points: a.points || 0,
+              }))
+            );
+          }
+
           const newBalance = Number(resp.data.balance) || 0;
           const tx: Transaction = {
             id: Date.now().toString(),

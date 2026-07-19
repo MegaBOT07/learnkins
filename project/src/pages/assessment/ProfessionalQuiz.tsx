@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { professionalQuizAPI, progressAPI } from "../../utils/api";
+import { storeNewAchievements } from "../../utils/achievements";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
 import { useToast } from "../../components/Toast";
@@ -146,6 +147,16 @@ const ProfessionalQuiz = () => {
       );
 
       if (response.data?.success) {
+        if (response.data.newAchievements?.length > 0) {
+          storeNewAchievements(
+            response.data.newAchievements.map((a: any) => ({
+              icon: a.icon || '🏆',
+              name: a.name || 'Achievement Unlocked',
+              points: a.points || 0,
+            }))
+          );
+        }
+
         const { score: earnedScore, percentage: pct, passed: isPass, timeTaken: taken } = response.data.data || {};
         const timeTakenSeconds = taken || ((quiz.timeLimit * 60) - timeLeft);
         setTimeTaken(timeTakenSeconds);

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import type { Achievement, Discussion, Reply, StudyGroup } from "../../types/community";
 import { communityAPI } from "../../utils/api";
+import { storeNewAchievements } from "../../utils/achievements";
 import { useConfirm } from "../../components/ConfirmDialog";
 import {
   Users,
@@ -382,6 +383,13 @@ const Community = () => {
     try {
       const response = await communityAPI.createDiscussion({ title, content, category: newDiscussion.category, tags });
       const created = normalizeDiscussion(response.data?.discussion || {});
+
+      // Toast new achievements unlocked by community activity
+      const newAch = response.data?.discussion?.newAchievements;
+      if (newAch?.length > 0) {
+        storeNewAchievements(newAch.map((a: any) => ({ icon: a.icon || '🏆', name: a.name || 'Achievement Unlocked', points: a.points || 0 })));
+      }
+
       setDiscussions((prev) => [created, ...prev]);
       setDiscussionPaging((prev) => ({ ...prev, total: prev.total + 1 }));
       setStats((prev) => ({ ...prev, totalDiscussions: prev.totalDiscussions + 1 }));

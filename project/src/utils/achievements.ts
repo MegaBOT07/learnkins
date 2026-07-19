@@ -169,16 +169,18 @@ export const storeNewAchievements = (achievements: NewAchievementData[]): void =
     }
     // Avoid duplicates by name
     const existingNames = new Set(allAchievements.map(a => a.name));
+    const fresh: NewAchievementData[] = [];
     for (const ach of achievements) {
       if (!existingNames.has(ach.name)) {
         allAchievements.push(ach);
         existingNames.add(ach.name);
+        fresh.push(ach);
       }
     }
     localStorage.setItem(NEW_ACHIEVEMENT_KEY, JSON.stringify(allAchievements));
     // Dispatch event so AchievementToast provider can show live toasts
     window.dispatchEvent(
-      new CustomEvent("learnkins-achievement-unlocked", { detail: allAchievements })
+      new CustomEvent("learnkins-achievement-unlocked", { detail: fresh })
     );
   } catch { /* noop */ }
 };
