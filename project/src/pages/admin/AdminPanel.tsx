@@ -806,7 +806,6 @@ const AdminPanel = () => {
       setLoading(false);
     }
   };
-  const inputClass = "w-full px-4 py-3 border-2 border-black rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all";
   const cardClass = "bg-white border-2 border-black rounded-2xl p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all";
   const sidebarItemClass = (id: string) => `
     flex items-center space-x-3 px-4 py-3 rounded-lg transition-all cursor-pointer font-semibold

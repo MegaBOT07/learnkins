@@ -15,17 +15,12 @@ import {
   Zap,
   CheckCircle,
 } from "lucide-react";
-import { useGame } from "../../context/GameContext";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 import { motion } from "framer-motion";
 import Section from "../../components/common/Section";
 import Container from "../../components/common/Container";
 
 const Home = () => {
-  // @ts-ignore
-  const { userProgress } = useGame();
-  // @ts-ignore
   const { isAuthenticated } = useAuth();
 
   const features = [

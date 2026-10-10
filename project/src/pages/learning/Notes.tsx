@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTokens } from "../../context/TokenContext";
 import { Link } from "react-router-dom";
 import {
@@ -54,7 +54,6 @@ const Notes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("all");
@@ -205,7 +204,6 @@ const Notes = () => {
     };
     setSelectedNote(newNote);
     setIsCreating(true);
-    setIsEditing(true);
   };
 
   const saveNote = () => {
@@ -215,14 +213,13 @@ const Notes = () => {
     } else {
       setNotes((prev) => prev.map((note) => note.id === selectedNote.id ? { ...selectedNote, updatedAt: new Date().toISOString() } : note));
     }
-    setIsEditing(false);
     setIsCreating(false);
     setSelectedNote(null);
   };
 
   const deleteNote = (noteId: string) => {
     setNotes((prev) => prev.filter((note) => note.id !== noteId));
-    if (selectedNote?.id === noteId) { setSelectedNote(null); setIsEditing(false); setIsCreating(false); }
+    if (selectedNote?.id === noteId) { setSelectedNote(null); setIsCreating(false); }
   };
 
   const toggleFavorite = (noteId: string) => {
@@ -405,7 +402,7 @@ const Notes = () => {
                             ) : (
                               <>
                                 <div className="mb-3 font-bold">Content is locked.</div>
-                                <button onClick={(e) => { e.stopPropagation(); unlockNote(note.id); }} className="px-3 py-1.5 bg-black text-white rounded-lg font-bold text-xs border-2 border-black hover:bg-green-500 transition-all">
+                                <button onClick={(e) => { e.stopPropagation(); unlockNote(note.id, note); }} className="px-3 py-1.5 bg-black text-white rounded-lg font-bold text-xs border-2 border-black hover:bg-green-500 transition-all">
                                   Unlock Note (10 💎)
                                 </button>
                               </>
@@ -524,7 +521,7 @@ const Notes = () => {
                     <button type="button" onClick={saveNote} className="flex items-center space-x-2 px-5 py-2.5 bg-black text-white rounded-xl font-bold border-2 border-black hover:bg-green-500 transition-all active:scale-95" title="Save note">
                       <Save className="h-4 w-4" /><span>Save</span>
                     </button>
-                    <button type="button" onClick={() => { setSelectedNote(null); setIsEditing(false); setIsCreating(false); }} className="p-2.5 text-black hover:bg-black hover:text-white rounded-xl border-2 border-black transition-all" title="Close">
+                    <button type="button" onClick={() => { setSelectedNote(null); setIsCreating(false); }} className="p-2.5 text-black hover:bg-black hover:text-white rounded-xl border-2 border-black transition-all" title="Close">
                       <X className="h-5 w-5" />
                     </button>
                   </div>

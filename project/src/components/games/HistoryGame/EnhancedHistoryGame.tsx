@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Stars, Sparkles as DreiSparkles, Float } from "@react-three/drei";
+import { OrbitControls, Stars, Sparkles as DreiSparkles } from "@react-three/drei";
 import { EffectComposer, Bloom, ChromaticAberration, Vignette } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import { motion } from "framer-motion";
@@ -21,11 +21,11 @@ import {
   Heart,
   Award,
   Medal,
-  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useGameProgress } from "../../../hooks/useGameProgress";
 import { chapters, historicalPeriods } from "./ChapterData";
+import bgMusicUrl from "./bg sound.dat.mp3";
 
 // Enhanced historical periods data
 const allPeriods = [...historicalPeriods, ...chapters];
@@ -1894,7 +1894,6 @@ const EnhancedHistoryGame = () => {
   const [achievements, setAchievements] = useState<Set<string>>(new Set());
   const [showAchievement, setShowAchievement] = useState<string | null>(null);
   const [comboMultiplier, setComboMultiplier] = useState(1);
-  const [timeFreezeActive, setTimeFreezeActive] = useState(false);
   const [shieldActive, setShieldActive] = useState(false);
   const [doublePointsActive, setDoublePointsActive] = useState(false);
   const [lightningMode, setLightningMode] = useState(false);
@@ -1909,12 +1908,8 @@ const EnhancedHistoryGame = () => {
   const [gameLevel, setGameLevel] = useState(1);
   const [experiencePoints, setExperiencePoints] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [specialEvents, setSpecialEvents] = useState<
-    Array<{ type: string; message: string; duration: number }>
-  >([]);
   const [mode, setMode] = useState<"tpp" | "fpp">("tpp");
   const [fppCameraRotation, setFppCameraRotation] = useState({ x: 0, y: 0 });
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // Audio ref for background music
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -1963,7 +1958,6 @@ const EnhancedHistoryGame = () => {
             // Deactivate power-up effects
             if (key === "shield") setShieldActive(false);
             if (key === "double") setDoublePointsActive(false);
-            if (key === "freeze") setTimeFreezeActive(false);
             if (key === "lightning") setLightningMode(false);
           }
         });
@@ -2017,7 +2011,6 @@ const EnhancedHistoryGame = () => {
     // Activate effects
     if (powerUpType === "shield") setShieldActive(true);
     if (powerUpType === "double") setDoublePointsActive(true);
-    if (powerUpType === "freeze") setTimeFreezeActive(true);
     if (powerUpType === "lightning") setLightningMode(true);
 
     setShowPowerUpEffect(powerUpType);
@@ -2206,7 +2199,6 @@ const EnhancedHistoryGame = () => {
     trackStartedRef.current = false;
     setExperiencePoints(0);
     setParticleEffects([]);
-    setSpecialEvents([]);
     trackCompletedRef.current = false;
     trackStartedRef.current = false;
   };
@@ -2254,7 +2246,7 @@ const EnhancedHistoryGame = () => {
       {/* Animated Star Background */}
       <StarBackground />
       {/* Background Music */}
-      <audio ref={audioRef} src="/bg sound.dat.mp3" preload="auto" />
+      <audio ref={audioRef} src={bgMusicUrl} preload="auto" />
 
       {/* Header */}
       <div className="absolute top-4 left-4 z-50">
@@ -2478,7 +2470,7 @@ const EnhancedHistoryGame = () => {
           {/* Post-processing effects */}
           <EffectComposer>
             <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
-            <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0005, 0.0005] as any} />
+            <ChromaticAberration blendFunction={BlendFunction.NORMAL} offset={[0.0005, 0.0005] as any} radialModulation={false} modulationOffset={0.15} />
             <Vignette eskil={false} offset={0.1} darkness={0.8} />
           </EffectComposer>
           {/* Ambient cosmic sparkles everywhere */}

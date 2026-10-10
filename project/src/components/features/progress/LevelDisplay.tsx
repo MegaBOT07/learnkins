@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Star, Zap, X } from 'lucide-react';
-import ProgressBar from './ProgressBar';
 
 interface LevelDisplayProps {
   level: number;

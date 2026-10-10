@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { progressAPI, authAPI, communityAPI } from '../utils/api';
 import {
-  CATEGORY_MAP,
   mapBackendToFrontend,
   defaultAchievements as sharedDefaultAchievements,
   FrontendAchievement,
@@ -98,7 +97,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         progressAPI.getStats(),
         communityAPI.getAchievements(),
       ]);
-      const me    = meRes.status    === 'fulfilled' ? (meRes.value?.data?.user    ?? meRes.value?.data?.data    ?? meRes.value?.data)    : null;
+      const me: any = meRes.status === 'fulfilled' ? (meRes.value?.data?.user ?? null)    : null;
       const stats = statsRes.status === 'fulfilled' ? (statsRes.value?.data?.data ?? statsRes.value?.data) : null;
       const allAch = achRes.status  === 'fulfilled' ? (achRes.value?.data?.achievements ?? []) : [];
 
@@ -127,7 +126,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ? mapBackendAchievements(
               allAch,
               new Set((me?.achievements ?? []).map((a: any) => a ? (a._id?.toString() ?? a.toString()) : '')),
-              me
+              me ?? undefined
             )
           : prev.achievements,
       }));

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -9,16 +9,8 @@ import {
   HelpCircle,
   Video,
   Download,
-  Star,
-  Clock,
-  Users,
-  TrendingUp,
   BarChart3,
-  Calendar,
-  CheckCircle,
-  Award,
   Target,
-  Zap,
 } from "lucide-react";
 
 const Science = () => {

@@ -14,7 +14,6 @@ import {
   Heart,
   Share2,
   Star,
-  MoreHorizontal,
   User,
   MessageCircle,
   Target,
@@ -131,6 +130,7 @@ const normalizeGroup = (item: any, meId: string): StudyGroup => {
     isMember,
     rules: item.rules || [],
     tags: item.tags || [],
+    creator: item.creator && typeof item.creator === "object" ? item.creator : item.creator ? { _id: String(item.creator) } : undefined,
   };
 };
 
@@ -235,7 +235,7 @@ const Community = () => {
     setDiscussions((prev) => {
       if (!append) return mapped;
       const ids = new Set(prev.map((d) => d.id));
-      const toAdd = mapped.filter((d) => !ids.has(d.id));
+      const toAdd = mapped.filter((d: Discussion) => !ids.has(d.id));
       return [...prev, ...toAdd];
     });
     setDiscussionPaging({
@@ -257,7 +257,7 @@ const Community = () => {
     setStudyGroups((prev) => {
       if (!append) return mapped;
       const ids = new Set(prev.map((g) => g.id));
-      const toAdd = mapped.filter((g) => !ids.has(g.id));
+      const toAdd = mapped.filter((g: StudyGroup) => !ids.has(g.id));
       return [...prev, ...toAdd];
     });
     setGroupPaging({
@@ -283,7 +283,7 @@ const Community = () => {
 
       const rawAchievements = achievementRes.data?.achievements || [];
       const userAchievements = userAchievementRes.data?.achievements || [];
-      const userEarnedIds = new Set(userAchievements.map((a: any) => String(a._id || a.id)));
+      const userEarnedIds = new Set<string>(userAchievements.map((a: any) => String(a._id || a.id)));
 
       setAchievements(rawAchievements.map((a: any) => normalizeAchievement(a, userEarnedIds)));
 
@@ -624,7 +624,7 @@ const Community = () => {
   };
 
   const canManageGroup = (group: StudyGroup) => {
-    const creatorId = String((group as any)?.creator?._id || (group as any)?.creator?.id || "");
+    const creatorId = String(group.creator?._id || group.creator?.id || "");
     return isAuthenticated && (String(user?.role) === "admin" || creatorId === meId);
   };
 
@@ -1092,6 +1092,7 @@ const Community = () => {
                 {filteredGroups.map((group, index) => {
                   const color = groupColors[index % groupColors.length];
                   const isFull = Number(group.memberCount || 0) >= Number(group.maxMembers || 0);
+                  const isEditingThisGroup = editingGroupId === group.id;
                   return (
                     <motion.div
                       key={group.id}
@@ -1099,7 +1100,7 @@ const Community = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: index * 0.08 }}
                       whileHover={{ y: -6 }}
-                      onClick={() => navigate(`/community/groups/${group.id}`)}
+                      onClick={() => { if (!isEditingThisGroup) navigate(`/community/groups/${group.id}`); }}
                       className={`bg-white p-6 rounded-2xl border-2 ${color.border} shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer`}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -1108,10 +1109,71 @@ const Community = () => {
                           <p className="text-sm text-gray-600 font-medium mb-3">{group.description}</p>
                           <p className="text-xs text-gray-400 font-bold">Created {new Date(group.createdAt).toLocaleDateString()}</p>
                         </div>
-                        <span className={`text-xs font-black px-3 py-1.5 rounded-lg border-2 ${color.badge} uppercase tracking-wider`}>
-                          {subjectLabelMap[group.subject] || group.subject}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className={`text-xs font-black px-3 py-1.5 rounded-lg border-2 ${color.badge} uppercase tracking-wider`}>
+                            {subjectLabelMap[group.subject] || group.subject}
+                          </span>
+                          {canManageGroup(group) && !isEditingThisGroup && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); startEditGroup(group); }}
+                                className="p-2 text-gray-500 hover:text-black border-2 border-transparent hover:border-black rounded-lg transition-all"
+                                title="Edit group"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteGroup(group.id); }}
+                                className="p-2 text-gray-500 hover:text-red-600 border-2 border-transparent hover:border-red-500 rounded-lg transition-all"
+                                title="Delete group"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
+
+                      {isEditingThisGroup && (
+                        <div className="space-y-3 mb-4" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            value={editingGroupDraft.name}
+                            onChange={(e) => setEditingGroupDraft((p) => ({ ...p, name: e.target.value }))}
+                            className="w-full px-3 py-2 border-2 border-black rounded-xl"
+                            placeholder="Group name"
+                          />
+                          <textarea
+                            value={editingGroupDraft.description}
+                            onChange={(e) => setEditingGroupDraft((p) => ({ ...p, description: e.target.value }))}
+                            rows={3}
+                            className="w-full px-3 py-2 border-2 border-black rounded-xl"
+                            placeholder="Description"
+                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <select value={editingGroupDraft.subject} onChange={(e) => setEditingGroupDraft((p) => ({ ...p, subject: e.target.value }))} className="w-full px-3 py-2 border-2 border-black rounded-xl">
+                              {Object.entries(subjectLabelMap).filter(([value]) => value !== "general").map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min={2}
+                              max={50}
+                              value={editingGroupDraft.maxMembers}
+                              onChange={(e) => setEditingGroupDraft((p) => ({ ...p, maxMembers: e.target.value }))}
+                              className="w-full px-3 py-2 border-2 border-black rounded-xl"
+                              placeholder="Max members"
+                            />
+                          </div>
+                          <input value={editingGroupDraft.tags} onChange={(e) => setEditingGroupDraft((p) => ({ ...p, tags: e.target.value }))} className="w-full px-3 py-2 border-2 border-black rounded-xl" placeholder="tags comma separated" />
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => setEditingGroupId(null)} className="px-3 py-2 border-2 border-black rounded-xl text-sm font-bold">Cancel</button>
+                            <button onClick={() => handleUpdateGroup(group.id)} disabled={submittingEditId === group.id} className="px-3 py-2 bg-black text-white border-2 border-black rounded-xl text-sm font-bold disabled:opacity-60">
+                              {submittingEditId === group.id ? "Saving..." : "Save"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {group.tags && group.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-4">

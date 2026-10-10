@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { subjectAPI, materialAPI } from "../../utils/api";
 import Container from "../../components/common/Container";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -94,7 +93,6 @@ const DUMMY_SUBJECTS = [
 ];
 
 const Subjects = () => {
-  // @ts-ignore
   const { isAuthenticated } = useAuth();
   const location = useLocation();
   const [subjects, setSubjects] = useState<any[]>([]);

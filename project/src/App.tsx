@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useGameProgress } from "./hooks/useGameProgress";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -57,7 +57,6 @@ import EnhancedHistoryGame from "./components/games/HistoryGame/EnhancedHistoryG
 import GrammarWarrior from "./components/games/GrammarWarrior/GrammarWarrior";
 
 import WordBuilder from "./components/games/WordBuilder/WordBuilder";
-// @ts-ignore: JS module without type declarations
 import TreasureHunt from "./components/games/trea/TreasureHunt.jsx";
 import VirtualLab from "./components/games/VirtualLab/VirtualLab.jsx";
 
@@ -150,8 +149,8 @@ function AppLayout() {
           <Route path="/professional-quizzes" element={<Navigate to="/quizzes" replace />} />
           <Route path="/game/:id" element={<Game />} />
           <Route path="/professional-quiz/:id" element={<ProfessionalQuiz />} />
-          <Route path="/professional-quiz/:id/attempt/:attemptId" element={<QuizAttemptReview />} />
-          <Route path="/my-attempts" element={<MyQuizAttempts />} />
+          <Route path="/professional-quiz/:id/attempt/:attemptId" element={<ProtectedRoute><QuizAttemptReview /></ProtectedRoute>} />
+          <Route path="/my-attempts" element={<ProtectedRoute><MyQuizAttempts /></ProtectedRoute>} />
 
           {/* Hidden Verification Route */}
           <Route path="/verify/internship/:certificateId" element={<PublicVerify />} />

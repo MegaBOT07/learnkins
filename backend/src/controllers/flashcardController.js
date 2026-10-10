@@ -1,7 +1,7 @@
 import Flashcard from '../models/Flashcard.js';
 import Progress from '../models/Progress.js';
 import User from '../models/User.js';
-import { checkFlashcardAchievements, checkAndAwardAchievements } from '../utils/achievementChecker.js';
+import { checkFlashcardAchievements } from '../utils/achievementChecker.js';
 
 // @desc    Get all flashcards
 // @route   GET /api/flashcards

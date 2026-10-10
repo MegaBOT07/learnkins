@@ -97,7 +97,7 @@ const Register: React.FC = () => {
 
     setLoading(true);
 
-    const { confirmPassword, ...registrationData } = formData;
+    const { confirmPassword: _confirmPassword, ...registrationData } = formData;
     const result = await register(registrationData);
 
     if (result.success && result.user) {

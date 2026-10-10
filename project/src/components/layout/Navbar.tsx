@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 import { useTokens } from "../../context/TokenContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +7,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  User,
   LogOut,
   BarChart3,
   BookOpen,
@@ -29,7 +27,6 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isGamesDropdownOpen, setIsGamesDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [showGameAnimation, setShowGameAnimation] = useState(false);
   const [showStartButton, setShowStartButton] = useState(false);
   const [gameLoading, setGameLoading] = useState(false);
@@ -39,15 +36,6 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const { balance } = useTokens();
-
-  // Handle scroll effect
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

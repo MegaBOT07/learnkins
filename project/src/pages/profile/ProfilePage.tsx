@@ -12,23 +12,17 @@ import {
   GraduationCap,
   TrendingUp,
   Wallet,
-  CheckCircle,
-  Lock,
   BarChart3,
   Award,
   Target,
   Crown,
   Users,
   Compass,
-  Zap,
-  AlertCircle,
 } from "lucide-react";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
-// @ts-ignore
 import { useGame } from "../../context/GameContext";
 import { useTokens } from "../../context/TokenContext";
-import { progressAPI, userAPI, communityAPI } from "../../utils/api";
+import { userAPI, communityAPI } from "../../utils/api";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
 import {
@@ -88,7 +82,7 @@ export default function ProfilePage() {
         const me = result.userStats;
         setUserStats({
           level: me.level || 1,
-          experience: me.experience || 0,
+          experience: (me.experience || 0) % 100,
           experienceToNext: 100,
           totalPoints: me.totalPoints || 0,
           streak: me.currentStreak || 0,
@@ -125,7 +119,7 @@ export default function ProfilePage() {
         const me = result.userStats;
         setUserStats({
           level: me.level || 1,
-          experience: me.experience || 0,
+          experience: (me.experience || 0) % 100,
           experienceToNext: 100,
           totalPoints: me.totalPoints || 0,
           streak: me.currentStreak || 0,
@@ -178,9 +172,7 @@ export default function ProfilePage() {
   const filteredAchievements = selectedCategory === "all"
     ? achievements
     : achievements.filter((a) => a.category === selectedCategory);
-  const unlockedAchievements = achievements.filter((a) => a.unlocked);
   const totalPoints = userStats?.totalPoints || 0;
-  const completionRate = achievements.length ? (unlockedAchievements.length / achievements.length) * 100 : 0;
 
   const getUserInitials = (name: string) =>
     name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);

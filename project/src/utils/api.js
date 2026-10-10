@@ -85,7 +85,8 @@ export const subjectAPI = {
 
 // Material API
 export const materialAPI = {
-  getMaterials: (subjectId) => api.get(`/materials?subject=${subjectId}`),
+  getMaterials: (subjectId) =>
+    api.get("/materials", { params: subjectId ? { subject: subjectId } : {} }),
   getMaterial: (id) => api.get(`/materials/${id}`),
   createMaterial: (materialData) => api.post("/materials", materialData),
   updateMaterial: (id, materialData) =>
@@ -117,7 +118,7 @@ export const gameAPI = {
   createGame: (gameData) => api.post("/games", gameData),
   updateGame: (id, gameData) => api.put(`/games/${id}`, gameData),
   deleteGame: (id) => api.delete(`/games/${id}`),
-  startGame: (id) => api.post(`/games/${id}/start`),
+  startGame: (id) => api.post(`/games/${id}/play`),
   submitScore: (id, score, timeTaken) => api.post(`/games/${id}/score`, { score, timeTaken }),
 };
 
@@ -132,8 +133,6 @@ export const flashcardAPI = {
   updateFlashcard: (id, flashcardData) =>
     api.put(`/flashcards/${id}`, flashcardData),
   deleteFlashcard: (id) => api.delete(`/flashcards/${id}`),
-  markAsKnown: (id) => api.post(`/flashcards/${id}/known`),
-  markAsUnknown: (id) => api.post(`/flashcards/${id}/unknown`),
   generateAIFlashcards: (params) => api.post('/flashcards/ai-generate', params),
   batchCreateFlashcards: (flashcards) => api.post('/flashcards/batch', { flashcards }),
 };
@@ -153,9 +152,7 @@ export const progressAPI = {
 export const contactAPI = {
   sendMessage: (messageData) => api.post("/contact", messageData),
   getMessages: () => api.get("/contact"),
-  getMessage: (id) => api.get(`/contact/${id}`),
   updateMessageStatus: (id, data) => api.put(`/contact/${id}/status`, data),
-  deleteMessage: (id) => api.delete(`/contact/${id}`),
 };
 
 // Newsletter API
@@ -253,13 +250,6 @@ export const shopAPI = {
   updateItem: (id, data) => api.put(`/shop/${id}`, data),
   deleteItem: (id) => api.delete(`/shop/${id}`),
   getAdminStats: () => api.get('/shop/admin/stats'),
-};
-
-// Admin API aggregates
-export const adminAPI = {
-  getTokenStats: () => api.get('/tokens/admin/stats'),
-  getShopStats: () => api.get('/shop/admin/stats'),
-  awardUserTokens: (userId, amount, reason) => api.post('/tokens/award', { userId, amount, reason }),
 };
 
 // Professional Quiz API

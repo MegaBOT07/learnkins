@@ -29,8 +29,6 @@ const SiteVideos: React.FC = () => {
 
     // Award 5 tokens for watching a video to completion
     award(5, `watched:${title}`, { videoTitle: title });
-    // lightweight feedback
-    try { console.log(`Awarded 5 tokens for watching ${title}`); } catch(e){}
   };
 
   const handlePlay = (id: string, title: string) => {

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { professionalQuizAPI } from "../../utils/api";
 import { useAuth } from "../../context/AuthContext";
-import { ArrowLeft, Clock, Trophy } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface Question {
   id: string;
@@ -45,12 +45,9 @@ const QuizAttemptReview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Auth is enforced by <ProtectedRoute>, which waits for the session to load
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { from: { pathname: `/professional-quiz/${id}/attempt/${attemptId}` } } });
-      return;
-    }
-    fetchAttempt();
+    if (isAuthenticated) fetchAttempt();
   }, [id, attemptId, isAuthenticated]);
 
   const fetchAttempt = async () => {
@@ -183,8 +180,8 @@ const QuizAttemptReview = () => {
             const correctAns = q.correctAnswer;
             const isShort = q.type === 'short-answer';
 
-            let userDisplay = typeof userAns === 'number' ? q.options[userAns] || `Option ${userAns}` : String(userAns ?? 'Not answered');
-            let correctDisplay = typeof correctAns === 'number' ? q.options[correctAns] || `Option ${correctAns}` : String(correctAns);
+            const userDisplay = typeof userAns === 'number' ? q.options[userAns] || `Option ${userAns}` : String(userAns ?? 'Not answered');
+            const correctDisplay = typeof correctAns === 'number' ? q.options[correctAns] || `Option ${correctAns}` : String(correctAns);
 
             return (
               <div key={q.id} className={`rounded-xl border-2 p-5 ${isCorrect ? 'border-green-400 bg-green-50' : 'border-red-400 bg-red-50'}`}>

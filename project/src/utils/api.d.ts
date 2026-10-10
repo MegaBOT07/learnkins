@@ -28,10 +28,15 @@ export interface SubjectsResponse {
 export interface MaterialData {
   title: string;
   description?: string;
-  content: string;
+  content?: string;
   subjectId?: string;
   subject?: string;
   type?: string;
+  chapter?: string;
+  grade?: string;
+  fileUrl?: string;
+  tags?: string | string[];
+  difficulty?: string;
 }
 
 export interface QuizData {
@@ -151,10 +156,13 @@ export interface UserResponse {
 
 export interface SubjectResponse {
   id: string;
+  _id?: string;
+  slug: string;
   name: string;
   description: string;
   grade: string;
   materials: MaterialResponse[];
+  [key: string]: any;
 }
 
 export interface MaterialResponse {
@@ -326,7 +334,7 @@ export interface SubjectAPI {
   getSubjects: (
     grade?: string
   ) => Promise<AxiosResponse<SubjectsResponse>>;
-  getSubject: (id: string) => Promise<AxiosResponse<SubjectResponse>>;
+  getSubject: (slug: string) => Promise<AxiosResponse<{ success: boolean; data: SubjectResponse }>>;
   createSubject: (
     subjectData: SubjectData
   ) => Promise<AxiosResponse<SubjectResponse>>;
@@ -355,7 +363,7 @@ export interface MaterialAPI {
 export interface QuizAPI {
   getHomepageQuizCards: () => Promise<AxiosResponse<any>>;
   getQuizzes: (filters?: QuizFilters) => Promise<AxiosResponse<{ success: boolean; count: number; total: number; data: QuizResponse[] }>>;
-  getQuiz: (id: string) => Promise<AxiosResponse<QuizResponse>>;
+  getQuiz: (id: string) => Promise<AxiosResponse<{ success: boolean; data?: QuizResponse; quiz?: QuizResponse }>>;
   createQuiz: (quizData: QuizData) => Promise<AxiosResponse<QuizResponse>>;
   updateQuiz: (
     id: string,
@@ -363,6 +371,11 @@ export interface QuizAPI {
   ) => Promise<AxiosResponse<QuizResponse>>;
   deleteQuiz: (id: string) => Promise<AxiosResponse<void>>;
   submitQuiz: (id: string, answers: any[], timeTaken?: number, quizData?: any, localResult?: { percentage: number; correctCount: number }) => Promise<AxiosResponse<any>>;
+  getLeaderboard: (subject?: string) => Promise<AxiosResponse<any>>;
+}
+
+export interface LeaderboardAPI {
+  getLeaderboard: (params?: Record<string, any>) => Promise<AxiosResponse<any>>;
 }
 
 export interface GameAPI {
@@ -391,8 +404,8 @@ export interface FlashcardAPI {
     flashcardData: Partial<FlashcardData>
   ) => Promise<AxiosResponse<{ data: FlashcardResponse }>>;
   deleteFlashcard: (id: string) => Promise<AxiosResponse<void>>;
-  markAsKnown: (id: string) => Promise<AxiosResponse<void>>;
-  markAsUnknown: (id: string) => Promise<AxiosResponse<void>>;
+  generateAIFlashcards: (params: any) => Promise<AxiosResponse<any>>;
+  batchCreateFlashcards: (flashcards: any[]) => Promise<AxiosResponse<any>>;
 }
 
 export interface ProgressAPI {
@@ -402,13 +415,26 @@ export interface ProgressAPI {
   updateProgress: (progressData: ProgressData) => Promise<AxiosResponse<{ success: boolean; data: ProgressResponse }>>;
   logStudySession: (sessionData: any) => Promise<AxiosResponse<any>>;
   logVideoProgress: (videoData: any) => Promise<AxiosResponse<any>>;
+  logGameActivity: (gameData: any) => Promise<AxiosResponse<any>>;
 }
 
 export interface ContactAPI {
   sendMessage: (messageData: MessageData) => Promise<AxiosResponse<any>>;
-  getMessages: () => Promise<AxiosResponse<any[]>>;
-  getMessage: (id: string) => Promise<AxiosResponse<any>>;
-  deleteMessage: (id: string) => Promise<AxiosResponse<void>>;
+  getMessages: () => Promise<AxiosResponse<any>>;
+  updateMessageStatus: (id: string, data: { status: string }) => Promise<AxiosResponse<any>>;
+}
+
+export interface NewsletterAPI {
+  subscribe: (email: string) => Promise<AxiosResponse<any>>;
+  getSubscribers: () => Promise<AxiosResponse<any>>;
+  unsubscribe: (email: string) => Promise<AxiosResponse<any>>;
+}
+
+export interface CertificateAPI {
+  createCertificate: (data: any) => Promise<AxiosResponse<any>>;
+  getCertificates: () => Promise<AxiosResponse<any>>;
+  deleteCertificate: (id: string) => Promise<AxiosResponse<any>>;
+  bulkCreateCertificates: (formData: FormData) => Promise<AxiosResponse<Blob>>;
 }
 
 export interface ParentalAPI {
@@ -477,12 +503,6 @@ export interface CommunityAPI {
   getAchievements: () => Promise<AxiosResponse<any>>;
   getUserAchievements: () => Promise<AxiosResponse<any>>;
   awardAchievement: (id: string) => Promise<AxiosResponse<any>>;
-  // Admin
-  createAchievement: (data: any) => Promise<AxiosResponse<any>>;
-  updateAchievement: (id: string, data: any) => Promise<AxiosResponse<any>>;
-  deleteAchievement: (id: string) => Promise<AxiosResponse<any>>;
-  getAchievement: (id: string) => Promise<AxiosResponse<any>>;
-  awardAchievementToUser: (id: string, userId: string) => Promise<AxiosResponse<any>>;
 
   // Stats
   getCommunityStats: () => Promise<AxiosResponse<any>>;
@@ -492,11 +512,12 @@ export interface ProfessionalQuizAPI {
   getQuizzes: (params?: any, signal?: AbortSignal) => Promise<AxiosResponse<any>>;
   getQuiz: (id: string) => Promise<AxiosResponse<any>>;
   createQuiz: (quizData: any) => Promise<AxiosResponse<any>>;
-  createAIQuiz: (payload: { difficulty?: string; subject?: string; grade?: string; title?: string; totalQuestions?: number }) => Promise<AxiosResponse<any>>;
+  createAIQuiz: (payload: { difficulty?: string; subject?: string; grade?: string; title?: string; topic?: string; totalQuestions?: number; questionType?: string }) => Promise<AxiosResponse<any>>;
   updateQuiz: (id: string, quizData: any) => Promise<AxiosResponse<any>>;
   deleteQuiz: (id: string) => Promise<AxiosResponse<any>>;
   submitQuiz: (id: string, answers: any[], timeTaken: number) => Promise<AxiosResponse<any>>;
   getUserAttempts: (id: string) => Promise<AxiosResponse<any>>;
+  getAllMyAttempts: () => Promise<AxiosResponse<any>>;
   getMyAIQuizzes: () => Promise<AxiosResponse<any>>;
   deleteMyAIQuiz: (id: string) => Promise<AxiosResponse<any>>;
 }
@@ -508,6 +529,25 @@ export interface TokenAPI {
   redeem: (amount: number, reason: string, meta?: any) => Promise<AxiosResponse<any>>;
   awardUser: (userId: string, amount: number, reason: string, meta?: any) => Promise<AxiosResponse<any>>;
   getUserTransactions: (userId: string) => Promise<AxiosResponse<any>>;
+  claimDaily: () => Promise<AxiosResponse<any>>;
+  getAdminStats: () => Promise<AxiosResponse<any>>;
+}
+
+export interface ShopAPI {
+  getItems: (params?: Record<string, any>) => Promise<AxiosResponse<any>>;
+  purchase: (id: string) => Promise<AxiosResponse<any>>;
+  getMyPurchases: () => Promise<AxiosResponse<any>>;
+  createItem: (data: any) => Promise<AxiosResponse<any>>;
+  updateItem: (id: string, data: any) => Promise<AxiosResponse<any>>;
+  deleteItem: (id: string) => Promise<AxiosResponse<any>>;
+  getAdminStats: () => Promise<AxiosResponse<any>>;
+}
+
+export interface PaymentAPI {
+  getPlans: () => Promise<AxiosResponse<any>>;
+  createOrder: (plan: string) => Promise<AxiosResponse<any>>;
+  verifyPayment: (data: any) => Promise<AxiosResponse<any>>;
+  getHistory: () => Promise<AxiosResponse<any>>;
 }
 
 // Export the API objects with proper typing
@@ -524,6 +564,11 @@ export declare const parentalAPI: ParentalAPI;
 export declare const communityAPI: CommunityAPI;
 export declare const professionalQuizAPI: ProfessionalQuizAPI;
 export declare const tokenAPI: TokenAPI;
+export declare const leaderboardAPI: LeaderboardAPI;
+export declare const newsletterAPI: NewsletterAPI;
+export declare const certificateAPI: CertificateAPI;
+export declare const shopAPI: ShopAPI;
+export declare const paymentAPI: PaymentAPI;
 
 // Default export
 declare const api: any;

@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { quizAPI, progressAPI } from "../../utils/api";
+import { quizAPI } from "../../utils/api";
 import { storeNewAchievements } from "../../utils/achievements";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
 import { useToast } from "../../components/Toast";
 import {
   Clock,
-  CheckCircle,
-  XCircle,
   ArrowLeft,
   Trophy,
-  Star,
 } from "lucide-react";
 
 interface Question {
@@ -58,7 +55,7 @@ const Quiz = () => {
   const [submitting, setSubmitting] = useState(false);
   const timerDoneRef = useRef(false);
   const { award } = useTokens();
-  const { takeQuiz, addPoints, addExperience } = useGame();
+  const { takeQuiz, addPoints } = useGame();
   const { showToast } = useToast();
 
 
@@ -97,7 +94,7 @@ const Quiz = () => {
 
         const response = await quizAPI.getQuiz(id);
         // backend returns { success: true, data: quiz }
-        const payload = response.data?.data || response.data?.quiz || response.data;
+        const payload: any = response.data?.data || response.data?.quiz || response.data;
         if (payload) {
           setQuiz(normalizeQuiz(payload));
           setTimeLeft((payload.timeLimit || 0) * 60);
@@ -119,7 +116,7 @@ const Quiz = () => {
 
   // Handle quiz submission to backend
   const handleSubmitQuiz = async () => {
-    if (!quizData) return;
+    if (!quizData || submitting) return;
 
     try {
       setSubmitting(true);
@@ -199,14 +196,16 @@ const Quiz = () => {
   };
 
   const handleAnswerSelect = (answer: string) => {
+    if (!quizData) return;
+    const isFirstAnswer = !answers[currentQuestionIndex];
     const newAnswers = [...answers];
     newAnswers[currentQuestionIndex] = answer;
     setAnswers(newAnswers);
 
+    // Award 1 token the first time a question is answered (not on every click)
+    if (!isFirstAnswer) return;
     try {
-      // award 1 token per question click and save meta to server when authenticated
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      award?.(1, `quiz:select`, { quizId: quizData.id, questionId: currentQuestion.id, index: currentQuestionIndex });
+      award?.(1, `quiz:select`, { quizId: quizData.id, questionId: quizData.questions[currentQuestionIndex]?.id, index: currentQuestionIndex });
     } catch (e) {
       console.warn('Failed to award token for question selection', e);
     }
@@ -219,6 +218,7 @@ const Quiz = () => {
   };
 
   const handleNextQuestion = () => {
+    if (!quizData) return;
     if (currentQuestionIndex < quizData.questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -248,6 +248,7 @@ const Quiz = () => {
   };
 
   const getProgressPercentage = () => {
+    if (!quizData || quizData.questions.length === 0) return 0;
     return ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
   };
 
@@ -648,13 +649,13 @@ const Quiz = () => {
 
           <button
             onClick={isLastQuestion ? handleQuizComplete : handleNextQuestion}
-            disabled={!answers[currentQuestionIndex]}
-            className={`px-6 py-3 rounded-xl border-2 border-black font-bold transition-all ${!answers[currentQuestionIndex] === undefined
+            disabled={!answers[currentQuestionIndex] || submitting}
+            className={`px-6 py-3 rounded-xl border-2 border-black font-bold transition-all ${!answers[currentQuestionIndex] || submitting
               ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-50"
               : "bg-black text-white hover:bg-white hover:text-black"
               }`}
           >
-            {isLastQuestion ? "Finish Quiz" : "Next"}
+            {isLastQuestion ? (submitting ? "Submitting..." : "Finish Quiz") : "Next"}
           </button>
         </div>
       </div>

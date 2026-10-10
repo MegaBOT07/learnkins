@@ -354,12 +354,19 @@ const Contact = () => {
                   ></textarea>
                 </div>
 
+                {submitError && (
+                  <p role="alert" className="text-sm font-bold text-red-600">
+                    {submitError}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full bg-black text-white py-3 px-6 rounded-xl border-2 border-black font-black text-base hover:bg-white hover:text-black transition-all flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,206,209,1)]"
+                  disabled={submitting}
+                  className="w-full bg-black text-white py-3 px-6 rounded-xl border-2 border-black font-black text-base hover:bg-white hover:text-black transition-all flex items-center justify-center shadow-[3px_3px_0px_0px_rgba(0,206,209,1)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send className="h-5 w-5 mr-2" />
-                  Send Message
+                  {submitting ? "Sending..." : "Send Message"}
                 </button>
               </form>
             </motion.div>

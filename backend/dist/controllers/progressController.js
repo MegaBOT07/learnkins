@@ -239,10 +239,8 @@ export const logStudySession = async (req, res) => {
 export const logGameActivity = async (req, res) => {
   try {
     const {
-      gameTitle,
       score,
-      maxScore,
-      difficulty
+      maxScore
     } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -253,8 +251,10 @@ export const logGameActivity = async (req, res) => {
     }
     user.totalGamesPlayed = (user.totalGamesPlayed || 0) + 1;
 
-    // Award leaderboard points from game score
-    const gamePoints = Math.floor(score || 0);
+    // Award leaderboard points from game score (non-negative, capped at maxScore when given)
+    let gamePoints = Math.max(0, Math.floor(Number(score) || 0));
+    const cap = Number(maxScore);
+    if (cap > 0) gamePoints = Math.min(gamePoints, Math.floor(cap));
     user.points = (user.points || 0) + gamePoints;
     await user.save();
     const newAchievements = await checkAndAwardAchievements(user._id);
@@ -281,9 +281,7 @@ export const logVideoProgress = async (req, res) => {
       subject,
       chapter,
       videoId,
-      videoTitle,
       timeWatched,
-      totalDuration,
       isCompleted
     } = req.body;
     const userId = req.user.id;
@@ -303,7 +301,7 @@ export const logVideoProgress = async (req, res) => {
     }
 
     // Update time spent with minutes watched
-    const minutesWatched = Math.round(timeWatched / 60);
+    const minutesWatched = Math.round((Number(timeWatched) || 0) / 60);
     progress.timeSpent += minutesWatched;
     progress.lastAccessed = new Date();
 

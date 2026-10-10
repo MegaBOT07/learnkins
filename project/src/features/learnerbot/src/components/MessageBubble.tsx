@@ -41,7 +41,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onOptionClick })
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code: ({ node, className, children, ...props }) => {
+                  code: ({ node: _node, className, children, ...props }) => {
                     const match = /language-(\w+)/.exec(className || '');
                     return match ? (
                       <pre className="bg-gray-900/90 rounded-lg p-4 overflow-x-auto border border-gray-600/40 shadow-inner">

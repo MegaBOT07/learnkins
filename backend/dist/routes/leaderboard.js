@@ -3,28 +3,32 @@ import { protect } from '../middleware/auth.js';
 import User from '../models/User.js';
 const router = express.Router();
 
+// Leaderboard tabs: which stat each one ranks by
+const SORT_FIELDS = {
+  all: 'points',
+  quizzes: 'totalQuizzesTaken',
+  games: 'totalGamesPlayed'
+};
+
 // @desc    Get unified leaderboard (top 100 + user rank)
 // @route   GET /api/leaderboard
 // @access  Private
 router.get('/', protect, async (req, res) => {
   try {
     const userId = req.user?.id;
-    const {
-      filter = 'all',
-      subject,
-      game
-    } = req.query;
+    const sortField = SORT_FIELDS[req.query.filter] || SORT_FIELDS.all;
 
-    // Build match stage — only students with points
+    // Only students with a non-zero value for the ranked stat
     const matchStage = {
       role: 'student',
-      points: {
+      [sortField]: {
         $gt: 0
       }
     };
 
-    // Get top 100 users by points
-    let topUsers = await User.find(matchStage).select('name avatar points experience level totalQuizzesTaken totalGamesPlayed perfectScores currentStreak').sort({
+    // Get top 100 users by the ranked stat (points break ties)
+    const topUsers = await User.find(matchStage).select('name avatar points experience level totalQuizzesTaken totalGamesPlayed perfectScores currentStreak').sort({
+      [sortField]: -1,
       points: -1
     }).limit(100).lean();
 
@@ -50,11 +54,11 @@ router.get('/', protect, async (req, res) => {
     if (!userInTop100 && userId) {
       const currentUser = await User.findById(userId).select('name avatar points experience level totalQuizzesTaken totalGamesPlayed perfectScores currentStreak').lean();
       if (currentUser) {
-        // Count users with more points
+        // Count users ahead on the ranked stat
         const rank = await User.countDocuments({
           role: 'student',
-          points: {
-            $gt: currentUser.points || 0
+          [sortField]: {
+            $gt: currentUser[sortField] || 0
           }
         });
         userRank = {

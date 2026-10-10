@@ -39,11 +39,11 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ progress, userId, onBac
         let id = userId;
         if (!id) {
           const meRes = await authAPI.getMe();
-          id = meRes.data?.id;
+          id = meRes.data?.user?.id || meRes.data?.user?._id;
         }
         if (!id) throw new Error('User id not found');
 
-        const res = await progressAPI.getProgress(id);
+        const res = await progressAPI.getProgress();
         // Normalize badges' earnedAt to Date objects if needed
         // Handle both array and object response shapes
         // Add type assertion to help TypeScript understand the structure

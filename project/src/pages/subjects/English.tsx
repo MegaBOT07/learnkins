@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
@@ -10,12 +10,9 @@ import {
   HelpCircle,
   CreditCard,
   Book,
-  PenTool,
-  MessageSquare,
   Eye,
   Star,
   Clock,
-  Users,
   Target,
 } from "lucide-react";
 

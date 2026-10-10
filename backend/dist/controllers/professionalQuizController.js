@@ -267,7 +267,7 @@ Rules:
     try {
       const content = await callModel(model, body);
       if (!content) continue;
-      const questions = parseJSONFromResponse(content);
+      let questions = parseJSONFromResponse(content);
       if (questions && Array.isArray(questions) && questions.length > 0) {
         // Fix: if all MC/TF answers are the same index, shuffle the options
         const mcTf = questions.filter(q => q.type !== 'short-answer' && Array.isArray(q.options) && q.options.length > 1);

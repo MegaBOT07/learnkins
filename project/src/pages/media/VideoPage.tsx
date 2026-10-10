@@ -14,7 +14,6 @@ const VideoPage: React.FC = () => {
   const { slug, chapterId } = useParams();
   const [videos, setVideos] = useState<VideoEntry[]>([]);
   const [watchedVideos, setWatchedVideos] = useState<Record<string, boolean>>({});
-  const [videoProgress, setVideoProgress] = useState<Record<string, number>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -57,13 +56,6 @@ const VideoPage: React.FC = () => {
       mounted = false;
     };
   }, [slug]);
-
-  const handleVideoTimeUpdate = async (videoId: string, currentTime: number, duration: number) => {
-    setVideoProgress(prev => ({
-      ...prev,
-      [videoId]: currentTime
-    }));
-  };
 
   const handleVideoEnded = async (videoId: string, video: VideoEntry, duration: number) => {
     try {
@@ -159,7 +151,6 @@ const VideoPage: React.FC = () => {
                         controls
                         src={v.src}
                         className="w-full h-48 rounded-xl border-2 border-gray-200"
-                        onTimeUpdate={(e) => handleVideoTimeUpdate(v.id, e.currentTime, e.currentTarget.duration)}
                         onEnded={(e) => handleVideoEnded(v.id, v, e.currentTarget.duration)}
                       />
                     </div>

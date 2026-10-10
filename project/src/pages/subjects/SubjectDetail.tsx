@@ -296,7 +296,7 @@ const SubjectDetail = () => {
                             className="w-full h-full"
                             allowFullScreen
                             title={v.title}
-                            referrerpolicy="strict-origin-when-cross-origin"
+                            referrerPolicy="strict-origin-when-cross-origin"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           />
                         ) : (

@@ -11,7 +11,7 @@
     "server": "cd ../backend && npm run dev",
     "server:install": "cd ../backend && npm install",
     "server:seed": "cd ../backend && npm run seed",
-    "dev:full": "node start-dev.js"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -54,7 +54,7 @@
     "stylelint-config-tailwindcss": "^1.0.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.3.0",
+    "typescript-eslint": "^8.71.1",
     "vite": "^7.0.6"
   }
 }

@@ -68,6 +68,9 @@ export interface UserStats {
   level?: number;
   perfectScores?: number;
   totalFlashcardsRead?: number;
+  experience?: number;
+  totalPoints?: number;
+  longestStreak?: number;
 }
 
 export const mapBackendToFrontend = (
@@ -206,7 +209,7 @@ interface FetchResult {
 export const fetchAchievementsWithCache = async (
   fetchAll: () => Promise<{ data?: { achievements?: BackendAchievement[] } }>,
   fetchUser: () => Promise<{ data?: { achievements?: BackendAchievement[] } }>,
-  fetchMe: () => Promise<{ data?: { user?: any } }>,
+  fetchMe: () => Promise<{ data?: { user?: any; data?: any } }>,
 ): Promise<FetchResult> => {
   try {
     const [allRes, userRes, meRes] = await Promise.allSettled([
@@ -252,6 +255,9 @@ export const fetchAchievementsWithCache = async (
       level: me?.level || 1,
       perfectScores: me?.perfectScores || 0,
       totalFlashcardsRead: me?.totalFlashcardsRead || 0,
+      experience: me?.experience || 0,
+      totalPoints: me?.points || 0,
+      longestStreak: me?.longestStreak || 0,
     };
 
     const achievements = allAch.length > 0

@@ -18,7 +18,6 @@ import {
   UserMinus,
   LogOut,
   Plus,
-  X,
   Loader2,
   Clock,
   Shield,
@@ -425,29 +424,32 @@ const StudyGroupDetail = () => {
                   </div>
                 </div>
               ) : (
-                messages.map((msg) => (
+                messages.map((msg) => {
+                  const isMine = String(msg.sender?._id) === meId;
+                  return (
                   <motion.div
                     key={msg._id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex items-start gap-3 ${String(msg.sender?._id || msg.sender?.id) === meId ? "flex-row-reverse" : ""}`}
+                    className={`flex items-start gap-3 ${isMine ? "flex-row-reverse" : ""}`}
                   >
-                    <div className={`w-9 h-9 rounded-xl border-2 border-black flex items-center justify-center bg-white flex-shrink-0 ${String(msg.sender?._id || msg.sender?.id) === meId ? "" : ""}`}>
+                    <div className="w-9 h-9 rounded-xl border-2 border-black flex items-center justify-center bg-white flex-shrink-0">
                       <User className="w-5 h-5 text-gray-600" />
                     </div>
-                    <div className={`max-w-[75%] ${String(msg.sender?._id || msg.sender?.id) === meId ? "items-end" : "items-start"}`}>
+                    <div className={`max-w-[75%] ${isMine ? "items-end" : "items-start"}`}>
                       <div className={`px-4 py-2.5 rounded-2xl border-2 border-black ${
-                        String(msg.sender?._id || msg.sender?.id) === meId
+                        isMine
                           ? "bg-black text-white"
                           : "bg-white text-black"
                       }`}>
-                        <p className="text-sm font-bold">{String(msg.sender?._id || msg.sender?.id) === meId ? "You" : msg.sender?.name || "User"}</p>
+                        <p className="text-sm font-bold">{isMine ? "You" : msg.sender?.name || "User"}</p>
                         <p className="text-sm mt-0.5">{msg.content}</p>
                       </div>
                       <p className="text-xs text-gray-400 mt-1 px-1 font-medium">{formatDate(msg.createdAt)}</p>
                     </div>
                   </motion.div>
-                ))
+                  );
+                })
               )}
               <div ref={chatEndRef} />
             </div>

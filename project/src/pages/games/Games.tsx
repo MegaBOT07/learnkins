@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Trophy, Star, Clock, Users, Flame, TrendingUp,
-  Gamepad2, Beaker, Calculator, Globe2, BookText, Crown, Medal,
+  Gamepad2, Beaker, Calculator, Globe2, BookText,
 } from "lucide-react";
 import { leaderboardAPI } from "../../utils/api";
 

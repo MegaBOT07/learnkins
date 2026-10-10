@@ -5,7 +5,6 @@ import { ArrowRight, Trophy, Clock, Users, Search, Star, Trash2, Flame } from "l
 import { professionalQuizAPI, subjectAPI, leaderboardAPI } from "../../utils/api";
 import { useToast } from "../../components/Toast";
 import { useConfirm } from "../../components/ConfirmDialog";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 
 interface ProfessionalQuiz {
@@ -29,7 +28,6 @@ interface ProfessionalQuiz {
 const ProfessionalQuizzes = () => {
   const [searchParams] = useSearchParams();
   const initialSubject = searchParams.get("subject") || "all";
-  // @ts-ignore
   const { user, isAuthenticated } = useAuth();
   const userGrade = user?.grade || "";
 
@@ -502,7 +500,7 @@ const ProfessionalQuizzes = () => {
             <div className="bg-white border-2 border-red-500 rounded-2xl p-6 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <p className="text-red-700 font-bold">{error}</p>
               <button
-                onClick={fetchQuizzes}
+                onClick={() => fetchQuizzes()}
                 className="mt-4 px-6 py-2.5 bg-black text-white rounded-xl border-2 border-black font-bold hover:bg-white hover:text-black transition-all"
               >
                 Retry

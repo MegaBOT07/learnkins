@@ -4,7 +4,6 @@ import Progress from '../models/Progress.js';
 import User from '../models/User.js';
 import Subject from '../models/Subject.js';
 import TokenTransaction from '../models/TokenTransaction.js';
-import jwt from 'jsonwebtoken';
 import { checkAndAwardAchievements } from '../utils/achievementChecker.js';
 
 // Helper: award tokens + XP after a quiz; silent – never throws

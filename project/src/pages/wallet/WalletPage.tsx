@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wallet,
@@ -26,8 +26,6 @@ import {
   Gem,
   Shield,
   Package,
-  RefreshCw,
-  AlertCircle,
 } from "lucide-react";
 import { useTokens } from "../../context/TokenContext";
 import { paymentAPI, shopAPI } from "../../utils/api";

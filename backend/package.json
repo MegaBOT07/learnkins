@@ -8,11 +8,7 @@
     "build": "babel src -d dist --extensions .js --copy-files",
     "start": "node dist/server.js",
     "dev": "nodemon src/server.js",
-    "seed": "node src/seeds/seedData.js",
-    "seed:all": "node src/seeds/seedAllData.js",
-    "create:test:users": "node src/seeds/createTestUsers.js",
-    "test:check-parent": "node scripts/check-parent.js",
-    "test:check-users": "node scripts/check-users.js",
+    "seed": "node src/adminSeed.js",
     "test:email": "node src/scripts/test-email.js",
     "test:email:to": "node src/scripts/test-email.js"
   },

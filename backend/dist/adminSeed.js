@@ -38,7 +38,7 @@ const disconnectDB = async () => {
 // Load JSON files
 const loadJSON = filename => {
   try {
-    const filepath = path.join(__dirname, "../../public", filename);
+    const filepath = path.join(__dirname, "../../project/public", filename);
     const data = fs.readFileSync(filepath, "utf8");
     return JSON.parse(data);
   } catch (error) {

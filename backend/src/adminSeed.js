@@ -45,7 +45,7 @@ const loadJSON = (filename) => {
   try {
     const filepath = path.join(
       __dirname,
-      "../../public",
+      "../../project/public",
       filename
     );
     const data = fs.readFileSync(filepath, "utf8");

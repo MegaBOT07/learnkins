@@ -1,19 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Trophy, Star, Target, Award, TrendingUp, BarChart3, Crown, Flame, Brain, BookOpen, Users, Compass, BarChart2, Beaker, AlertCircle
+  Trophy, Star, Target, Award, Crown, Flame, BookOpen, Users, Compass, AlertCircle
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { progressAPI, userAPI, communityAPI } from "../../utils/api";
+import { userAPI, communityAPI } from "../../utils/api";
 import LevelDisplay from "../../components/features/progress/LevelDisplay";
 import AchievementCard from "../../components/features/achievements/AchievementCard";
 import ProgressBar from "../../components/features/progress/ProgressBar";
-import ActivityHeatmap from "../../components/features/progress/ActivityHeatmap";
 import {
   fetchAchievementsWithCache,
   consumeNewAchievements,
   FrontendAchievement,
-  CATEGORY_LABELS,
 } from "../../utils/achievements";
 
 const CATEGORIES = [
@@ -51,7 +49,7 @@ const Progress = () => {
         const me = result.userStats;
         setUserStats({
           level: me.level || 1,
-          experience: me.experience || 0,
+          experience: (me.experience || 0) % 100,
           experienceToNext: 100,
           totalPoints: me.totalPoints || 0,
           streak: me.currentStreak || 0,

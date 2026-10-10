@@ -25,12 +25,9 @@ const MyQuizAttempts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Auth is enforced by <ProtectedRoute>, which waits for the session to load
   useEffect(() => {
-    if (!isAuthenticated) {
-      navigate("/login", { state: { from: { pathname: "/my-attempts" } } });
-      return;
-    }
-    fetchAttempts();
+    if (isAuthenticated) fetchAttempts();
   }, [isAuthenticated]);
 
   const fetchAttempts = async () => {

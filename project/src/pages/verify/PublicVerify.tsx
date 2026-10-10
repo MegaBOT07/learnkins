@@ -1,14 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, CheckCircle, Download, FileText, Calendar, Building, User } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Download, FileText, Calendar, Building, User } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { useEffect } from 'react';
+
+interface VerifiedCertificate {
+  certificateId: string;
+  studentName: string;
+  university?: string;
+  internshipTitle: string;
+  internshipDomain?: string;
+  duration?: string;
+  startDate: string;
+  endDate: string;
+  issueDate: string;
+  pdfUrl?: string;
+  verificationCount?: number;
+  lastVerifiedDate?: string;
+}
+
+type VerifyStatus = 'valid' | 'invalid' | 'revoked';
 
 const PublicVerify = () => {
   const { certificateId } = useParams();
-  const [data, setData] = useState(null);
-  const [status, setStatus] = useState(null); // 'valid', 'invalid', 'revoked'
+  const [data, setData] = useState<VerifiedCertificate | null>(null);
+  const [status, setStatus] = useState<VerifyStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -23,15 +39,21 @@ const PublicVerify = () => {
           setStatus(res.data.status?.toLowerCase() === 'revoked' ? 'revoked' : 'invalid');
           setErrorMsg(res.data.message);
         }
-      } catch (error) {
+      } catch (error: any) {
         setStatus('invalid');
-        setErrorMsg(error.response?.data?.message || 'Certificate Not Found');
+        setErrorMsg(error?.response?.data?.message || 'Certificate Not Found');
       } finally {
         setLoading(false);
       }
     };
     
-    if (certificateId) verifyCert();
+    if (certificateId) {
+      verifyCert();
+    } else {
+      setStatus('invalid');
+      setErrorMsg('Certificate Not Found');
+      setLoading(false);
+    }
   }, [certificateId]);
 
   if (loading) {

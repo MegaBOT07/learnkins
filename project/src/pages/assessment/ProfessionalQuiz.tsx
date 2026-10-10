@@ -5,7 +5,6 @@ import { storeNewAchievements } from "../../utils/achievements";
 import { useTokens } from "../../context/TokenContext";
 import { useGame } from "../../context/GameContext";
 import { useToast } from "../../components/Toast";
-// @ts-ignore
 import { useAuth } from "../../context/AuthContext";
 import { Clock, ArrowLeft, Trophy } from "lucide-react";
 
@@ -41,10 +40,9 @@ const ProfessionalQuiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  // @ts-ignore
   const { isAuthenticated } = useAuth();
   const { award } = useTokens();
-  const { takeQuiz, addPoints, addExperience } = useGame();
+  const { takeQuiz, addPoints } = useGame();
   const { showToast } = useToast();
 
   const [quiz, setQuiz] = useState<ProfessionalQuizData | null>(null);
@@ -445,8 +443,8 @@ const ProfessionalQuiz = () => {
                 const isCorrect = attemptData?.answers?.[index]?.isCorrect ?? false;
                 const correctAns = q.correctAnswer;
 
-                let userDisplay = typeof userAns === 'number' ? q.options[userAns] || `Option ${userAns}` : String(userAns ?? 'Not answered');
-                let correctDisplay = typeof correctAns === 'number' ? q.options[correctAns] || `Option ${correctAns}` : String(correctAns);
+                const userDisplay = typeof userAns === 'number' ? q.options[userAns] || `Option ${userAns}` : String(userAns ?? 'Not answered');
+                const correctDisplay = typeof correctAns === 'number' ? q.options[correctAns] || `Option ${correctAns}` : String(correctAns);
                 const isShort = q.type === 'short-answer';
 
                 return (

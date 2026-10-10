@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { ArrowLeft, Play, Star } from "lucide-react";
 
 interface GameData {
@@ -28,7 +28,8 @@ const Game = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const gameData = GAME_DATA_MAP[id || "1"] || GAME_DATA_MAP["1"];
+  const gameData = id ? GAME_DATA_MAP[id] : undefined;
+  if (!gameData) return <Navigate to="/games" replace />;
   const gameUrl = gameData.gameUrl;
 
   const getDifficultyStyle = (d: string) => {

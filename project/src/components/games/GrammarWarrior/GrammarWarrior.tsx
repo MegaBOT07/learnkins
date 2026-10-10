@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import {
   Stars,
@@ -12,7 +12,7 @@ import {
   OrbitControls
 } from '@react-three/drei';
 import * as THREE from 'three';
-import { Zap, Heart, Clock, Trophy, AlertCircle, Flame, ArrowLeft } from 'lucide-react';
+import { Zap, Trophy } from 'lucide-react';
 import { useGameProgress } from '../../../hooks/useGameProgress';
 import HeroSelection from './components/HeroSelection';
 import { Hero } from './types/game';
@@ -20,7 +20,7 @@ import { MONSTERS } from './data/monsters';
 
 // --- 3D Components ---
 
-const SpaceShip = ({ hero, isFiring }: { hero: Hero, isFiring: boolean }) => {
+const SpaceShip = ({ isFiring }: { hero: Hero, isFiring: boolean }) => {
   const meshRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
@@ -292,7 +292,7 @@ const GrammarWarrior: React.FC = () => {
   }, [gameState]);
 
   const renderHeroSelect = () => (
-    <HeroSelection onSelect={handleHeroSelect} />
+    <HeroSelection onSelectHero={handleHeroSelect} />
   );
 
   const renderMenu = () => (

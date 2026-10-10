@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Clock, Trophy, BookOpen, Search, Users } from "lucide-react";
+import { Trophy, Search } from "lucide-react";
 
 interface Quiz {
   id: string;
@@ -127,21 +127,6 @@ const Quizzes = () => {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getSubjectIcon = (subject: string) => {
-    switch (subject) {
-      case "Mathematics":
-        return "🧮";
-      case "Science":
-        return "🔬";
-      case "English":
-        return "📚";
-      case "Social Science":
-        return "🌍";
-      default:
-        return "📖";
     }
   };
 

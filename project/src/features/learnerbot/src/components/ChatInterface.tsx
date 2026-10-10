@@ -13,9 +13,10 @@ import { progressService } from '../services/progressService';
 import type { ChatMessage } from '../services/apiService';
 
 interface ChatInterfaceProps {
+  onShowProgress?: () => void;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = () => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ onShowProgress }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [progress, setProgress] = useState<UserProgress>(progressService.getProgress());
@@ -72,10 +73,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
       setProgress(progressService.getProgress());
     }
   }, [userName]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -323,11 +320,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = () => {
                       <Trophy className="w-4 h-4 text-yellow-400" />
                       Recent Badges
                     </h4>
-                    {earnedBadges.length > 0 && (
-                      <span className="text-[10px] text-slate-400">
-                        {earnedBadges.length} earned
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {earnedBadges.length > 0 && (
+                        <span className="text-[10px] text-slate-400">
+                          {earnedBadges.length} earned
+                        </span>
+                      )}
+                      {onShowProgress && (
+                        <button
+                          type="button"
+                          onClick={onShowProgress}
+                          className="text-[10px] font-bold text-purple-300 hover:text-white underline"
+                        >
+                          View all
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {recentBadges.length > 0 ? (

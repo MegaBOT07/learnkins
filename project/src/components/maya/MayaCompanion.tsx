@@ -95,6 +95,7 @@ const BotSprite: React.FC<BotSpriteProps> = ({
       <circle cx="32" cy="4" r="4" fill={color} />
       <motion.circle cx="32" cy="4" r="4"
         fill="none" stroke={color} strokeWidth="1.5" opacity={0}
+        initial={{ r:4, opacity:0.7 }}
         animate={{ r:[4,9], opacity:[0.7,0] }}
         transition={{ duration:1.6, repeat:Infinity }}
       />
@@ -165,11 +166,13 @@ const BotSprite: React.FC<BotSpriteProps> = ({
       <ellipse cx="42" cy="86" rx="6" ry="2.5" fill={color} fillOpacity="0.18" />
       <motion.ellipse cx="22" cy="87" rx={5} ry={2}
         fill={color} fillOpacity={0.45}
+        initial={{ ry:2, fillOpacity:0.45 }}
         animate={{ ry:[2,3.5,2], fillOpacity:[0.45,0.1,0.45] }}
         transition={{ duration:0.55, repeat:Infinity, ease:"easeInOut" }}
       />
       <motion.ellipse cx="42" cy="87" rx={5} ry={2}
         fill={color} fillOpacity={0.45}
+        initial={{ ry:2, fillOpacity:0.45 }}
         animate={{ ry:[2,3.5,2], fillOpacity:[0.45,0.1,0.45] }}
         transition={{ duration:0.55, repeat:Infinity, ease:"easeInOut", delay:0.28 }}
       />
@@ -463,8 +466,10 @@ const MayaCompanion: React.FC = () => {
   useEffect(() => {
     if (onAuthPage) { setMode("hidden"); return; }
     const done = localStorage.getItem(MAYA_TOUR_KEY);
+    // Only auto-start the tour from the home page so deep links aren't hijacked
+    const startTour = !done && location.pathname === "/";
     const t = setTimeout(()=>{
-      if (!done) {
+      if (startTour) {
         setTargetPos(resolvePos(STEPS[0]));
         setMode("touring");
       } else {
